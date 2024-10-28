@@ -386,6 +386,7 @@ static tNFA_STATUS nfa_dm_set_rf_listen_mode_config(
    * DH will only add RF parameters for itself.
    * In this case, we must program LA_SEL_INFO for DH techs only
    */
+  if (nfa_dm_cb.custom_config == false) {
     UINT8_TO_STREAM(p, NFC_PMID_LA_BIT_FRAME_SDD);
     UINT8_TO_STREAM(p, NCI_PARAM_LEN_LA_BIT_FRAME_SDD);
     UINT8_TO_STREAM(p, 0x04);
@@ -395,6 +396,7 @@ static tNFA_STATUS nfa_dm_set_rf_listen_mode_config(
     UINT8_TO_STREAM(p, NFC_PMID_LA_SEL_INFO);
     UINT8_TO_STREAM(p, NCI_PARAM_LEN_LA_SEL_INFO);
     UINT8_TO_STREAM(p, sens_info);
+  }
 
   /* for Listen B */
 

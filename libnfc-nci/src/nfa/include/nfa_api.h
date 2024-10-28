@@ -1423,4 +1423,15 @@ tNFA_STATUS NFA_ChangeDiscoveryTech(tNFA_TECHNOLOGY_MASK pollTech,
 *******************************************************************************/
 bool NFA_IsRfRemovalDetectionSupported();
 
+/*******************************************************************************
+**
+** Function:        NFA_SetCustomConfig
+**
+** Description:     Allow to set NCI config for Listen A from upper layer
+**
+** Returns:         none:
+**
+*******************************************************************************/
+extern void NFA_SetCustomConfig(bool status);
+
 #endif /* NFA_API_H */
