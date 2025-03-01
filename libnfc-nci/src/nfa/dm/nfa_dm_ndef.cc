@@ -85,12 +85,15 @@ const uint8_t* nfa_dm_ndef_wkt_uri_str_tbl[] = {
 **
 *******************************************************************************/
 void nfa_dm_ndef_dereg_hdlr_by_handle(tNFA_HANDLE ndef_type_handle) {
+  if (gki_utils == nullptr) {
+    gki_utils = new GkiUtils();
+  }
   tNFA_DM_CB* p_cb = &nfa_dm_cb;
   uint16_t hdlr_idx;
   hdlr_idx = (uint16_t)(ndef_type_handle & NFA_HANDLE_MASK);
 
   if (p_cb->p_ndef_handler[hdlr_idx]) {
-    GKI_freebuf(p_cb->p_ndef_handler[hdlr_idx]);
+    gki_utils->freebuf(p_cb->p_ndef_handler[hdlr_idx]);
     p_cb->p_ndef_handler[hdlr_idx] = nullptr;
   }
 }

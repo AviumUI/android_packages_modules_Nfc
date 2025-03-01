@@ -49,7 +49,10 @@ public final class NfcActivityManager extends IAppCallback.Stub
     final List<NfcApplicationState> mApps;  // Application(s) that have NFC state. Usually one
     final List<NfcActivityState> mActivities;  // Activities that have NFC state
 
-    NfcApplicationState findAppState(Application app) {
+    /**
+     * @hide
+     */
+    public NfcApplicationState findAppState(Application app) {
         for (NfcApplicationState appState : mApps) {
             if (appState.app == app) {
                 return appState;
@@ -58,7 +61,10 @@ public final class NfcActivityManager extends IAppCallback.Stub
         return null;
     }
 
-    void registerApplication(Application app) {
+    /**
+     * @hide
+     */
+    public void registerApplication(Application app) {
         NfcApplicationState appState = findAppState(app);
         if (appState == null) {
             appState = new NfcApplicationState(app, this);
@@ -67,7 +73,10 @@ public final class NfcActivityManager extends IAppCallback.Stub
         appState.register();
     }
 
-    void unregisterApplication(Application app) {
+    /**
+     * @hide
+     */
+    public void unregisterApplication(Application app) {
         NfcApplicationState appState = findAppState(app);
         if (appState == null) {
             Log.e(TAG, "app was not registered " + app);
@@ -76,8 +85,11 @@ public final class NfcActivityManager extends IAppCallback.Stub
         appState.unregister();
     }
 
-    /** find activity state from mActivities */
-    synchronized NfcActivityState findActivityState(Activity activity) {
+    /** find activity state from mActivities
+     *
+     * @hide
+     */
+    public synchronized NfcActivityState findActivityState(Activity activity) {
         for (NfcActivityState state : mActivities) {
             if (state.activity == activity) {
                 return state;
@@ -86,8 +98,11 @@ public final class NfcActivityManager extends IAppCallback.Stub
         return null;
     }
 
-    /** find or create activity state from mActivities */
-    synchronized NfcActivityState getActivityState(Activity activity) {
+    /** find or create activity state from mActivities
+     *
+     * @hide
+     */
+    public synchronized NfcActivityState getActivityState(Activity activity) {
         NfcActivityState state = findActivityState(activity);
         if (state == null) {
             state = new NfcActivityState(activity, this);
@@ -96,7 +111,10 @@ public final class NfcActivityManager extends IAppCallback.Stub
         return state;
     }
 
-    synchronized NfcActivityState findResumedActivityState() {
+    /**
+    * @hide
+    */
+    public synchronized NfcActivityState findResumedActivityState() {
         for (NfcActivityState state : mActivities) {
             if (state.resumed) {
                 return state;
@@ -105,7 +123,10 @@ public final class NfcActivityManager extends IAppCallback.Stub
         return null;
     }
 
-    synchronized void destroyActivityState(Activity activity) {
+    /**
+     * @hide
+     */
+    public synchronized void destroyActivityState(Activity activity) {
         NfcActivityState activityState = findActivityState(activity);
         if (activityState != null) {
             activityState.destroy();

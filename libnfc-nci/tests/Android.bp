@@ -19,6 +19,7 @@ cc_test {
         "packages/modules/Nfc/libnfc-nci/src/nfa/include",
         "packages/modules/Nfc/libnfc-nci/src/nfa/ce",
         "packages/modules/Nfc/libnfc-nci/src/nfa/dm",
+        "packages/modules/Nfc/libnfc-nci/src/nfa/ee",
         "packages/modules/Nfc/libnfc-nci/src/nfa/hci",
         "packages/modules/Nfc/libnfc-nci/src/nfa/wlc",
         "packages/modules/Nfc/libnfc-nci/src/nfc/tags",

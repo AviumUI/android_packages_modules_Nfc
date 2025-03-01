@@ -19,13 +19,18 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "mock_gki_utils.h"
 #include "nfc_api.h"
 #include "nfc_int.h"
 
 class NfcVsTest : public ::testing::Test {
  protected:
   tNFC_CB mock_nfc_cb;
-  void SetUp() override { memset(&mock_nfc_cb, 0, sizeof(mock_nfc_cb)); }
+  void SetUp() override {
+    memset(&mock_nfc_cb, 0, sizeof(mock_nfc_cb));
+    gki_utils = new MockGkiUtils();
+  }
+  void TearDown() override { gki_utils = nullptr; }
 };
 
 TEST_F(NfcVsTest, SuccessfulRegistration) {

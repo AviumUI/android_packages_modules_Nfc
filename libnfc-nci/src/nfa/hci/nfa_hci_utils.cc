@@ -31,6 +31,7 @@
 #include "nfa_hci_api.h"
 #include "nfa_hci_defs.h"
 #include "nfa_hci_int.h"
+#include "nfc_config.h"
 
 using android::base::StringPrintf;
 
@@ -1356,9 +1357,12 @@ char* nfa_hciu_get_type_inst_names(uint8_t pipe, uint8_t type, uint8_t inst,
 *******************************************************************************/
 std::string nfa_hciu_evt_2_str(uint8_t pipe_id, uint8_t evt) {
   tNFA_HCI_DYN_PIPE* p_pipe = nfa_hciu_find_pipe_by_pid(pipe_id);
+  std::vector<uint8_t> conn_pipe_ids;
+  bool is_conn_pipe = nfa_hciu_check_sim_pipe_ids(pipe_id);
+
   if (pipe_id != NFA_HCI_ADMIN_PIPE &&
       pipe_id != NFA_HCI_LINK_MANAGEMENT_PIPE && p_pipe != nullptr &&
-      p_pipe->local_gate == NFA_HCI_CONNECTIVITY_GATE) {
+      ((p_pipe->local_gate == NFA_HCI_CONNECTIVITY_GATE) || is_conn_pipe)) {
     switch (evt) {
       case NFA_HCI_EVT_CONNECTIVITY:
         return "EVT_CONNECTIVITY";
@@ -1419,4 +1423,31 @@ static void handle_debug_loopback(NFC_HDR* p_buf, uint8_t type,
 
   p_buf->event = NFA_HCI_CHECK_QUEUE_EVT;
   nfa_sys_sendmsg(p_buf);
+}
+
+/*******************************************************************************
+**
+** Function         nfa_hciu_check_sim_pipe_ids
+**
+** Description      This function checks if the pipe Id is in the list
+**                  NAME_OFF_HOST_SIM_PIPE_IDS, if used.
+**
+** Returns          true if match
+**
+*******************************************************************************/
+bool nfa_hciu_check_sim_pipe_ids(uint8_t pipe_id) {
+  std::vector<uint8_t> conn_pipe_ids;
+  bool is_conn_pipe = false;
+
+  if (NfcConfig::hasKey(NAME_OFF_HOST_SIM_PIPE_IDS)) {
+    conn_pipe_ids = NfcConfig::getBytes(NAME_OFF_HOST_SIM_PIPE_IDS);
+    for (int i = 0; i < conn_pipe_ids.size(); i++) {
+      if (pipe_id == conn_pipe_ids[i]) {
+        LOG(VERBOSE) << StringPrintf(
+            "%s; pipe 0x%x is in OFF_HOST_SIM_PIPE_IDS", __func__, pipe_id);
+        return true;
+      }
+    }
+  }
+  return false;
 }

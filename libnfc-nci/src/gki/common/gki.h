@@ -464,6 +464,9 @@ class GkiUtilsInterface {
   virtual uint16_t update_timer_list(TIMER_LIST_Q* p_timer_listq,
                                      int32_t num_units_since_last_update) = 0;
   virtual TIMER_LIST_ENT* timer_list_first(TIMER_LIST_Q* p_timer_listq) = 0;
+  virtual void freebuf(void* p_buf) = 0;
+  virtual void enqueue(BUFFER_Q* p_q, void* p_buf) = 0;
+  virtual void* dequeue(BUFFER_Q* p_q) = 0;
 };
 
 class GkiUtils : public GkiUtilsInterface {
@@ -503,6 +506,12 @@ class GkiUtils : public GkiUtilsInterface {
   TIMER_LIST_ENT* timer_list_first(TIMER_LIST_Q* p_timer_listq) override {
     return GKI_timer_list_first(p_timer_listq);
   };
+
+  void freebuf(void* p_buf) override { GKI_freebuf(p_buf); };
+  void enqueue(BUFFER_Q* p_q, void* p_buf) override {
+    GKI_enqueue(p_q, p_buf);
+  };
+  void* dequeue(BUFFER_Q* p_q) override { return GKI_dequeue(p_q); };
 };
 
 extern GkiUtilsInterface* gki_utils;

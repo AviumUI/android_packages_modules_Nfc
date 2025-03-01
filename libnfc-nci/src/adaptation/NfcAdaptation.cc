@@ -81,7 +81,6 @@ extern void delete_stack_non_volatile_store(bool forceDelete);
 NfcAdaptation* NfcAdaptation::mpInstance = nullptr;
 ThreadMutex NfcAdaptation::sLock;
 ThreadCondVar NfcAdaptation::mHalOpenCompletedEvent;
-ThreadCondVar NfcAdaptation::mHalCloseCompletedEvent;
 sp<INfc> NfcAdaptation::mHal;
 sp<INfcV1_1> NfcAdaptation::mHal_1_1;
 sp<INfcV1_2> NfcAdaptation::mHal_1_2;
@@ -101,6 +100,7 @@ bool isDownloadFirmwareCompleted = false;
 bool use_aidl = false;
 uint8_t mute_tech_route_option = 0x00;
 unsigned int t5t_mute_legacy = 0;
+bool nfa_ee_route_debounce_timer = true;
 
 extern tNFA_DM_CFG nfa_dm_cfg;
 extern tNFA_PROPRIETARY_CFG nfa_proprietary_cfg;
@@ -113,7 +113,7 @@ extern bool nfa_poll_bail_out_mode;
 // ETSI TS 102 622, section 6.1.3.1
 static std::vector<uint8_t> host_allowlist;
 
-static int get_vsr_api_level() {
+[[maybe_unused]] static int get_vsr_api_level() {
   int vendor_api_level =
       ::android::base::GetIntProperty("ro.vendor.api_level", -1);
   if (vendor_api_level != -1) {
@@ -203,6 +203,10 @@ class NfcClientCallback : public INfcClientCallback {
   Return<void> sendEvent_1_1(
       ::android::hardware::nfc::V1_1::NfcEvent event,
       ::android::hardware::nfc::V1_0::NfcStatus event_status) override {
+    if (sVndExtnsPresent) {
+      sNfcVendorExtn->processEvent((uint8_t)event,
+                                   (tHAL_NFC_STATUS)event_status);
+    }
     mEventCallback((uint8_t)event, (tHAL_NFC_STATUS)event_status);
     return Void();
   };
@@ -647,6 +651,12 @@ void NfcAdaptation::Initialize() {
     }
   }
 
+  if (NfcConfig::hasKey(NAME_NFA_EE_ROUTE_DEBOUNCE_TIMER)) {
+    if (NfcConfig::getUnsigned(NAME_NFA_EE_ROUTE_DEBOUNCE_TIMER) == 0x00) {
+      nfa_ee_route_debounce_timer = false;
+    }
+  }
+
   verify_stack_non_volatile_store();
   if (NfcConfig::hasKey(NAME_PRESERVE_STORAGE) &&
       NfcConfig::getUnsigned(NAME_PRESERVE_STORAGE) == 1) {
@@ -857,7 +867,9 @@ void NfcAdaptation::InitializeHalDeviceContext() {
       mAidlHal->getInterfaceVersion(&mAidlHalVer);
       LOG(INFO) << StringPrintf("%s: INfcAidl::fromBinder returned ver(%d)",
                                 func, mAidlHalVer);
-      if (get_vsr_api_level() <= __ANDROID_API_V__) {
+      // TODO: Enforce VSR API level check later
+      // if (get_vsr_api_level() <= __ANDROID_API_V__) {
+      if (mAidlHalVer <= 1) {
         sVndExtnsPresent = sNfcVendorExtn->Initialize(nullptr, mAidlHal);
       }
     }

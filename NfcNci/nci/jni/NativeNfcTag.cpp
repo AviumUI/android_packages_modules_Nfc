@@ -169,7 +169,9 @@ void nativeNfcTag_abortWaits() {
   sem_post(&sMakeReadonlySem);
   sCurrentRfInterface = NFA_INTERFACE_ISO_DEP;
   sCurrentActivatedProtocl = NFA_INTERFACE_ISO_DEP;
-  if (!gIsTagDeactivating) {
+  // Do not reset type & protocol in case of Tag Deactivating or RF Interface
+  // reselect.
+  if (!gIsTagDeactivating && !gIsSelectingRfInterface) {
     sCurrentConnectedTargetType = TARGET_TYPE_UNKNOWN;
     sCurrentConnectedTargetProtocol = NFC_PROTOCOL_UNKNOWN;
   }

@@ -222,6 +222,9 @@ typedef struct {
 
   uint8_t nfcc_mode; /* NFC controller modes */
 
+  tNFC_RESPONSE nfcee_data; /* pending NFCEE_STATUS_NTF*/
+
+  bool is_nfcee_discovery_required; /* is NFCEE discovery required*/
 } tNFC_CB;
 
 /*****************************************************************************

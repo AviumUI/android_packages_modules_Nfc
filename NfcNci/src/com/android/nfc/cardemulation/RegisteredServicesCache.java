@@ -16,6 +16,7 @@
 
 package com.android.nfc.cardemulation;
 
+import static android.nfc.cardemulation.CardEmulation.CATEGORY_OTHER;
 import static android.nfc.cardemulation.CardEmulation.SET_SERVICE_ENABLED_STATUS_FAILURE_ALREADY_SET;
 import static android.nfc.cardemulation.CardEmulation.SET_SERVICE_ENABLED_STATUS_FAILURE_INVALID_SERVICE;
 import static android.nfc.cardemulation.CardEmulation.SET_SERVICE_ENABLED_STATUS_FAILURE_UNKNOWN_ERROR;
@@ -518,7 +519,7 @@ public class RegisteredServicesCache {
             ndefNfceeAppInfo.serviceInfo.applicationInfo = new ApplicationInfo();
             List<String> ndefNfceeAid = new ArrayList<String>();
             ndefNfceeAid.add(DEFAULT_T4T_NFCEE_AID);
-            AidGroup ndefNfceeAidGroup = new AidGroup(ndefNfceeAid, "other");
+            AidGroup ndefNfceeAidGroup = new AidGroup(ndefNfceeAid, CATEGORY_OTHER);
             ArrayList<AidGroup> ndefNfceeAidStaticGroups = new ArrayList<>();
             ndefNfceeAidStaticGroups.add(ndefNfceeAidGroup);
             ArrayList<AidGroup> ndefNfceeAidDynamicGroups = new ArrayList<>();
@@ -532,8 +533,8 @@ public class RegisteredServicesCache {
                     0,
                     userId,
                     mContext.getResources().getString(R.string.device_ndef_nfcee_service_name),
-                    "Ndef-Nfcee",
-                    "Ndef-Nfcee");
+                    RoutingOptionManager.SE_NDEF_NFCEE,
+                    RoutingOptionManager.SE_NDEF_NFCEE);
             validServices.add(ndefNfceeAidService);
         }
 

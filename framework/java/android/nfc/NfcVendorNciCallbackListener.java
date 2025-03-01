@@ -96,7 +96,10 @@ public final class NfcVendorNciCallbackListener extends INfcVendorNciCallback.St
                 final NfcVendorNciCallbackListener listener = this;
                 NfcAdapter.callService(() -> {
                     NfcAdapter.getService().unregisterVendorExtensionCallback(listener);
-                    NfcAdapter.getService().asBinder().unlinkToDeath(mDeathRecipient, 0);
+                    if (mDeathRecipient != null) {
+                        NfcAdapter.getService().asBinder().unlinkToDeath(mDeathRecipient, 0);
+                        mDeathRecipient = null;
+                    }
                     mIsRegistered = false;
                 });
             }

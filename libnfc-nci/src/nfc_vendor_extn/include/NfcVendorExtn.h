@@ -27,6 +27,8 @@ using android::sp;
 using android::hardware::nfc::V1_0::INfc;
 using INfcAidl = ::aidl::android::hardware::nfc::INfc;
 
+#define NFCSTATUS_EXTN_FEATURE_SUCCESS (0x0050)
+
 // This is only intended for a limited time to handle non-AOSP vendor interface
 // implementations on existing upgrading devices and not as a new extension point.
 // This will be removed once all devices are upgraded to the latest NFC HAL.
@@ -46,6 +48,49 @@ struct VendorExtnCb {
   tHAL_NFC_DATA_CBACK* pDataCback;
   std::map<std::string, ConfigValue> configMap;
 };
+
+/**
+ * @brief Holds NCI packet data length and data buffer
+ *
+ */
+typedef struct {
+  uint16_t data_len;
+  uint8_t* p_data;
+} NciData_t;
+
+/**
+ * @brief Holds functional event datas to support
+ *        extension features
+ */
+typedef struct {
+  NciData_t nci_msg;
+  NciData_t nci_rsp_ntf;
+  uint8_t write_status;
+  uint8_t hal_state;
+  uint8_t rf_state;
+  uint8_t hal_event;
+  uint8_t hal_event_status;
+} NfcExtEventData_t;
+
+/**
+ * @brief Holds functional event codes to support
+ *        extension features.
+ */
+typedef enum {
+  HANDLE_VENDOR_NCI_MSG,
+  HANDLE_VENDOR_NCI_RSP_NTF,
+  HANDLE_WRITE_COMPLETE_STATUS,
+  HANDLE_HAL_CONTROL_GRANTED,
+  HANDLE_NFC_HAL_STATE_UPDATE,
+  HANDLE_RF_HAL_STATE_UPDATE,
+  HANDLE_HAL_EVENT,
+  HANDLE_FW_DNLD_STATUS_UPDATE,
+} NfcExtEvent_t;
+
+typedef enum {
+  NFCC_HAL_TRANS_ERR_CODE = 6u,
+  NFCC_HAL_FATAL_ERR_CODE = 8u,
+} NfcExtHal_NFCC_ERROR_CODE_t;
 
 class NfcVendorExtn {
  public:

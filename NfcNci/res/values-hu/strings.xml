@@ -1,63 +1,66 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name" msgid="78565911793142902">"NFC-szolgáltatás"</string>
-    <string name="nfcUserLabel" msgid="7708535817084357357">"NFC"</string>
-    <string name="accessibility_nfc_enabled" msgid="7796246979948787735">"NFC bekapcsolva"</string>
-    <string name="tap_to_beam" msgid="5819197866281059878">"Koppintson rá sugárzáshoz"</string>
-    <string name="beam_progress" msgid="7453634884807323920">"Bejövő sugár..."</string>
-    <string name="beam_outgoing" msgid="4679536649779123495">"Sugárzás..."</string>
-    <string name="beam_complete" msgid="477026736424637435">"Átvitel befejezve."</string>
-    <string name="beam_failed" msgid="5116241718189888630">"A sugárzás nem fejeződött be"</string>
-    <string name="beam_canceled" msgid="5425192751826544741">"Sugárzás megszakítva"</string>
-    <string name="cancel" msgid="61873902552555096">"Mégse"</string>
-    <string name="beam_tap_to_view" msgid="7430394753262448349">"Koppintson rá a megtekintéshez"</string>
-    <string name="beam_handover_not_supported" msgid="4083165921751489015">"A fogadó eszköz nem támogatja a nagyméretű fájlok átvitelét adatsugárzás útján."</string>
-    <string name="beam_try_again" msgid="3364677301009783455">"Eszközök újbóli összekapcsolása"</string>
-    <string name="beam_busy" msgid="5253335587620612576">"A Beam jelenleg elfoglalt. Próbálja újra, ha az előző átvitel már befejeződött."</string>
-    <string name="device" msgid="4459621591392478151">"eszköz"</string>
-    <string name="connecting_peripheral" msgid="1296182660525660935">"Csatlakozás a következőhöz: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="connected_peripheral" msgid="20748648543160091">"Csatlakozva a következőhöz: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="connect_peripheral_failed" msgid="7925702596242839275">"Nem sikerült csatlakozni ehhez: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="disconnecting_peripheral" msgid="1443699384809097200">"Leválasztás a következőről: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="disconnected_peripheral" msgid="4470578100296504366">"Leválasztva a következőről: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="pairing_peripheral" msgid="6983626861540899365">"Párosítás a következővel: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="pairing_peripheral_failed" msgid="6087643307743264679">"Nem sikerült a párosítás ezzel: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="failed_to_enable_bt" msgid="7229153323594758077">"Nem lehet aktiválni a Bluetootht"</string>
-    <string name="confirm_pairing" msgid="4112568077038265363">"Biztosan párosítani szeretné a(z) <xliff:g id="DEVICE_NAME">%1$s</xliff:g> Bluetooth-eszközt?"</string>
-    <string name="pair_yes" msgid="3525614878559994448">"Igen"</string>
-    <string name="pair_no" msgid="5022308368904055020">"Nem"</string>
-    <string name="tap_again_to_pay" msgid="5754988005412859897">"Koppintson ismét a(z) <xliff:g id="APP">%1$s</xliff:g> alkalmazással való fizetéshez"</string>
-    <string name="tap_again_to_complete" msgid="5423640945118279123">"Koppintson ismét, hogy a(z) <xliff:g id="APP">%1$s</xliff:g> alkalmazással fejezze be a műveletet"</string>
-    <string name="tap_again_description" msgid="3019101527041529661">"Tartsa a leolvasóhoz"</string>
-    <string name="appchooser_description" msgid="2554187931814833244">"Válasszon beolvasó appot"</string>
-    <string name="transaction_failure" msgid="7828102078637936513">"A tranzakciót nem lehetett végrehajtani a(z) <xliff:g id="APP">%1$s</xliff:g> alkalmazással."</string>
-    <string name="could_not_use_app" msgid="8137587876138569083">"Nem lehetett használni a(z) <xliff:g id="APP">%1$s</xliff:g> alkalmazást."</string>
-    <string name="pay_with" msgid="5531545488795798945">"Fizetőeszköz"</string>
-    <string name="complete_with" msgid="6797459104103012992">"Befejezés a következővel:"</string>
-    <string name="default_pay_app_removed" msgid="4108250545457437360">"Az érintéssel való fizetésnél előnyben részesített szolgáltatást eltávolították. Választ egy másikat?"</string>
-    <string name="ask_nfc_tap" msgid="2925239870458286340">"A befejezéshez koppintson egy másik eszközre"</string>
-    <string name="wifi_connect" msgid="6250727951843550671">"Csatlakozás"</string>
-    <string name="status_unable_to_connect" msgid="9183908200295307657">"Nem lehet csatlakozni a hálózathoz"</string>
-    <string name="status_wifi_connected" msgid="5893022897732105739">"Csatlakozva"</string>
-    <string name="title_connect_to_network" msgid="2474034615817280146">"Csatlakozás hálózathoz"</string>
-    <string name="prompt_connect_to_network" msgid="8511683573657516114">"Csatlakozik a következő hálózathoz: <xliff:g id="NETWORK_SSID">%1$s</xliff:g>?"</string>
-    <string name="beam_requires_nfc_enabled" msgid="2800366967218600534">"Az Android Beam használatához engedélyezni kell az NFC-t. Engedélyezi?"</string>
-    <string name="android_beam" msgid="1666446406999492763">"Android Beam"</string>
-    <string name="beam_requires_external_storage_permission" msgid="8798337545702206901">"Az alkalmazás nem rendelkezik a fájl sugárzásához szükséges Külső tárolási engedéllyel."</string>
-    <string name="title_confirm_url_open" msgid="8069968913244794478">"Megnyitja a linket?"</string>
-    <string name="summary_confirm_url_open" msgid="1246398412196449226">"Telefonja linket kapott NFC-n keresztül:"</string>
-    <string name="summary_confirm_url_open_tablet" msgid="771152442325809851">"Táblagépe linket kapott NFC-n keresztül:"</string>
-    <string name="action_confirm_url_open" msgid="3458322738812921189">"Link megnyitása"</string>
-    <string name="tag_read_error" msgid="2485274498885877547">"NFC-olvasási hiba. Próbálja újra."</string>
-    <string name="tag_dispatch_failed" msgid="3562984995049738400">"Nem található támogatott alkalmazás ehhez az NFC-címkéhez"</string>
-    <string name="nfc_blocking_alert_title" msgid="1086172436984457085">"Előfordulhat, hogy le van tiltva az NFC"</string>
-    <string name="nfc_blocking_alert_message" msgid="7003156052570107490">"Koppintással további információkhoz juthat a probléma elhárításáról."</string>
-    <string name="nfc_tag_alert_title" msgid="197917719004551090">"<xliff:g id="APPNAME">%1$s</xliff:g> – NFC-n keresztül elindítva"</string>
-    <string name="nfc_tag_alert_message" msgid="3140894528184634873">"Ide koppintva megtudhatja, hogyan tilthatja le a funkciót."</string>
-    <string name="nfc_logging_alert_title" msgid="5300867034660942987">"A rendszer rögzíti az NFC-adatokat"</string>
-    <string name="nfc_logging_alert_message" msgid="1550187184825467942">"Koppintson a rögzítés leállításához."</string>
-    <string name="title_package_enabling_nfc" msgid="5736481508428918024">"Engedélyezi a(z) <xliff:g id="PKG">%1$s</xliff:g> számára az NFC bekapcsolását?"</string>
-    <string name="enable_nfc_yes" msgid="694867197186062792">"Igen"</string>
-    <string name="enable_nfc_no" msgid="6549033065900624599">"Nem"</string>
+    <string name="app_name" msgid="5975754765946896125">"NFC-szolgáltatás"</string>
+    <string name="nfcUserLabel" msgid="1264167300457896256">"NFC"</string>
+    <string name="accessibility_nfc_enabled" msgid="830589378553181410">"NFC bekapcsolva"</string>
+    <string name="tap_to_beam" msgid="2022424274840394451">"Koppintson rá sugárzáshoz"</string>
+    <string name="beam_progress" msgid="1929294166633309327">"Bejövő sugár..."</string>
+    <string name="beam_outgoing" msgid="5219329384828480018">"Sugárzás..."</string>
+    <string name="beam_complete" msgid="6147496341809579439">"Átvitel befejezve."</string>
+    <string name="beam_failed" msgid="4211620610434373359">"A sugárzás nem fejeződött be"</string>
+    <string name="beam_canceled" msgid="512339558899479458">"Sugárzás megszakítva"</string>
+    <string name="cancel" msgid="2441041247172250936">"Mégse"</string>
+    <string name="beam_tap_to_view" msgid="9147455481297418801">"Koppintson rá a megtekintéshez"</string>
+    <string name="beam_handover_not_supported" msgid="3930703977696510905">"A fogadó eszköz nem támogatja a nagyméretű fájlok átvitelét adatsugárzás útján."</string>
+    <string name="beam_try_again" msgid="1962556612448345422">"Eszközök újbóli összekapcsolása"</string>
+    <string name="beam_busy" msgid="8179024484757185047">"A Beam jelenleg elfoglalt. Próbálja újra, ha az előző átvitel már befejeződött."</string>
+    <string name="device" msgid="6859793408635712424">"eszköz"</string>
+    <string name="connecting_peripheral" msgid="5023158537894294802">"Csatlakozás a következőhöz: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="connected_peripheral" msgid="2496731052957541047">"Csatlakozva a következőhöz: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="connect_peripheral_failed" msgid="368937385551413385">"Nem sikerült csatlakozni ehhez: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="disconnecting_peripheral" msgid="1121670272906082527">"Leválasztás a következőről: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="disconnected_peripheral" msgid="9009042963082667744">"Leválasztva a következőről: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="pairing_peripheral" msgid="5319926791325775305">"Párosítás a következővel: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="pairing_peripheral_failed" msgid="5905500974914016272">"Nem sikerült a párosítás ezzel: <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="failed_to_enable_bt" msgid="5978409523818027926">"Nem lehet aktiválni a Bluetootht"</string>
+    <string name="confirm_pairing" msgid="6587809107551647782">"Biztosan párosítani szeretné a(z) <xliff:g id="DEVICE_NAME">%1$s</xliff:g> Bluetooth-eszközt?"</string>
+    <string name="pair_yes" msgid="3624986519335168604">"Igen"</string>
+    <string name="pair_no" msgid="1333098406083837138">"Nem"</string>
+    <string name="tap_again_to_pay" msgid="4338572813931564301">"Koppintson ismét a(z) <xliff:g id="APP">%1$s</xliff:g> alkalmazással való fizetéshez"</string>
+    <string name="tap_again_to_complete" msgid="6649361012821973200">"Koppintson ismét, hogy a(z) <xliff:g id="APP">%1$s</xliff:g> alkalmazással fejezze be a műveletet"</string>
+    <string name="tap_again_description" msgid="7062073825398109427">"Tartsa a leolvasóhoz"</string>
+    <string name="appchooser_description" msgid="4568068957993132082">"Válasszon beolvasó appot"</string>
+    <string name="transaction_failure" msgid="6933419514549792555">"A tranzakciót nem lehetett végrehajtani a(z) <xliff:g id="APP">%1$s</xliff:g> alkalmazással."</string>
+    <string name="could_not_use_app" msgid="2945389413330489607">"Nem lehetett használni a(z) <xliff:g id="APP">%1$s</xliff:g> alkalmazást."</string>
+    <string name="pay_with" msgid="5104112137995621262">"Fizetőeszköz"</string>
+    <string name="complete_with" msgid="6624789011610610450">"Befejezés a következővel:"</string>
+    <string name="default_pay_app_removed" msgid="4678760785647557185">"Az érintéssel való fizetésnél előnyben részesített szolgáltatást eltávolították. Választ egy másikat?"</string>
+    <string name="ask_nfc_tap" msgid="7921925213499063051">"A befejezéshez koppintson egy másik eszközre"</string>
+    <string name="wifi_connect" msgid="2726973850576310336">"Csatlakozás"</string>
+    <string name="status_unable_to_connect" msgid="3282224066213036023">"Nem lehet csatlakozni a hálózathoz"</string>
+    <string name="status_wifi_connected" msgid="8878112079913521399">"Csatlakozva"</string>
+    <string name="title_connect_to_network" msgid="5617055452888255705">"Csatlakozás hálózathoz"</string>
+    <string name="prompt_connect_to_network" msgid="6954936151128422990">"Csatlakozik a következő hálózathoz: <xliff:g id="NETWORK_SSID">%1$s</xliff:g>?"</string>
+    <string name="beam_requires_nfc_enabled" msgid="1943159298389147033">"Az Android Beam használatához engedélyezni kell az NFC-t. Engedélyezi?"</string>
+    <string name="android_beam" msgid="5505991354821548221">"Android Beam"</string>
+    <string name="beam_requires_external_storage_permission" msgid="1414485338750858306">"Az alkalmazás nem rendelkezik a fájl sugárzásához szükséges Külső tárolási engedéllyel."</string>
+    <string name="title_confirm_url_open" msgid="5517813934880640232">"Megnyitja a linket?"</string>
+    <string name="summary_confirm_url_open" msgid="7945693255033907131">"Telefonja linket kapott NFC-n keresztül:"</string>
+    <string name="summary_confirm_url_open_tablet" msgid="7988255063558403447">"Táblagépe linket kapott NFC-n keresztül:"</string>
+    <string name="action_confirm_url_open" msgid="2280097397376867615">"Link megnyitása"</string>
+    <string name="tag_read_error" msgid="8591844088497440515">"NFC-olvasási hiba. Próbálja újra."</string>
+    <string name="tag_dispatch_failed" msgid="1105926115269578595">"Nem található támogatott alkalmazás ehhez az NFC-címkéhez"</string>
+    <string name="nfc_blocking_alert_title" msgid="3361011027125473371">"Előfordulhat, hogy le van tiltva az NFC"</string>
+    <string name="nfc_blocking_alert_message" msgid="6427327924471665520">"Koppintással további információkhoz juthat a probléma elhárításáról."</string>
+    <string name="tag_app_alert_title" msgid="6761163540731807246">"NFC-címkék olvasásának engedélyezése az alkalmazások számára"</string>
+    <string name="tag_app_alert_message" msgid="5518729638341784348">"A(z) <xliff:g id="APPNAMES">%1$s</xliff:g> képes NFC-címkék olvasására."</string>
+    <string name="tag_app_alert_message_multiple" msgid="6989858224684960030">"A következő alkalmazások képesek NFC-címkék olvasására: <xliff:g id="APPNAMES">%1$s</xliff:g>."</string>
+    <string name="tag_app_alert_action_button" msgid="1442462487575846704">"Ide koppintva megtudhatja, hogyan tilthatja le."</string>
+    <string name="nfc_logging_alert_title" msgid="7355334076019926549">"A rendszer rögzíti az NFC-adatokat"</string>
+    <string name="nfc_logging_alert_message" msgid="3833608086332697579">"Koppintson a rögzítés leállításához."</string>
+    <string name="title_package_enabling_nfc" msgid="7797373366778008307">"Engedélyezi a(z) <xliff:g id="PKG">%1$s</xliff:g> számára az NFC bekapcsolását?"</string>
+    <string name="enable_nfc_yes" msgid="3514504441883079276">"Igen"</string>
+    <string name="enable_nfc_no" msgid="4272144216339787073">"Nem"</string>
+    <string name="device_ndef_nfcee_service_name" msgid="1035872251333915624">"Beágyazott címke"</string>
 </resources>

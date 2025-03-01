@@ -301,7 +301,7 @@
 
 /* CE Type 4 Tag, Frame Waiting time Integer */
 #ifndef CE_T4T_ISO_DEP_FWI
-#define CE_T4T_ISO_DEP_FWI 7
+#define CE_T4T_ISO_DEP_FWI 0x70
 #ifndef RW_CI_TOUT_RESP
 #define RW_CI_TOUT_RESP 1000
 #endif
@@ -481,7 +481,8 @@
 /* Max number of NFCEE supported */
 #ifndef NFA_EE_MAX_EE_SUPPORTED
 /* Modified for NFC-A until we add dynamic support */
-#define NFA_EE_MAX_EE_SUPPORTED 6
+#define NB_MEP_CONFIG 2
+#define NFA_EE_MAX_EE_SUPPORTED (5 + NB_MEP_CONFIG)
 #endif
 
 /* Maximum number of AID entries per target_handle  */

@@ -29,13 +29,18 @@ import android.os.Bundle;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.android.nfc.NfcStatsLog;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.Rule;
 import org.junit.runner.RunWith;
+import org.mockito.MockitoSession;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.HexFormat;
@@ -43,7 +48,7 @@ import java.util.Locale;
 
 @RunWith(AndroidJUnit4.class)
 public class StatsdUtilsTest {
-    private final StatsdUtils mStatsdUtils = spy(new StatsdUtils());
+    private final StatsdUtils mStatsdUtils = spy(new StatsdUtils(new StatsdUtilsContext()));
 
     @Test
     public void testGetFrameType() {
@@ -157,6 +162,41 @@ public class StatsdUtilsTest {
         verifyNoMoreInteractions(mStatsdUtils);
     }
 
+    @Test
+    public void testLogObserveModeStateChanged_noOverride() {
+        MockitoSession session = mockitoSession().spyStatic(NfcStatsLog.class).startMocking();
+
+        try {
+            mStatsdUtils.logObserveModeStateChanged(true, StatsdUtils.TRIGGER_SOURCE_FOREGROUND_APP,
+                    LATENCY_MS);
+
+            verify(() -> NfcStatsLog.write(NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED,
+                NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__STATE__OBSERVE_MODE_ENABLED,
+                NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__FOREGROUND_APP,
+                LATENCY_MS));
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    @Test
+    public void testLogObserveModeStateChanged_override() {
+        MockitoSession session = mockitoSession().spyStatic(NfcStatsLog.class).startMocking();
+
+        try {
+            mStatsdUtils.setNextObserveModeTriggerSource(StatsdUtils.TRIGGER_SOURCE_AUTO_TRANSACT);
+            mStatsdUtils.logObserveModeStateChanged(true, StatsdUtils.TRIGGER_SOURCE_FOREGROUND_APP,
+                    LATENCY_MS);
+
+            verify(() -> NfcStatsLog.write(NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED,
+                NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__STATE__OBSERVE_MODE_ENABLED,
+                NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__AUTO_TRANSACT,
+                LATENCY_MS));
+        } finally {
+            session.finishMocking();
+        }
+    }
+
 
     private static final int GAIN_1 = 42;
     private static final int GAIN_2 = 25;
@@ -174,4 +214,5 @@ public class StatsdUtilsTest {
                     0x21};
     private static final String UNKNOWN_FRAME_KEY =
             HexFormat.of().formatHex(UNKNOWN_FRAME).toUpperCase(Locale.ROOT);
+    private static final int LATENCY_MS = 100;
 }

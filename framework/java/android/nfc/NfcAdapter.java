@@ -923,7 +923,7 @@ public final class NfcAdapter {
         mNfcUnlockHandlers = new HashMap<NfcUnlockHandler, INfcUnlockHandler>();
         mTagRemovedListener = null;
         mLock = new Object();
-        mControllerAlwaysOnListener = new NfcControllerAlwaysOnListener(getService());
+        mControllerAlwaysOnListener = new NfcControllerAlwaysOnListener();
         mNfcWlcStateListener = new NfcWlcStateListener(getService());
         mNfcVendorNciCallbackListener = new NfcVendorNciCallbackListener();
         mNfcOemExtension = new NfcOemExtension(mContext, this);
@@ -2594,11 +2594,11 @@ public final class NfcAdapter {
         }
     }
     /** @hide */
-    interface ServiceCallReturn<T> {
+    public interface ServiceCallReturn<T> {
         T call() throws RemoteException;
     }
     /** @hide */
-    static <T> T callServiceReturn(ServiceCallReturn<T> call, T defaultReturn) {
+    public static <T> T callServiceReturn(ServiceCallReturn<T> call, T defaultReturn) {
         try {
             if (sService == null) {
                 attemptDeadServiceRecovery(new RemoteException("NFC Service is null"));

@@ -149,6 +149,7 @@ typedef uint8_t tNFA_EE_ECB_FLAGS;
 #define NFA_EE_STATUS_RESTORING 0x20
 /* this bit is in ee_status for internal use only */
 #define NFA_EE_STATUS_INT_MASK 0x20
+#define NFA_EE_STATUS_MEP_MASK 0x40
 
 #define NFA_EMPTY_AID_TLV_LEN 0x02
 
@@ -559,6 +560,7 @@ void nfa_ee_get_tech_route(uint8_t power_state, uint8_t* p_handles);
 #endif
 void nfa_ee_proc_evt(tNFC_RESPONSE_EVT event, void* p_data);
 tNFA_EE_ECB* nfa_ee_find_ecb(uint8_t nfcee_id);
+tNFA_EE_ECB* nfa_ee_add_mep_ecb(uint8_t nfcee_id);
 tNFA_EE_ECB* nfa_ee_find_ecb_by_conn_id(uint8_t conn_id);
 uint8_t nfa_ee_ecb_to_mask(tNFA_EE_ECB* p_cb);
 void nfa_ee_restore_one_ecb(tNFA_EE_ECB* p_cb);

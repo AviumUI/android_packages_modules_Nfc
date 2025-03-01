@@ -19,6 +19,7 @@
     package="com.android.test.nonpaymentnfc">
 
     <uses-permission android:name="android.permission.NFC" />
+    <uses-sdk android:minSdkVersion="36" android:targetSdkVersion="36"/>
     <application android:label="Non Payment NFC App">
         <service android:name="com.android.test.nonpaymentnfc.NonPaymentApduService"
             android:exported="true"

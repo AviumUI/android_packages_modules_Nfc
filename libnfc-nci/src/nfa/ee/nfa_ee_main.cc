@@ -452,6 +452,45 @@ tNFA_EE_ECB* nfa_ee_find_ecb(uint8_t nfcee_id) {
 
 /*******************************************************************************
 **
+** Function         nfa_ee_add_mep_ecb
+**
+** Description      Return the ecb associated with the given nfcee_id
+**
+** Returns          tNFA_EE_ECB
+**
+*******************************************************************************/
+tNFA_EE_ECB* nfa_ee_add_mep_ecb(uint8_t nfcee_id) {
+  tNFA_EE_ECB* p_cb;
+  p_cb = nfa_ee_cb.ecb;
+
+  for (int i = 0; i < nfa_ee_cb.cur_ee; i++) {
+    if (nfa_ee_cb.ecb[i].nfcee_id == nfcee_id) {
+      // If already stored, this is a physical UICC
+      // Structure filled with NFCEE_DISCOVER_NTF info
+      LOG(DEBUG) << StringPrintf("%s; nfceeId 0x%x already in list", __func__,
+                                 nfcee_id);
+      return &nfa_ee_cb.ecb[i];
+    }
+  }
+
+  if (nfa_ee_cb.cur_ee < NFA_EE_MAX_EE_SUPPORTED) {
+    /* the cb can collect up to NFA_EE_MAX_EE_SUPPORTED ee_info */
+    p_cb = &nfa_ee_cb.ecb[nfa_ee_cb.cur_ee++];
+  } else {
+    LOG(ERROR) << StringPrintf("%s; Too many EE", __func__);
+    return nullptr;
+  }
+  // Store info and indicate MEP NFCEE
+  p_cb->nfcee_id = nfcee_id;
+  p_cb->num_interface = 0;
+  p_cb->num_tlvs = 0;
+  p_cb->ee_status = NFA_EE_STATUS_MEP_MASK;
+
+  return p_cb;
+}
+
+/*******************************************************************************
+**
 ** Function         nfa_ee_find_ecb_by_conn_id
 **
 ** Description      Return the ecb associated with the given connection id

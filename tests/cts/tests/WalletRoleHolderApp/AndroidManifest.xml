@@ -19,6 +19,7 @@
     package="com.android.test.walletroleholder">
 
     <uses-permission android:name="android.permission.NFC" />
+    <uses-sdk android:minSdkVersion="36" android:targetSdkVersion="36"/>
     <application android:label="Wallet Role Holder App">>
         <service android:name="com.android.test.walletroleholder.WalletRoleHolderApduService"
             android:exported="true"

@@ -22,15 +22,13 @@ import android.app.ActivityManager;
 import android.app.role.OnRoleHoldersChangedListener;
 import android.app.role.RoleManager;
 import android.content.Context;
-import android.nfc.ComponentNameAndUser;
 import android.nfc.PackageAndUser;
 import android.os.Binder;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.permission.flags.Flags;
-import android.util.Log;
 import android.sysprop.NfcProperties;
-import android.util.Pair;
+import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.nfc.NfcEventLog;
@@ -141,7 +139,7 @@ public class WalletRoleObserver {
         }
     }
 
-     boolean isWalletRoleFeatureEnabled() {
+    boolean isWalletRoleFeatureEnabled() {
         final long token = Binder.clearCallingIdentity();
         try {
             return Flags.walletRoleEnabled();

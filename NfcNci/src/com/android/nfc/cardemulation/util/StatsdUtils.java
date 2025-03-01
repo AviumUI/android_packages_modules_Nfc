@@ -20,6 +20,7 @@ import static com.android.nfc.NfcStatsLog.NFC_POLLING_LOOP_NOTIFICATION_REPORTED
 import static com.android.nfc.NfcStatsLog.NFC_POLLING_LOOP_NOTIFICATION_REPORTED__PROPRIETARY_FRAME_TYPE__PROPRIETARY_FRAME_UNKNOWN;
 
 import android.annotation.FlaggedApi;
+import android.annotation.NonNull;
 import android.nfc.cardemulation.CardEmulation;
 import android.nfc.cardemulation.PollingFrame;
 import android.os.Bundle;
@@ -75,6 +76,15 @@ public class StatsdUtils {
             .NFC_CARDEMULATION_OCCURRED__CATEGORY__FAILED_HCE_OTHER_DISCONNECTED_BEFORE_RESPONSE;
     /** Wrappers for Category values */
 
+    public static final int TRIGGER_SOURCE_UNKNOWN =
+            NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__TRIGGER_SOURCE_UNKNOWN;
+    public static final int TRIGGER_SOURCE_WALLET_ROLE_HOLDER =
+            NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__WALLET_ROLE_HOLDER;
+    public static final int TRIGGER_SOURCE_FOREGROUND_APP =
+            NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__FOREGROUND_APP;
+    public static final int TRIGGER_SOURCE_AUTO_TRANSACT =
+            NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__AUTO_TRANSACT;
+
     /** Name of SE terminal to log in statsd */
     private String mSeName = "";
     /** Timestamp in millis when app binding starts */
@@ -85,6 +95,9 @@ public class StatsdUtils {
     private String mTransactionCategory = CardEmulation.EXTRA_CATEGORY;
     /** Current transaction's uid to log in statsd */
     private int mTransactionUid = -1;
+    /** Shared context between instances of StatsdUtils */
+    @NonNull
+    private StatsdUtilsContext mStatsdUtilsContext;
 
     private static final byte FRAME_HEADER_ECP = 0x6A;
     private static final byte FRAME_ECP_V1 = 0x01;
@@ -103,14 +116,17 @@ public class StatsdUtils {
         DISCONNECTED_BEFORE_RESPONSE
     }
 
-    public StatsdUtils(String seName) {
+    public StatsdUtils(String seName, @NonNull StatsdUtilsContext statsdUtilsContext) {
+        this(statsdUtilsContext);
         mSeName = seName;
 
         // HCEF has no category, default it to PAYMENT category to record every call
         if (seName.equals(SE_NAME_HCEF)) mTransactionCategory = CardEmulation.CATEGORY_PAYMENT;
     }
 
-    public StatsdUtils() {}
+    public StatsdUtils(@NonNull StatsdUtilsContext statsdUtilsContext) {
+        mStatsdUtilsContext = statsdUtilsContext;
+    }
 
     private void resetCardEmulationEvent() {
         // Reset mTransactionCategory value to prevent accidental triggers in general
@@ -277,11 +293,32 @@ public class StatsdUtils {
         }
     }
 
-    public void logObserveModeStateChanged(boolean enabled, int triggerSource, int latency) {
+    /**
+     * Set the trigger source of the next observe mode state change. Use this when the source of the
+     * change is not known at the time of the change. This value will be cleared after the next
+     * call to logObserveModeStateChanged().
+     */
+    public void setNextObserveModeTriggerSource(int triggerSource) {
+        mStatsdUtilsContext.setObserveModeTriggerSource(triggerSource);
+    }
+
+    /**
+     * Log when observe mode is enabled or disabled.
+     *
+     * @param enabled true if observe mode is enabled, false if it is disabled
+     * @param triggerSource the source of the change, if known. This value will be ignored if
+     *                      setNextObserveModeTriggerSource() has been called.
+     * @param latencyMs the amount of time that it took to enable or disable observe mode in
+     * milliseconds.
+     */
+    public void logObserveModeStateChanged(boolean enabled, int triggerSource, int latencyMs) {
+        Integer overrideTriggerSource = mStatsdUtilsContext.getObserveModeTriggerSource();
+
         NfcStatsLog.write(NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED,
                 enabled ? NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__STATE__OBSERVE_MODE_ENABLED
                         : NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__STATE__OBSERVE_MODE_DISABLED,
-                triggerSource, latency);
+                overrideTriggerSource != null ? overrideTriggerSource : triggerSource, latencyMs);
+      mStatsdUtilsContext.setObserveModeTriggerSource(null);
     }
 
     private final HashMap<String, PollingFrameLog> pollingFrameMap = new HashMap<>();

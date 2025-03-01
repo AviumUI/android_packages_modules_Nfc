@@ -1647,6 +1647,11 @@ void nfa_dm_poll_disc_cback_dta_wrapper(tNFA_DM_RF_DISC_EVT event,
   nfa_dm_poll_disc_cback(event, p_data);
 }
 
+void nfa_dm_nfc_response_cback_wrapper(tNFC_RESPONSE_EVT event,
+                                       tNFC_RESPONSE* p_data) {
+  nfa_dm_nfc_response_cback(event, p_data);
+}
+
 /*******************************************************************************
 **
 ** Function         nfa_dm_notify_activation_status

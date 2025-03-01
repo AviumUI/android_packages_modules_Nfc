@@ -6,6 +6,8 @@
 
 const char fuzzer_name[] = MODULE_NAME;
 
+GkiUtilsInterface* gki_utils = nullptr;
+
 tNFA_DM_CB nfa_dm_cb = {};
 bool ndef_handler_registered = false;
 

@@ -146,6 +146,10 @@ uint8_t nfc_ncif_send_data(tNFC_CONN_CB* p_cb, NFC_HDR* p_data) {
   bool fragmented = false;
   bool empty_p_data = p_data == nullptr;
 
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
+
   LOG(VERBOSE) << StringPrintf("nfc_ncif_send_data :%d, num_buff:%d qc:%d",
                              p_cb->conn_id, p_cb->num_buff, p_cb->tx_q.count);
   if (p_cb->id == NFC_RF_CONN_ID) {
@@ -177,7 +181,7 @@ uint8_t nfc_ncif_send_data(tNFC_CONN_CB* p_cb, NFC_HDR* p_data) {
 
   if (p_data) {
     /* always enqueue the data to the tx queue */
-    GKI_enqueue(&p_cb->tx_q, p_data);
+    gki_utils->enqueue(&p_cb->tx_q, p_data);
   }
 
   /* try to send the first data packet in the tx queue  */
@@ -197,7 +201,7 @@ uint8_t nfc_ncif_send_data(tNFC_CONN_CB* p_cb, NFC_HDR* p_data) {
     if (!fragmented) {
       /* if data packet is not fragmented, use the original buffer */
       p = p_data;
-      p_data = (NFC_HDR*)GKI_dequeue(&p_cb->tx_q);
+      p_data = (NFC_HDR*)gki_utils->dequeue(&p_cb->tx_q);
     } else {
       /* the data packet is too big and need to be fragmented
        * prepare a new GKI buffer
@@ -261,13 +265,16 @@ uint8_t nfc_ncif_send_data(tNFC_CONN_CB* p_cb, NFC_HDR* p_data) {
 **
 *******************************************************************************/
 void nfc_ncif_check_cmd_queue(NFC_HDR* p_buf) {
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
   uint8_t* ps;
   /* If there are commands waiting in the xmit queue, or if the controller
    * cannot accept any more commands, */
   /* then enqueue this command */
   if (p_buf) {
     if ((nfc_cb.nci_cmd_xmit_q.count) || (nfc_cb.nci_cmd_window == 0)) {
-      GKI_enqueue(&nfc_cb.nci_cmd_xmit_q, p_buf);
+      gki_utils->enqueue(&nfc_cb.nci_cmd_xmit_q, p_buf);
       p_buf = nullptr;
     }
   }
@@ -276,7 +283,7 @@ void nfc_ncif_check_cmd_queue(NFC_HDR* p_buf) {
   if (nfc_cb.nci_cmd_window > 0) {
     /* If no command was provided, or if older commands were in the queue, then
      * get cmd from the queue */
-    if (!p_buf) p_buf = (NFC_HDR*)GKI_dequeue(&nfc_cb.nci_cmd_xmit_q);
+    if (!p_buf) p_buf = (NFC_HDR*)gki_utils->dequeue(&nfc_cb.nci_cmd_xmit_q);
 
     if (p_buf) {
       /* save the message header to double check the response */
@@ -330,7 +337,7 @@ void nfc_ncif_check_cmd_queue(NFC_HDR* p_buf) {
           nfc_cb.flags &= ~NFC_FL_DISCOVER_PENDING;
           ps = (uint8_t*)nfc_cb.p_disc_pending;
           nci_snd_discover_cmd(*ps, (tNFC_DISCOVER_PARAMS*)(ps + 1));
-          GKI_freebuf(nfc_cb.p_disc_pending);
+          gki_utils->freebuf(nfc_cb.p_disc_pending);
           nfc_cb.p_disc_pending = nullptr;
         }
       } else if (nfc_cb.flags & NFC_FL_HAL_REQUESTED) {

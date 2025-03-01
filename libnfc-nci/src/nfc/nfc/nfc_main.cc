@@ -1214,6 +1214,9 @@ void NFC_SetReassemblyFlag(bool reassembly) { nfc_cb.reassembly = reassembly; }
 **
 *******************************************************************************/
 tNFC_STATUS NFC_SendData(uint8_t conn_id, NFC_HDR* p_data) {
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
   tNFC_STATUS status = NFC_STATUS_FAILED;
   tNFC_CONN_CB* p_cb = nfc_find_conn_cb_by_conn_id(conn_id);
 
@@ -1222,7 +1225,7 @@ tNFC_STATUS NFC_SendData(uint8_t conn_id, NFC_HDR* p_data) {
     status = nfc_ncif_send_data(p_cb, p_data);
   }
 
-  if (status != NFC_STATUS_OK) GKI_freebuf(p_data);
+  if (status != NFC_STATUS_OK) gki_utils->freebuf(p_data);
 
   return status;
 }

@@ -11,13 +11,13 @@ public class TagLostExceptionTest {
     try {
       throw new TagLostException();
     } catch (TagLostException e) {
-      Assert.assertTrue(e.getMessage() == null);
+      Assert.assertTrue("TagLostException message is null", e.getMessage() == null);
     }
     String s = new String("testTagLostException");
     try {
       throw new TagLostException(s);
     } catch (TagLostException e) {
-      Assert.assertTrue(e.getMessage().equals(s));
+      Assert.assertTrue("TagLostException message is not correct", e.getMessage().equals(s));
     }
   }
 }

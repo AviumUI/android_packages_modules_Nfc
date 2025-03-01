@@ -14,9 +14,12 @@
 // limitations under the License.
 //
 
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include "nfa_dm_act.cc"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include "mock_gki_utils.h"
 
 class NfaDmActDataCbackTest : public ::testing::Test {
 protected:
@@ -299,9 +302,10 @@ protected:
         nfa_dm_cb.disc_cb.disc_state = NFA_DM_RFST_IDLE;
         nfa_dm_cb.flags = 0;
         nfa_dm_cb.disc_cb.activated_protocol = NFA_PROTOCOL_T1T;
+        gki_utils = new MockGkiUtils();
     }
-    void TearDown() override {
-    }
+    void TearDown() override { gki_utils = nullptr; }
+
     MOCK_METHOD(tNFC_STATUS, nfa_rw_send_raw_frame, (NFC_HDR* p_data), ());
     MOCK_METHOD(tNFC_STATUS, NFC_SendData, (uint8_t conn_id, NFC_HDR* p_data), ());
     MOCK_METHOD(void, NFC_SetReassemblyFlag, (bool flag), ());
@@ -374,11 +378,10 @@ TEST_F(NfaDmActSendRawFrameTest, SendRawFrameWhenInactive) {
 
 class NfaDmActSendVscTest : public ::testing::Test {
 protected:
-    void SetUp() override {
-    }
-    void TearDown() override {
-    }
-    MOCK_METHOD(void, NFC_SendVsCommand, (uint8_t oid, NFC_HDR* p_cmd, tNFA_DM_CBACK* p_cback), ());
+ void SetUp() override { gki_utils = new MockGkiUtils(); }
+ void TearDown() override { gki_utils = nullptr; }
+ MOCK_METHOD(void, NFC_SendVsCommand,
+             (uint8_t oid, NFC_HDR* p_cmd, tNFA_DM_CBACK* p_cback), ());
 };
 
 TEST_F(NfaDmActSendVscTest, ValidCommandParams) {

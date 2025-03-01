@@ -17,6 +17,7 @@
 package com.android.nfc;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.backup.BackupManager;
@@ -43,6 +44,7 @@ import android.util.Log;
 
 import com.android.nfc.cardemulation.CardEmulationManager;
 import com.android.nfc.cardemulation.util.StatsdUtils;
+import com.android.nfc.cardemulation.util.StatsdUtilsContext;
 import com.android.nfc.dhimpl.NativeNfcManager;
 import com.android.nfc.flags.FeatureFlags;
 import com.android.nfc.flags.Flags;
@@ -75,7 +77,10 @@ public class NfcInjector {
     private final VibrationEffect mVibrationEffect;
     private final BackupManager mBackupManager;
     private final FeatureFlags mFeatureFlags;
+    @Nullable
     private final StatsdUtils mStatsdUtils;
+    @Nullable
+    private final StatsdUtilsContext mStatsdUtilsContext;
     private final ForegroundUtils mForegroundUtils;
     private final NfcDiagnostics mNfcDiagnostics;
     private final NfcServiceManager.ServiceRegisterer mNfcManagerRegisterer;
@@ -109,7 +114,9 @@ public class NfcInjector {
         mVibrationEffect = VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE);
         mBackupManager = new BackupManager(mContext);
         mFeatureFlags = new com.android.nfc.flags.FeatureFlagsImpl();
-        mStatsdUtils = mFeatureFlags.statsdCeEventsFlag() ? new StatsdUtils() : null;
+        mStatsdUtilsContext = mFeatureFlags.statsdCeEventsFlag() ? new StatsdUtilsContext() : null;
+        mStatsdUtils = mFeatureFlags.statsdCeEventsFlag() ?
+            new StatsdUtils(mStatsdUtilsContext) : null;
         mForegroundUtils =
                 ForegroundUtils.getInstance(mContext.getSystemService(ActivityManager.class));
         mNfcDiagnostics = new NfcDiagnostics(mContext);
@@ -190,8 +197,14 @@ public class NfcInjector {
         return mFeatureFlags;
     }
 
+    @Nullable
     public StatsdUtils getStatsdUtils() {
         return mStatsdUtils;
+    }
+
+    @Nullable
+    public StatsdUtilsContext getStatsdUtilsContext() {
+        return mStatsdUtilsContext;
     }
 
     public ForegroundUtils getForegroundUtils() {
@@ -338,7 +351,8 @@ public class NfcInjector {
      * Returns whether the device unlocked or not.
      */
     public boolean isDeviceLocked() {
-        return (android.app.Flags.deviceUnlockListener() && Flags.useDeviceLockListener())
+        return (isInProvisionMode()
+            || (android.app.Flags.deviceUnlockListener() && Flags.useDeviceLockListener()))
                             ? mKeyguardManager.isDeviceLocked()
                             : mKeyguardManager.isKeyguardLocked();
     }

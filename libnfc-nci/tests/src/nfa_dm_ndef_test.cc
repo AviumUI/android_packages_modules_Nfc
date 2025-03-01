@@ -13,10 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-#include <cstring>
 #include "nfa_dm_ndef.cc"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <cstring>
+
+#include "mock_gki_utils.h"
 class MockNDEFHandler {
 public:
     MOCK_METHOD(void, OnNDEFData, (uint8_t event, tNFA_NDEF_EVT_DATA* data));
@@ -42,10 +46,12 @@ protected:
                 tNFA_DM_API_REG_NDEF_HDLR*>(&mock_handler1);
         nfa_dm_cb_mock.p_ndef_handler[1] = reinterpret_cast<
                 tNFA_DM_API_REG_NDEF_HDLR*>(&mock_handler2);
+        gki_utils = new MockGkiUtils();
     }
     void TearDown() override {
         g_mock_handler = nullptr;
         testing::Mock::VerifyAndClearExpectations(&mock_handler);
+        gki_utils = nullptr;
     }
 };
 
