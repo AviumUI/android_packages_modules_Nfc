@@ -201,6 +201,9 @@ void nfa_rw_proc_disc_evt(tNFA_DM_RF_DISC_EVT event, tNFC_DISCOVER* p_data,
 **
 *******************************************************************************/
 tNFA_STATUS nfa_rw_send_raw_frame(NFC_HDR* p_data) {
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
   tNFA_RW_MSG* p_msg;
 
   p_msg = (tNFA_RW_MSG*)GKI_getbuf((uint16_t)sizeof(tNFA_RW_MSG));
@@ -210,7 +213,7 @@ tNFA_STATUS nfa_rw_send_raw_frame(NFC_HDR* p_data) {
 
     p_msg->op_req.params.send_raw_frame.p_data = p_data;
 
-    if (nfa_rw_handle_event((NFC_HDR*)p_msg)) GKI_freebuf(p_msg);
+    if (nfa_rw_handle_event((NFC_HDR*)p_msg)) gki_utils->freebuf(p_msg);
 
     return (NFA_STATUS_OK);
   }

@@ -30,6 +30,7 @@
 #include "nfa_hci_api.h"
 #include "nfa_hci_defs.h"
 #include "nfa_hci_int.h"
+#include "nfc_config.h"
 
 using android::base::StringPrintf;
 
@@ -1732,6 +1733,9 @@ void nfa_hci_handle_dyn_pipe_pkt(uint8_t pipe_id, uint8_t* p_data,
                                  uint16_t data_len) {
   tNFA_HCI_DYN_PIPE* p_pipe = nfa_hciu_find_pipe_by_pid(pipe_id);
   tNFA_HCI_DYN_GATE* p_gate;
+  bool is_conn_pipe = false;
+
+  LOG(VERBOSE) << StringPrintf("%s; 0x%x", __func__, pipe_id);
 
   if (p_pipe == nullptr) {
     /* Invalid pipe ID */
@@ -1743,18 +1747,22 @@ void nfa_hci_handle_dyn_pipe_pkt(uint8_t pipe_id, uint8_t* p_data,
     return;
   }
 
+  if (nfa_hciu_check_sim_pipe_ids(pipe_id) ||
+      (p_pipe->local_gate == NFA_HCI_CONNECTIVITY_GATE)) {
+    is_conn_pipe = true;
+  }
+
   if (p_pipe->local_gate == NFA_HCI_IDENTITY_MANAGEMENT_GATE) {
     nfa_hci_handle_identity_mgmt_gate_pkt(p_data, p_pipe);
   } else if (p_pipe->local_gate == NFA_HCI_LOOP_BACK_GATE) {
     nfa_hci_handle_loopback_gate_pkt(p_data, data_len, p_pipe);
-  } else if (p_pipe->local_gate == NFA_HCI_CONNECTIVITY_GATE) {
+  } else if (is_conn_pipe) {
     nfa_hci_handle_connectivity_gate_pkt(p_data, data_len, p_pipe);
   } else {
     p_gate = nfa_hciu_find_gate_by_gid(p_pipe->local_gate);
     if (p_gate == nullptr) {
-      LOG(ERROR) << StringPrintf(
-          "nfa_hci_handle_dyn_pipe_pkt - Pipe's gate %d is corrupt",
-          p_pipe->local_gate);
+      LOG(ERROR) << StringPrintf("%s; Pipe's gate %d is corrupt", __func__,
+                                 p_pipe->local_gate);
       if (nfa_hci_cb.type == NFA_HCI_COMMAND_TYPE)
         nfa_hciu_send_msg(pipe_id, NFA_HCI_RESPONSE_TYPE, NFA_HCI_ANY_E_NOK, 0,
                           nullptr);

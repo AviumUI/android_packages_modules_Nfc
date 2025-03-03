@@ -68,6 +68,12 @@
             </intent-filter>
             <meta-data android:name="android.nfc.cardemulation.off_host_apdu_service" android:resource="@xml/offhost_apdu_service_default_to_observe"/>
         </service>
+        <service android:name=".CtsMyHostNfcFService" android:exported="true" android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_NFCF_SERVICE"/>
+            </intent-filter>
+            <meta-data android:name="android.nfc.cardemulation.host_nfcf_service" android:resource="@xml/nfcfservice"/>
+        </service>
         <activity android:name="android.nfc.cts.NfcFCardEmulationActivity"
              android:exported="false">
         </activity>

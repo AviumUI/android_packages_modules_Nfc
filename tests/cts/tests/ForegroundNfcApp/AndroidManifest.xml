@@ -19,6 +19,7 @@
     package="com.android.test.foregroundnfc">
 
     <uses-permission android:name="android.permission.NFC" />
+    <uses-sdk android:minSdkVersion="36" android:targetSdkVersion="36"/>
     <application android:label="Foreground NFC App">
         <service android:name="com.android.test.foregroundnfc.ForegroundApduService"
             android:exported="true"

@@ -41,4 +41,8 @@ class MockGkiUtils : public GkiUtilsInterface {
               (override));
   MOCK_METHOD(TIMER_LIST_ENT*, timer_list_first, (TIMER_LIST_Q * p_timer_listq),
               (override));
+
+  MOCK_METHOD(void, freebuf, (void* p_buf), (override));
+  MOCK_METHOD(void, enqueue, (BUFFER_Q * p_q, void* p_buf), (override));
+  MOCK_METHOD(void*, dequeue, (BUFFER_Q * p_q), (override));
 };

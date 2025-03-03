@@ -139,6 +139,21 @@ RoutingManager::RoutingManager()
 
   mEuiccMepMode= NfcConfig::getUnsigned(NAME_EUICC_MEP_MODE, 0x0);
 
+  if (NfcConfig::hasKey(NAME_NFCEE_EVENT_RF_DISCOVERY_OPTION)) {
+    mIsRFDiscoveryOptimized =
+        (NfcConfig::getUnsigned(NAME_NFCEE_EVENT_RF_DISCOVERY_OPTION) == 0x01
+             ? true
+             : false);
+    LOG(VERBOSE) << StringPrintf(
+        "%s: NAME_NFCEE_EVENT_RF_DISCOVERY_OPTION found : %d", fn,
+        mIsRFDiscoveryOptimized);
+  } else {
+    mIsRFDiscoveryOptimized = false;
+    LOG(VERBOSE) << StringPrintf(
+        "%s: NAME_NFCEE_EVENT_RF_DISCOVERY_OPTION not found : %d", fn,
+        mIsRFDiscoveryOptimized);
+  }
+
   memset(&mEeInfo, 0, sizeof(mEeInfo));
   mReceivedEeInfo = false;
   mSeTechMask = 0x00;
@@ -241,20 +256,37 @@ RoutingManager& RoutingManager::getInstance() {
  *******************************************************************************/
 bool RoutingManager::isTypeATypeBTechSupportedInEe(tNFA_HANDLE eeHandle) {
   static const char fn[] = "RoutingManager::isTypeATypeBTechSupportedInEe";
-  uint8_t mActualNumEe = MAX_NUM_EE;
-  tNFA_EE_INFO eeInfo[mActualNumEe];
-  memset(&eeInfo, 0, mActualNumEe * sizeof(tNFA_EE_INFO));
-  tNFA_STATUS nfaStat = NFA_EeGetInfo(&mActualNumEe, eeInfo);
+  uint8_t actualNbEe = MAX_NUM_EE;
+  tNFA_EE_INFO eeInfo[actualNbEe];
+
+  memset(&eeInfo, 0, actualNbEe * sizeof(tNFA_EE_INFO));
+  tNFA_STATUS nfaStat = NFA_EeGetInfo(&actualNbEe, eeInfo);
   if (nfaStat != NFA_STATUS_OK) {
     return false;
   }
-  for (auto i = 0; i < mActualNumEe; i++) {
+  for (auto i = 0; i < actualNbEe; i++) {
     if (eeHandle == eeInfo[i].ee_handle) {
       if (eeInfo[i].la_protocol || eeInfo[i].lb_protocol) {
         return true;
       }
     }
   }
+
+  if (mEuiccMepMode) {
+    memset(&eeInfo, 0, MAX_NUM_EE * sizeof(tNFA_EE_INFO));
+    nfaStat = NFA_EeGetMepInfo(&actualNbEe, eeInfo);
+    if (nfaStat != NFA_STATUS_OK) {
+      return false;
+    }
+    for (auto i = 0; i < actualNbEe; i++) {
+      if (eeHandle == eeInfo[i].ee_handle) {
+        if (eeInfo[i].la_protocol || eeInfo[i].lb_protocol) {
+          return true;
+        }
+      }
+    }
+  }
+
   LOG(WARNING) << StringPrintf(
       "%s; Route does not support A/B, using DH as default", fn);
   return false;
@@ -1203,12 +1235,26 @@ void RoutingManager::nfaEeCallback(tNFA_EE_EVT event,
       SyncEventGuard guard(routingManager.mEeInfoEvent);
       memcpy(&routingManager.mEeInfo, &eventData->discover_req,
              sizeof(routingManager.mEeInfo));
-      if (routingManager.mReceivedEeInfo && !routingManager.mDeinitializing) {
-        routingManager.mEeInfoChanged = true;
-        routingManager.notifyEeUpdated();
+      if (!routingManager.mIsRFDiscoveryOptimized) {
+        if (routingManager.mReceivedEeInfo && !routingManager.mDeinitializing) {
+          routingManager.mEeInfoChanged = true;
+          routingManager.notifyEeUpdated();
+        }
       }
       routingManager.mReceivedEeInfo = true;
       routingManager.mEeInfoEvent.notifyOne();
+    } break;
+
+    case NFA_EE_ENABLED_EVT: {
+      LOG(DEBUG) << StringPrintf(
+          "%s: NFA_EE_ENABLED_EVT; status=0x%X; num ee=%u", __func__,
+          eventData->discover_req.status, eventData->discover_req.num_ee);
+      if (routingManager.mIsRFDiscoveryOptimized) {
+        if (routingManager.mReceivedEeInfo && !routingManager.mDeinitializing) {
+          routingManager.mEeInfoChanged = true;
+          routingManager.notifyEeUpdated();
+        }
+      }
     } break;
 
     case NFA_EE_NO_CB_ERR_EVT:

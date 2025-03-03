@@ -46,7 +46,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /** Native interface to the NFC Manager functions */
@@ -82,12 +81,20 @@ public class NativeNfcManager implements DeviceHost {
         System.loadLibrary("nfc_nci_jni");
     }
 
+    private static NativeNfcManager sInstance;
+
+    public static NativeNfcManager getInstance() {
+        if (sInstance == null) throw new IllegalStateException("NativeNfcManager instance null");
+        return sInstance;
+    }
+
     public NativeNfcManager(Context context, DeviceHostListener listener) {
         mListener = listener;
         loadLibrary();
         initializeNativeStructure();
         mContext = context;
         mT4tNfceeMgr = new NativeT4tNfceeManager();
+        sInstance = this;
     }
 
     public native boolean initializeNativeStructure();

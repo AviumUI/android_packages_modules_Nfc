@@ -277,8 +277,11 @@ public class HandoverDataParser {
 
             // return BT OOB record so they can perform handover
             selectMessage = (createBluetoothHandoverSelectMessage(bluetoothActivating));
-            if (DBG) Log.d(TAG, "Waiting for incoming transfer, [" +
-                    bluetoothData.device.getAddress() + "]->[" + mLocalBluetoothAddress + "]");
+            if (DBG) {
+                Log.d(TAG, "Waiting for incoming transfer, ["
+                        + toAnonymizedAddress(bluetoothData.device.getAddress())
+                        + "]->[" + toAnonymizedAddress(mLocalBluetoothAddress) + "]");
+            }
         }
 
         return selectMessage;
@@ -587,6 +590,19 @@ public class HandoverDataParser {
         }
 
         return result;
+    }
+
+    /**
+     * Convert an address to an obfuscate one for logging purpose
+     *
+     * @param address Mac address to be log
+     * @return Loggable mac address
+     */
+    public static String toAnonymizedAddress(String address) {
+        if (address == null || address.length() != 17) {
+            return null;
+        }
+        return "XX:XX:XX:XX" + address.substring(11);
     }
 
     private ParcelUuid[] parseUuidFromBluetoothRecord(ByteBuffer payload, int type, int len) {

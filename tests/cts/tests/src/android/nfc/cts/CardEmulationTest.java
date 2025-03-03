@@ -104,8 +104,9 @@ public class CardEmulationTest {
         assumeTrue("Device must support NFC HCE", supportsHardware());
         mContext = InstrumentationRegistry.getContext();
         mAdapter = NfcAdapter.getDefaultAdapter(mContext);
-        Assert.assertNotNull(mAdapter);
-        assumeTrue(NfcUtils.enableNfc(mAdapter, mContext));
+        Assert.assertNotNull("NFC Adapter is null", mAdapter);
+        Assert.assertTrue("NFC Adapter could not be enabled",
+            NfcUtils.enableNfc(mAdapter, mContext));
     }
 
     @After
@@ -116,7 +117,7 @@ public class CardEmulationTest {
     @Test
     public void getNonNullInstance() {
         CardEmulation instance = CardEmulation.getInstance(mAdapter);
-        Assert.assertNotNull(instance);
+        Assert.assertNotNull("CardEmulation instance is null", instance);
     }
 
     @Test
@@ -153,9 +154,15 @@ public class CardEmulationTest {
         CardEmulation instance = CardEmulation.getInstance(mAdapter);
         ComponentName offHostService = new ComponentName(mContext, CtsMyOffHostApduService.class);
 
-        Assert.assertTrue(instance.setOffHostForService(offHostService, "eSE"));
-        Assert.assertTrue(instance.setShouldDefaultToObserveModeForService(offHostService, true));
-        Assert.assertTrue(instance.unsetOffHostForService(offHostService));
+        try {
+            Assert.assertTrue(instance.setOffHostForService(offHostService, "eSE"));
+            Assert.assertTrue(
+                    instance.setShouldDefaultToObserveModeForService(offHostService, true));
+            Assert.assertTrue(instance.unsetOffHostForService(offHostService));
+        } finally {
+            Assert.assertTrue(
+                    instance.setShouldDefaultToObserveModeForService(offHostService, false));
+        }
     }
 
     @Test
@@ -355,9 +362,12 @@ public class CardEmulationTest {
                     frames.add(createFrame(PollingFrame.POLLING_LOOP_TYPE_OFF));
                     ensurePreferredService(WalletRoleTestUtils.WALLET_HOLDER_SERVICE_DESC);
                     // Only the frames matching the filter should be delivered.
-                    notifyPollingLoopAndWait(new ArrayList<PollingFrame>(
-                                    Arrays.asList(frames.get(2), frames.get(6))),
-                            CustomHostApduService.class.getName());
+                    ArrayList<PollingFrame> framesToReceive = new ArrayList<PollingFrame>(
+                        Arrays.asList(frames.get(2), frames.get(6)));
+                    notifyPollingLoopAndWait(/* framesToSend = */ frames, framesToReceive,
+                        CustomHostApduService.class.getName());
+                    Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(
+                        customServiceName, annotationStringHex));
                     adapter.notifyHceDeactivated();
                 });
     }
@@ -883,8 +893,8 @@ public class CardEmulationTest {
 
         ExecutorService pool = Executors.newFixedThreadPool(2);
         class InternalErrorCallback implements CardEmulation.NfcEventCallback {
-            CountDownLatch mErrorLatch = new CountDownLatch(1);
-            CountDownLatch mStateOnLatch = new CountDownLatch(1);
+            final CountDownLatch mErrorLatch = new CountDownLatch(1);
+            final CountDownLatch mStateOnLatch = new CountDownLatch(1);
             int mErrorType = -1;
 
             @Override
@@ -898,9 +908,7 @@ public class CardEmulationTest {
             public void onInternalErrorReported(@CardEmulation.NfcInternalErrorType int errorType) {
                 synchronized (this) {
                     mErrorType = errorType;
-                    if (mErrorLatch != null) {
-                        mErrorLatch.countDown();
-                    }
+                    mErrorLatch.countDown();
                 }
             }
         }
@@ -920,15 +928,14 @@ public class CardEmulationTest {
                     }
                 }
             };
-        mContext.registerReceiver(receiver,filter);
+        mContext.registerReceiver(receiver, filter);
         try {
-            /* nfc_ncif_proc_proprietary_rsp() marks the data response for this gid
-             * and oid as not a vs response, so this will cause a hardware error */
+            /* nfc_ncif_proc_proprietary_rsp() marks the data response for this GID
+             * and OID as not a VS response, so this will cause a hardware error */
             adapter.sendVendorNciMessage(0x00, 0x03, 0x00, new byte[0]);
             if (!callback.mErrorLatch.await(5, TimeUnit.SECONDS)) {
                 Assert.fail("Did not receive internal error event within the elapsed time");
             }
-            Assert.assertNotEquals(-1, callback.mErrorType);
             // ToDo: can we query the recovery_option from the NfcConfig to make sure
             // the error matches the config?
             switch (callback.mErrorType) {
@@ -937,10 +944,13 @@ public class CardEmulationTest {
                     // A timeout error indicates that we will crash the NFC service and restart it.
                     // Give the adapter state a chance to bubble up.
                     Thread.currentThread().sleep(300);
-                    if (adapter.getAdapterState() != NfcAdapter.STATE_ON) {
-                        adapterStateLatch.await(20, TimeUnit.SECONDS);
-                        Assert.assertEquals(adapter.getAdapterState(), NfcAdapter.STATE_ON);
+
+                    // The NFC service has died, so we should wait for it to come back up.
+                    if (!adapterStateLatch.await(20, TimeUnit.SECONDS)) {
+                        Assert.fail("NFC service did not come back up within the elapsed time");
                     }
+
+                    Assert.assertEquals(adapter.getAdapterState(), NfcAdapter.STATE_ON);
                     Assert.assertTrue(NfcUtils.enableNfc(adapter, mContext));
                     Assert.assertTrue(
                             cardEmulation.setPreferredService(
@@ -950,7 +960,11 @@ public class CardEmulationTest {
                 break;
                 case CardEmulation.NFC_INTERNAL_ERROR_NFC_HARDWARE_ERROR:
                     // If the recovery option config is set to 1, we will reset the NFC service and
-                    // send a hardware error. We should be good to go at this point.
+                    // send a hardware error. Wait for the adapter to come back up to prevent
+                    // other tests from failing.
+                    if (!adapterStateLatch.await(20, TimeUnit.SECONDS)) {
+                        Assert.fail("NFC service did not come back up within the elapsed time");
+                    }
                     break;
                 default:
                     Assert.fail("Expected a hardware error or timeout error but got: "
@@ -1023,6 +1037,11 @@ public class CardEmulationTest {
             Assert.assertTrue(adapter.isObserveModeEnabled());
         } finally {
             Assert.assertTrue(cardEmulation.unsetPreferredService(activity));
+            ComponentName backgroundService =
+                    new ComponentName(mContext, BackgroundHostApduService.class);
+            Assert.assertTrue(
+                    cardEmulation.setShouldDefaultToObserveModeForService(
+                            backgroundService, false));
             activity.finish();
             adapter.notifyHceDeactivated();
         }
@@ -1062,6 +1081,9 @@ public class CardEmulationTest {
         try {
             ComponentName backgroundService =
                     new ComponentName(mContext, BackgroundHostApduService.class);
+            Assert.assertTrue(
+                    cardEmulation.setShouldDefaultToObserveModeForService(
+                            backgroundService, true));
             Assert.assertTrue(cardEmulation.setPreferredService(activity, backgroundService));
             ensurePreferredService(BackgroundHostApduService.class);
 
@@ -1282,23 +1304,14 @@ public class CardEmulationTest {
             frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
                     HexFormat.of().parseHex(annotationStringHex2)));
 
-            sCurrentPollLoopReceiver = new PollLoopReceiver(frames, null);
-            for (PollingFrame frame : frames) {
-                adapter.notifyPollingLoop(frame);
-            }
-            synchronized (sCurrentPollLoopReceiver) {
-                try {
-                    sCurrentPollLoopReceiver.wait(5000);
-                } catch (InterruptedException ie) {
-                    Assert.assertNull(ie);
-                }
-            }
-            Assert.assertEquals(frames.size(), sCurrentPollLoopReceiver.mReceivedFrames.size());
-            Assert.assertEquals(2, sCurrentPollLoopReceiver.mReceivedServiceNames.size());
+            notifyPollingLoopAndWait(frames, /* serviceName = */ null);
+            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(
+                backgroundServiceName, annotationStringHex1));
+            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(
+                customServiceName, annotationStringHex2));
         } finally {
             cardEmulation.unsetPreferredService(activity);
             activity.finish();
-            sCurrentPollLoopReceiver = null;
             adapter.notifyHceDeactivated();
         }
     }
@@ -1340,25 +1353,14 @@ public class CardEmulationTest {
             frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
                     HexFormat.of().parseHex(annotationStringHex2)));
 
-            sCurrentPollLoopReceiver = new PollLoopReceiver(frames, null);
-            for (PollingFrame frame : frames) {
-                adapter.notifyPollingLoop(frame);
-            }
-            synchronized (sCurrentPollLoopReceiver) {
-                try {
-                    sCurrentPollLoopReceiver.wait(5000);
-                } catch (InterruptedException ie) {
-                    Assert.assertNull(ie);
-                }
-            }
-            Assert.assertEquals(frames.size(),
-                    sCurrentPollLoopReceiver.mReceivedFrames.size());
-            Assert.assertEquals(2, sCurrentPollLoopReceiver.mReceivedServiceNames.size());
-            sCurrentPollLoopReceiver = null;
+            notifyPollingLoopAndWait(frames, /* serviceName = */ null);
+            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(
+                backgroundServiceName, annotationStringHex1));
+            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(
+                customServiceName, annotationStringHex2));
         } finally {
             cardEmulation.unsetPreferredService(activity);
             activity.finish();
-            sCurrentPollLoopReceiver = null;
             adapter.notifyHceDeactivated();
         }
     }
@@ -1379,47 +1381,15 @@ public class CardEmulationTest {
         ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>(1);
         frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
                 HexFormat.of().parseHex(annotationStringHex)));
-        notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
+        // add additional frame to ensure that only non-matching data is filtered out
+        frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
+                HexFormat.of().parseHex("1234567890")));
+        notifyPollingLoopAndWait(/* framesToSend = */ frames,
+            /* framesToReceive = */ new ArrayList<PollingFrame>(Arrays.asList(frames.get(0))),
+            CustomHostApduService.class.getName());
+        Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(customServiceName,
+            annotationStringHex));
         adapter.notifyHceDeactivated();
-    }
-
-    @Test
-    @RequiresFlagsEnabled(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
-    public void testCustomPollingLoopToCustomDynamicAndRemove() {
-        assumeVsrApiGreaterThanUdc();
-        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
-        adapter.notifyHceDeactivated();
-        CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
-        Activity activity = createAndResumeActivity();
-        ComponentName ctsServiceName = new ComponentName(mContext,
-                CtsMyHostApduService.class);
-        try {
-            Assert.assertTrue(cardEmulation.setPreferredService(activity, ctsServiceName));
-            ensurePreferredService(CtsMyHostApduService.class);
-            ComponentName customServiceName =
-                    new ComponentName(mContext, CustomHostApduService.class);
-            String testName = new Object() {
-            }.getClass().getEnclosingMethod().getName();
-            String annotationStringHex = HexFormat.of().toHexDigits(testName.hashCode());
-            Assert.assertTrue(cardEmulation.registerPollingLoopFilterForService(customServiceName,
-                    annotationStringHex, false));
-
-            ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>(1);
-            frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
-                    HexFormat.of().parseHex(annotationStringHex)));
-            notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
-            adapter.notifyHceDeactivated();
-
-            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(customServiceName,
-                    annotationStringHex));
-
-            notifyPollingLoopAndWait(frames, CtsMyHostApduService.class.getName());
-
-        } finally {
-            Assert.assertTrue(cardEmulation.unsetPreferredService(activity));
-            activity.finish();
-            adapter.notifyHceDeactivated();
-        }
     }
 
     @Test
@@ -1440,28 +1410,13 @@ public class CardEmulationTest {
         ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>(1);
         frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
                 HexFormat.of().parseHex(annotationStringHex)));
-        notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
+        frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
+                HexFormat.of().parseHex("123456789ABCDF")));
+        notifyPollingLoopAndWait(/* framesToSend = */ frames,
+                /* framesToReceive = */ new ArrayList<PollingFrame>(Arrays.asList(frames.get(0))),
+                CustomHostApduService.class.getName());
         Assert.assertTrue(cardEmulation.removePollingLoopPatternFilterForService(customServiceName,
                 annotationStringHexPrefix));
-        adapter.notifyHceDeactivated();
-    }
-
-    @Test
-    @RequiresFlagsEnabled(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
-    public void testCustomPollingLoopToCustomWithPrefix() {
-        assumeVsrApiGreaterThanUdc();
-        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
-        adapter.notifyHceDeactivated();
-        String testName = new Object() {
-        }.getClass().getEnclosingMethod().getName();
-        String annotationStringHexPrefix = HexFormat.of().toHexDigits(testName.hashCode());
-        String annotationStringHex = annotationStringHexPrefix + "123456789ABCDF";
-
-        ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>(1);
-        frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
-                HexFormat.of().parseHex(annotationStringHex)));
-        notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
-
         adapter.notifyHceDeactivated();
     }
 
@@ -1532,6 +1487,8 @@ public class CardEmulationTest {
                     HexFormat.of().parseHex(annotationStringHex)));
             ensurePreferredService(CtsMyHostApduService.class);
             notifyPollingLoopAndWait(frames, CtsMyHostApduService.class.getName());
+            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(ctsServiceName,
+                    annotationStringHex));
         } finally {
             Assert.assertTrue(cardEmulation.unsetPreferredService(activity));
             activity.finish();
@@ -1569,6 +1526,8 @@ public class CardEmulationTest {
                     HexFormat.of().parseHex(annotationStringHex)));
             ensurePreferredService(CustomHostApduService.class);
             notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
+            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(customServiceName,
+                    annotationStringHex));
         } finally {
             setDefaultPaymentService(originalDefault);
             adapter.notifyHceDeactivated();
@@ -1826,13 +1785,15 @@ public class CardEmulationTest {
             Assert.assertTrue(adapter.isObserveModeEnabled());
             List<PollingFrame> receivedFrames =
                     notifyPollingLoopAndWait(frames1,
-                    WalletRoleTestUtils.getWalletRoleHolderService().getClassName());
+                            WalletRoleTestUtils.getWalletRoleHolderService().getClassName());
             Assert.assertFalse(receivedFrames.get(0).getTriggeredAutoTransact());
             receivedFrames =
                     notifyPollingLoopAndWait(frames2, CtsMyHostApduService.class.getName());
             Assert.assertFalse(receivedFrames.get(0).getTriggeredAutoTransact());
             Thread.currentThread().sleep(5000);
             Assert.assertTrue(adapter.isObserveModeEnabled());
+            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(ctsComponentName,
+                    annotationStringHex2));
             adapter.notifyHceDeactivated();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -1945,6 +1906,8 @@ public class CardEmulationTest {
             Assert.assertTrue(receivedFrames.get(0).getTriggeredAutoTransact());
             PollingCheck.check("Observe mode not disabled", 200,
                     () -> !adapter.isObserveModeEnabled());
+            Assert.assertTrue(cardEmulation.removePollingLoopFilterForService(customServiceName,
+                    annotationStringHex));
             adapter.notifyHceDeactivated();
             PollingCheck.check("Observe mode not enabled", 3000, adapter::isObserveModeEnabled);
         } finally {
@@ -2073,7 +2036,7 @@ public class CardEmulationTest {
     static void ensureUnlocked() {
         final Context context = InstrumentationRegistry.getInstrumentation().getContext();
         final UserManager userManager = context.getSystemService(UserManager.class);
-        assumeFalse(userManager.isHeadlessSystemUserMode());
+        assumeFalse("Device must not be headless", userManager.isHeadlessSystemUserMode());
         final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         final PowerManager pm = context.getSystemService(PowerManager.class);
         final KeyguardManager km = context.getSystemService(KeyguardManager.class);
@@ -2142,14 +2105,14 @@ public class CardEmulationTest {
 
     static class PollLoopReceiver  {
         int mFrameIndex = 0;
-        ArrayList<PollingFrame> mFrames;
-        String mServiceName;
+        ArrayList<PollingFrame> mExpectedFrames;
+        String mExpectedServiceName;
         ArrayList<PollingFrame> mReceivedFrames;
         String mReceivedServiceName;
         ArrayList<String> mReceivedServiceNames;
         PollLoopReceiver(ArrayList<PollingFrame> frames, String serviceName) {
-            mFrames = frames;
-            mServiceName = serviceName;
+            mExpectedFrames = frames;
+            mExpectedServiceName = serviceName;
             mReceivedFrames = new ArrayList<PollingFrame>();
             mReceivedServiceNames = new ArrayList<String>();
         }
@@ -2161,7 +2124,7 @@ public class CardEmulationTest {
             mReceivedFrames.addAll(receivedFrames);
             mReceivedServiceName = className;
             mReceivedServiceNames.add(className);
-            if (mReceivedFrames.size() < mFrames.size()) {
+            if (mReceivedFrames.size() < mExpectedFrames.size()) {
                 return;
             }
             synchronized (this) {
@@ -2170,23 +2133,22 @@ public class CardEmulationTest {
         }
 
         void test() {
-            if (mReceivedFrames.size() > mFrames.size()) {
+            if (mReceivedFrames.size() > mExpectedFrames.size()) {
                 Assert.fail("received more frames than sent");
-            } else if (mReceivedFrames.size() < mFrames.size()) {
+            } else if (mReceivedFrames.size() < mExpectedFrames.size()) {
                 Assert.fail("received fewer frames than sent");
             }
             for (PollingFrame receivedFrame : mReceivedFrames) {
-                Assert.assertEquals(mFrames.get(mFrameIndex).getType(), receivedFrame.getType());
-                Assert.assertEquals(mFrames.get(mFrameIndex).getVendorSpecificGain(),
+                PollingFrame expectedFrame = mExpectedFrames.get(mFrameIndex);
+                Assert.assertEquals(expectedFrame.getType(), receivedFrame.getType());
+                Assert.assertEquals(expectedFrame.getVendorSpecificGain(),
                         receivedFrame.getVendorSpecificGain());
-                Assert.assertEquals(mFrames.get(mFrameIndex).getTimestamp(),
-                        receivedFrame.getTimestamp());
-                Assert.assertArrayEquals(mFrames.get(mFrameIndex).getData(),
-                        receivedFrame.getData());
+                Assert.assertEquals(expectedFrame.getTimestamp(), receivedFrame.getTimestamp());
+                Assert.assertArrayEquals(expectedFrame.getData(), receivedFrame.getData());
                 mFrameIndex++;
             }
-            if (mServiceName != null) {
-                Assert.assertEquals(mServiceName, mReceivedServiceName);
+            if (mExpectedServiceName != null) {
+                Assert.assertEquals(mExpectedServiceName, mReceivedServiceName);
             }
         }
         public void onObserveModeStateChanged(String className, boolean isEnabled) {
@@ -2198,10 +2160,16 @@ public class CardEmulationTest {
         }
     }
 
-    private List<PollingFrame> notifyPollingLoopAndWait(
-            ArrayList<PollingFrame> frames, String serviceName) {
+    private List<PollingFrame> notifyPollingLoopAndWait(ArrayList<PollingFrame> frames,
+        String serviceName) {
+        return notifyPollingLoopAndWait(/* framesToSend = */ frames,
+            /* framesToReceive = */ frames, serviceName);
+    }
+
+    private List<PollingFrame> notifyPollingLoopAndWait(ArrayList<PollingFrame> framesToSend,
+        ArrayList<PollingFrame> framesToReceive, String serviceName) {
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
-        PollLoopReceiver pollLoopReceiver = new PollLoopReceiver(frames, serviceName);
+        PollLoopReceiver pollLoopReceiver = new PollLoopReceiver(framesToReceive, serviceName);
         boolean receiveFromWalletRoleHoder =
                 getWalletRoleHolderService().getClassName().equals(serviceName);
         if (receiveFromWalletRoleHoder) {
@@ -2209,7 +2177,7 @@ public class CardEmulationTest {
         } else {
             sCurrentPollLoopReceiver = pollLoopReceiver;
         }
-        for (PollingFrame frame : frames) {
+        for (PollingFrame frame : framesToSend) {
             adapter.notifyPollingLoop(frame);
         }
 
@@ -2221,14 +2189,12 @@ public class CardEmulationTest {
             }
         }
         pollLoopReceiver.test();
-        Assert.assertEquals(frames.size(), pollLoopReceiver.mFrameIndex);
-        List<PollingFrame> receivedFrames = pollLoopReceiver.mReceivedFrames;
         if (receiveFromWalletRoleHoder) {
             sWalletRolePollLoopReceiver = null;
         } else {
             sCurrentPollLoopReceiver = null;
         }
-        return receivedFrames;
+        return pollLoopReceiver.mReceivedFrames;
     }
 
     @RequiresFlagsEnabled(android.permission.flags.Flags.FLAG_WALLET_ROLE_ENABLED)

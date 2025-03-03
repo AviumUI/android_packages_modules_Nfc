@@ -530,4 +530,6 @@ extern char* nfa_hciu_get_type_inst_names(uint8_t pipe, uint8_t type,
                                           const uint8_t max_buff_size);
 extern std::string nfa_hciu_evt_2_str(uint8_t pipe_id, uint8_t evt);
 
+extern bool nfa_hciu_check_sim_pipe_ids(uint8_t pipe_id);
+
 #endif /* NFA_HCI_INT_H */

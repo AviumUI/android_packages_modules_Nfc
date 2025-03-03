@@ -631,6 +631,8 @@ extern bool nfa_poll_bail_out_mode;
 
 void nfa_dm_poll_disc_cback_dta_wrapper(tNFA_DM_RF_DISC_EVT event,
                                         tNFC_DISCOVER* p_data);
+void nfa_dm_nfc_response_cback_wrapper(tNFC_RESPONSE_EVT event,
+                                       tNFC_RESPONSE* p_data);
 extern unsigned char appl_dta_mode_flag;
 
 /* NFA device manager control block */

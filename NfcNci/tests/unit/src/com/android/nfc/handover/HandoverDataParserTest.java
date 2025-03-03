@@ -457,6 +457,27 @@ public class HandoverDataParserTest {
         }
     }
 
+    @Test
+    public void testToAnonymizedAddressWithNullInput() {
+        assertNull(HandoverDataParser.toAnonymizedAddress(null));
+    }
+
+    @Test
+    public void testToAnonymizedAddressWithShortInput() {
+        assertNull(HandoverDataParser.toAnonymizedAddress("11:22:33:44:55"));
+    }
+
+    @Test
+    public void testToAnonymizedAddressWithLongInput() {
+        assertNull(HandoverDataParser.toAnonymizedAddress("11:22:33:44:55:66:77"));
+    }
+
+    @Test
+    public void testToAnonymizedAddressWithValidInput() {
+        assertEquals("XX:XX:XX:XX:55:66",
+                HandoverDataParser.toAnonymizedAddress("11:22:33:44:55:66"));
+    }
+
     private ByteBuffer blePayload() {
         ByteBuffer payload = ByteBuffer.allocate(20);
         payload.put((byte) 0x07); // Length

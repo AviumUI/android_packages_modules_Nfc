@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -49,6 +50,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
+import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.quality.Strictness;
 
 @RunWith(AndroidJUnit4.class)
@@ -89,7 +91,7 @@ public class NfcChargingTest {
 
     @Test
     public void bytesToHex_convertsByteArrayToHexString() {
-        byte[] bytes = new byte[] {0x01, 0x0A, (byte) 0xFF};
+        byte[] bytes = new byte[]{0x01, 0x0A, (byte) 0xFF};
         String hexString = NfcCharging.bytesToHex(bytes);
         assertThat(hexString).isEqualTo("010AFF");
     }
@@ -112,8 +114,8 @@ public class NfcChargingTest {
     public void testCheckWlcCapMsg_InvalidMessageType() {
         // Construct an NDEF message with an invalid type
         byte[] type = NfcCharging.WLCCTL; // Incorrect type
-        byte[] payload = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04,0x05 };
-        NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, type, new byte[] {}, payload);
+        byte[] payload = new byte[]{0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+        NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, type, new byte[]{}, payload);
         NdefMessage ndefMessage = new NdefMessage(record);
 
         assertFalse(mNfcCharging.checkWlcCapMsg(ndefMessage));
@@ -123,8 +125,8 @@ public class NfcChargingTest {
     public void testCheckWlcCtlMsg_ValidMessage() {
         // Construct a valid WLCCTL NDEF message
         byte[] type = NfcCharging.WLCCTL;
-        byte[] payload = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
-        NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, type, new byte[] {}, payload);
+        byte[] payload = new byte[]{0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+        NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, type, new byte[]{}, payload);
         NdefMessage ndefMessage = new NdefMessage(record);
 
         assertTrue(mNfcCharging.checkWlcCtlMsg(ndefMessage));
@@ -136,8 +138,8 @@ public class NfcChargingTest {
     public void testCheckWlcCtlMsg_InvalidMessageType() {
         // Construct an NDEF message with an invalid type
         byte[] type = NfcCharging.WLCCAP; // Incorrect type
-        byte[] payload = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
-        NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, type, new byte[] {}, payload);
+        byte[] payload = new byte[]{0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+        NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, type, new byte[]{}, payload);
         NdefMessage ndefMessage = new NdefMessage(record);
 
         assertFalse(mNfcCharging.checkWlcCtlMsg(ndefMessage));
@@ -343,5 +345,239 @@ public class NfcChargingTest {
         Assert.assertEquals(0, mNfcCharging.WLCState);
         Assert.assertFalse(mNfcCharging.NfcChargingOnGoing);
     }
-}
 
+    @Test
+    public void testOnEndpointRemoved() {
+        int state2 = 0;
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        try {
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+
+        mNfcCharging.onEndpointRemoved(1);
+        assertEquals(state2, mNfcCharging.WLCState);
+        verify(mWatchdogWlc).interrupt();
+    }
+
+    @Test
+    public void testOnWlcStoppedWhenTimeCompletedWithReqNegotiated() {
+        int state211 = 10;
+        int modeReqNegotiated = 1;
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        try {
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("WlcCap_ModeReq"),
+                    modeReqNegotiated);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+
+        mNfcCharging.onWlcStopped(0x0);
+        assertEquals(state211, mNfcCharging.WLCState);
+        verify(mWatchdogWlc).interrupt();
+    }
+
+    @Test
+    public void testOnWlcStoppedWhenTimeCompleted() {
+        int state2 = 0;
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        try {
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("WlcCap_ModeReq"),
+                    0);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+
+        mNfcCharging.onWlcStopped(0x0);
+        assertEquals(state2, mNfcCharging.WLCState);
+        verify(mWatchdogWlc).interrupt();
+    }
+
+    @Test
+    public void testOnWlcStoppedWhenFodDetectionWithReqNegotiated() {
+        int state212 = 11;
+        int modeReqNegotiated = 1;
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        try {
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("WlcCap_ModeReq"),
+                    modeReqNegotiated);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+
+        mNfcCharging.onWlcStopped(0x1);
+        assertEquals(state212, mNfcCharging.WLCState);
+        verify(mWatchdogWlc).interrupt();
+    }
+
+    @Test
+    public void testOnWlcStoppedWhenFodDetection() {
+        int state2 = 0;
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        try {
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("WlcCap_ModeReq"),
+                    0);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+
+        mNfcCharging.onWlcStopped(0x1);
+        assertEquals(state2, mNfcCharging.WLCState);
+        verify(mWatchdogWlc).interrupt();
+    }
+
+    @Test
+    public void testOnWlcStoppedWhenError() {
+        int state212 = 11;
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        try {
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+
+        mNfcCharging.onWlcStopped(0x3);
+        assertEquals(state212, mNfcCharging.WLCState);
+        verify(mWatchdogWlc).interrupt();
+    }
+
+    @Test
+    public void testStartNfcChargingPresenceChecking() {
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        try {
+            FieldSetter.setField(mNfcCharging, mNfcCharging.getClass().getDeclaredField("DBG"),
+                    true);
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+
+        mNfcCharging.startNfcChargingPresenceChecking(50);
+        verifyNoInteractions(mWatchdogWlc);
+    }
+
+    @Test
+    public void testStopNfcCharging() {
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        NfcService nfcService = mock(NfcService.class);
+        DeviceHost.TagEndpoint TagHandler = mock(DeviceHost.TagEndpoint.class);
+        try {
+            FieldSetter.setField(mNfcCharging, mNfcCharging.getClass().getDeclaredField("DBG"),
+                    true);
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("TagHandler"),
+                    TagHandler);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+        when(NfcService.getInstance()).thenReturn(nfcService);
+        when(nfcService.sendScreenMessageAfterNfcCharging()).thenReturn(false);
+
+        mNfcCharging.stopNfcCharging();
+        verify(TagHandler).disconnect();
+    }
+
+    @Test
+    public void testStopNfcChargingPresenceChecking() {
+        NfcCharging.PresenceCheckWatchdog mWatchdogWlc = mock(
+                NfcCharging.PresenceCheckWatchdog.class);
+        try {
+            FieldSetter.setField(mNfcCharging,
+                    mNfcCharging.getClass().getDeclaredField("mWatchdogWlc"),
+                    mWatchdogWlc);
+        } catch (NoSuchFieldException nsfe) {
+            throw new RuntimeException(nsfe);
+        }
+
+        mNfcCharging.stopNfcChargingPresenceChecking();
+        verify(mWatchdogWlc).end(true);
+    }
+
+    @Test
+    public void testConvert_state_2_str_WlclCtl() {
+        int state12 = 4;
+        assertEquals("Read WLCL_CTL", mNfcCharging.convert_state_2_str(state12));
+    }
+
+    @Test
+    public void testConvert_state_2_str_ReadConfirmation() {
+        int state16 = 5;
+        assertEquals("Read confirmation?", mNfcCharging.convert_state_2_str(state16));
+    }
+
+    @Test
+    public void testConvert_state_2_str_CheckWptRequest() {
+        int state17 = 6;
+        assertEquals("Check WPT requested?", mNfcCharging.convert_state_2_str(state17));
+    }
+
+    @Test
+    public void testConvert_state_2_str_HandleWpt() {
+        int state21 = 7;
+        assertEquals("Handle WPT", mNfcCharging.convert_state_2_str(state21));
+    }
+
+    @Test
+    public void testConvert_state_2_str_HandleInfoReq() {
+        int state22 = 8;
+        assertEquals("Handle INFO_REQ?", mNfcCharging.convert_state_2_str(state22));
+    }
+
+    @Test
+    public void testConvert_state_2_str_HandleRemovalDetection() {
+        int state24 = 9;
+        assertEquals("Handle removal detection", mNfcCharging.convert_state_2_str(state24));
+    }
+
+    @Test
+    public void testConvert_state_2_str_HandleWptTimeCompleted() {
+        int state211 = 10;
+        assertEquals("Handle WPT time completed", mNfcCharging.convert_state_2_str(state211));
+    }
+
+    @Test
+    public void testConvert_state_2_str_HandleFodDetection() {
+        int state212 = 11;
+        assertEquals("Handle FOD detection/removal", mNfcCharging.convert_state_2_str(state212));
+    }
+
+    @Test
+    public void testConvert_state_2_str_Unknown() {
+        int unknown = -100;
+        assertEquals("Unknown", mNfcCharging.convert_state_2_str(unknown));
+    }
+}

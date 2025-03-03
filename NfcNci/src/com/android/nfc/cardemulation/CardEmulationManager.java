@@ -56,11 +56,8 @@ import android.os.UserManager;
 import android.provider.Settings;
 import android.sysprop.NfcProperties;
 import android.telephony.SubscriptionInfo;
-import android.telephony.SubscriptionManager;
-import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.Pair;
 import android.util.proto.ProtoOutputStream;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -1583,8 +1580,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             return;
         }
 
-        if (mContext.getResources().getBoolean(R.bool.enable_euicc_support)
-                && NfcInjector.NfcProperties.isEuiccSupported()) {
+        if (!mContext.getResources().getBoolean(R.bool.enable_euicc_support)
+                || !NfcInjector.NfcProperties.isEuiccSupported()) {
             Log.d(TAG, "Euicc CardEmulation is not support");
             return;
         }

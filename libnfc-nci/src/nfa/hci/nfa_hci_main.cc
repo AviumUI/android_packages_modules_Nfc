@@ -556,6 +556,9 @@ void nfa_hci_enable_one_nfcee(void) {
       if (nfa_ee_cb.isDiscoveryStopped == true) {
         nfa_dm_act_start_rf_discovery(nullptr);
         nfa_ee_cb.isDiscoveryStopped = false;
+        tNFA_EE_ECB* p_cb = nfa_ee_find_ecb(nfceeid);
+        tNFA_EE_CBACK_DATA nfa_ee_cback_data;
+        p_cb->p_ee_cback(NFA_EE_ENABLED_EVT, &nfa_ee_cback_data);
       }
     }
   }
@@ -1130,10 +1133,14 @@ static bool nfa_hci_evt_hdlr(NFC_HDR* p_msg) {
       nfa_hci_cb.hci_state, nfa_hciu_get_event_name(p_msg->event).c_str(),
       p_msg->event);
 
+  if (gki_utils == nullptr) {
+    gki_utils = new GkiUtils();
+  }
+
   /* If this is an API request, queue it up */
   if ((p_msg->event >= NFA_HCI_FIRST_API_EVENT) &&
       (p_msg->event <= NFA_HCI_LAST_API_EVENT)) {
-    GKI_enqueue(&nfa_hci_cb.hci_api_q, p_msg);
+    gki_utils->enqueue(&nfa_hci_cb.hci_api_q, p_msg);
   } else {
     tNFA_HCI_EVENT_DATA* p_evt_data = (tNFA_HCI_EVENT_DATA*)p_msg;
     switch (p_msg->event) {
@@ -1163,7 +1170,7 @@ static bool nfa_hci_evt_hdlr(NFC_HDR* p_msg) {
     }
   }
 
-  if ((p_msg->event > NFA_HCI_LAST_API_EVENT)) GKI_freebuf(p_msg);
+  if ((p_msg->event > NFA_HCI_LAST_API_EVENT)) gki_utils->freebuf(p_msg);
 
   nfa_hci_check_api_requests();
 

@@ -25,6 +25,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.nfc.NfcService;
+import com.android.nfc.dhimpl.NativeNfcManager;
 
 import org.junit.After;
 import org.junit.Before;
@@ -42,12 +43,15 @@ public class RoutingOptionManagerTest {
 
     @Mock
     private NfcService mNfcService;
+    @Mock
+    private NativeNfcManager mNativeNfcManager;
 
     @Captor
     private ArgumentCaptor<Integer> mRouteCaptor;
 
     private static final int DEFAULT_ROUTE = 0;
     private static final int DEFAULT_ISO_DEP_ROUTE = 1;
+    private static final int NDEF_NFCEE_ROUTE = 4;
     private static final int OVERRIDDEN_ISO_DEP_ROUTE = 10;
     private static final int OVERRIDDEN_OFF_HOST_ROUTE = 20;
     private static final int DEFAULT_OFF_HOST_ROUTE = 2;
@@ -112,11 +116,14 @@ public class RoutingOptionManagerTest {
     public void setUp() throws Exception {
         mStaticMockSession = ExtendedMockito.mockitoSession()
                 .mockStatic(NfcService.class)
+                .mockStatic(NativeNfcManager.class)
                 .strictness(Strictness.LENIENT)
                 .startMocking();
         MockitoAnnotations.initMocks(this);
 
+        when(mNativeNfcManager.getNdefNfceeRouteId()).thenReturn(NDEF_NFCEE_ROUTE);
         when(NfcService.getInstance()).thenReturn(mNfcService);
+        when(NativeNfcManager.getInstance()).thenReturn(mNativeNfcManager);
     }
 
     @After

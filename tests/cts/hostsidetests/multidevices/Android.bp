@@ -28,11 +28,6 @@ python_defaults {
         "cts-v-host",
         "general-tests",
     ],
-    version: {
-        py3: {
-            embedded_launcher: true,
-        },
-    },
 }
 
 python_test_host {

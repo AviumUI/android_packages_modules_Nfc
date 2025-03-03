@@ -24,7 +24,7 @@ import org.junit.runners.JUnit4;
 public class NfcFCardEmulationTest {
     private NfcAdapter mAdapter;
     private static final ComponentName mService =
-        new ComponentName("android.nfc.cts", "android.nfc.cts.CtsMyHostApduService");
+        new ComponentName("android.nfc.cts", "android.nfc.cts.CtsMyHostNfcFService");
 
     private boolean supportsHardware() {
         final PackageManager pm = InstrumentationRegistry.getContext().getPackageManager();
@@ -32,11 +32,11 @@ public class NfcFCardEmulationTest {
     }
 
     @Before
-    public void setUp() throws NoSuchFieldException, RemoteException {
-        assumeTrue(supportsHardware());
+    public void setUp() throws RemoteException {
+        assumeTrue("Device must support NFC type F HCE", supportsHardware());
         Context mContext = InstrumentationRegistry.getContext();
         mAdapter = NfcAdapter.getDefaultAdapter(mContext);
-        Assert.assertNotNull(mAdapter);
+        Assert.assertNotNull("NFC Adapter is null", mAdapter);
     }
 
     @Test
@@ -48,7 +48,7 @@ public class NfcFCardEmulationTest {
     @Test
     public void testRegisterAndUnregisterSystemCodeForService() throws RemoteException {
         NfcFCardEmulation instance = getInstance();
-        String code = "System Code";
+        String code = "4000";
 
         // Register system code
         Assert.assertTrue(instance.registerSystemCodeForService(mService, code));
@@ -56,14 +56,16 @@ public class NfcFCardEmulationTest {
 
         // Unregister system code
         Assert.assertTrue(instance.unregisterSystemCodeForService(mService));
-        Assert.assertNull(instance.getSystemCodeForService(mService));
+        Assert.assertNotEquals(instance.getSystemCodeForService(mService), code);
+
+        // Re-register system code future tests
+        Assert.assertTrue(instance.registerSystemCodeForService(mService, code));
     }
 
     @Test
     public void testSetAndGetNfcid2ForService() throws RemoteException {
         NfcFCardEmulation instance = getInstance();
         String testNfcid2 = "02FE000000000000";
-
         Assert.assertTrue(instance.setNfcid2ForService(mService, testNfcid2));
         Assert.assertEquals(instance.getNfcid2ForService(mService), testNfcid2);
     }
@@ -78,9 +80,10 @@ public class NfcFCardEmulationTest {
     }
 
     private Activity createAndResumeActivity() {
+        CardEmulationTest.ensureUnlocked();
         Intent intent
             = new Intent(ApplicationProvider.getApplicationContext(),
-                NfcFCardEmulationActivity.class);
+            NfcFCardEmulationActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         Activity activity = InstrumentationRegistry.getInstrumentation().startActivitySync(intent);
         InstrumentationRegistry.getInstrumentation().callActivityOnResume(activity);

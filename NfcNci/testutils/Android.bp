@@ -124,9 +124,4 @@ python_defaults {
         ":NfcEmulatorTestApp",
         "config.yaml",
     ],
-    version: {
-        py3: {
-            embedded_launcher: true,
-        },
-    },
 }

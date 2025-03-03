@@ -27,6 +27,8 @@
 using namespace ::std;
 using namespace ::android::base;
 
+#define PATH_NCI_UPDATE_CONF "/data/vendor/nfc/libnfc-nci-update.conf"
+
 namespace {
 std::string searchConfigPath(std::string file_name) {
   const std::vector<std::string> search_path = {
@@ -68,11 +70,18 @@ std::string findConfigPath() {
 void NfcConfig::loadConfig() {
   string config_path = findConfigPath();
   CHECK(config_path != "");
+  config_.updateNciCfg = false;
   config_.parseFromFile(config_path);
   /* Read vendor specific configs */
   NfcAdaptation& theInstance = NfcAdaptation::GetInstance();
   std::map<std::string, ConfigValue> configMap;
   theInstance.GetVendorConfigs(configMap);
+  struct stat file_stat;
+  // libnfc-nci config overwrite required.
+  if (stat(PATH_NCI_UPDATE_CONF, &file_stat) == 0) {
+    config_.updateNciCfg = true;
+    config_.parseFromFile(PATH_NCI_UPDATE_CONF);
+  }
   for (auto config : configMap) {
     config_.addConfig(config.first, config.second);
   }

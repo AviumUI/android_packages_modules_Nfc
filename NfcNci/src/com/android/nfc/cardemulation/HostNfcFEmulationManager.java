@@ -16,6 +16,7 @@
 
 package com.android.nfc.cardemulation;
 
+import android.annotation.Nullable;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -38,6 +39,7 @@ import android.util.proto.ProtoOutputStream;
 import com.android.nfc.NfcService;
 import com.android.nfc.NfcStatsLog;
 import com.android.nfc.cardemulation.util.StatsdUtils;
+import com.android.nfc.cardemulation.util.StatsdUtilsContext;
 import com.android.nfc.flags.Flags;
 
 import java.io.FileDescriptor;
@@ -63,6 +65,7 @@ public class HostNfcFEmulationManager {
     final Messenger mMessenger = new Messenger (new MessageHandler());
     final Object mLock;
 
+    @Nullable
     private final StatsdUtils mStatsdUtils;
 
     // All variables below protected by mLock
@@ -92,7 +95,8 @@ public class HostNfcFEmulationManager {
         mT3tIdentifiersCache = t3tIdentifiersCache;
         mState = STATE_IDLE;
         mStatsdUtils =
-                Flags.statsdCeEventsFlag() ? new StatsdUtils(StatsdUtils.SE_NAME_HCEF) : null;
+                Flags.statsdCeEventsFlag() ? new StatsdUtils(StatsdUtils.SE_NAME_HCEF,
+                    new StatsdUtilsContext()) : null;
     }
 
     /**

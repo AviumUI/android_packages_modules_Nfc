@@ -135,6 +135,7 @@ class RoutingManager {
   bool mEeInfoChanged;
   bool mReceivedEeInfo;
   bool mAidRoutingConfigured;
+  bool mIsRFDiscoveryOptimized;
   tNFA_EE_CBACK_DATA mCbEventData;
   tNFA_EE_DISCOVER_REQ mEeInfo;
   tNFA_TECHNOLOGY_MASK mSeTechMask;

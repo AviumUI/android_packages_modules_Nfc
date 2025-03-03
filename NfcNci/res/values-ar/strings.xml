@@ -1,63 +1,66 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name" msgid="78565911793142902">"‏خدمة NFC"</string>
-    <string name="nfcUserLabel" msgid="7708535817084357357">"NFC"</string>
-    <string name="accessibility_nfc_enabled" msgid="7796246979948787735">"‏تم تفعيل NFC."</string>
-    <string name="tap_to_beam" msgid="5819197866281059878">"Tap to beam"</string>
-    <string name="beam_progress" msgid="7453634884807323920">"بيانات واردة..."</string>
-    <string name="beam_outgoing" msgid="4679536649779123495">"إرسال لاسلكي..."</string>
-    <string name="beam_complete" msgid="477026736424637435">"اكتمل تبادل البيانات"</string>
-    <string name="beam_failed" msgid="5116241718189888630">"لم يكتمل تبادل البيانات"</string>
-    <string name="beam_canceled" msgid="5425192751826544741">"تم إلغاء تبادل البيانات"</string>
-    <string name="cancel" msgid="61873902552555096">"إلغاء"</string>
-    <string name="beam_tap_to_view" msgid="7430394753262448349">"انقر للعرض"</string>
-    <string name="beam_handover_not_supported" msgid="4083165921751489015">"جهاز المستلم لا يوفر نقل ملفات كبيرة عبر تبادل البيانات."</string>
-    <string name="beam_try_again" msgid="3364677301009783455">"تجميع الأجهزة معًا من جديد"</string>
-    <string name="beam_busy" msgid="5253335587620612576">"الشعاع مشغول حاليًا. يمكنك إعادة المحاولة عند اكتمال عملية النقل السابقة."</string>
-    <string name="device" msgid="4459621591392478151">"جهاز"</string>
-    <string name="connecting_peripheral" msgid="1296182660525660935">"جارٍ الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="connected_peripheral" msgid="20748648543160091">"تم الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="connect_peripheral_failed" msgid="7925702596242839275">"تعذر الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="disconnecting_peripheral" msgid="1443699384809097200">"جارٍ إلغاء الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="disconnected_peripheral" msgid="4470578100296504366">"تم إلغاء الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="pairing_peripheral" msgid="6983626861540899365">"جارٍ إقران <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="pairing_peripheral_failed" msgid="6087643307743264679">"تعذر إقران <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
-    <string name="failed_to_enable_bt" msgid="7229153323594758077">"تعذر تفعيل بلوتوث"</string>
-    <string name="confirm_pairing" msgid="4112568077038265363">"هل تريد فعلًا إقران جهاز بلوتوث <xliff:g id="DEVICE_NAME">%1$s</xliff:g>؟"</string>
-    <string name="pair_yes" msgid="3525614878559994448">"نعم"</string>
-    <string name="pair_no" msgid="5022308368904055020">"لا"</string>
-    <string name="tap_again_to_pay" msgid="5754988005412859897">"انقر مرة أخرى للدفع باستخدام <xliff:g id="APP">%1$s</xliff:g>"</string>
-    <string name="tap_again_to_complete" msgid="5423640945118279123">"انقر مرة أخرى للإكمال باستخدام <xliff:g id="APP">%1$s</xliff:g>"</string>
-    <string name="tap_again_description" msgid="3019101527041529661">"تثبيت الجهاز أمام القارئ"</string>
-    <string name="appchooser_description" msgid="2554187931814833244">"اختيار تطبيق لاستخدامه في المسح الضوئي"</string>
-    <string name="transaction_failure" msgid="7828102078637936513">"تعذر إكمال هذه المعاملة باستخدام <xliff:g id="APP">%1$s</xliff:g>."</string>
-    <string name="could_not_use_app" msgid="8137587876138569083">"تعذر استخدام <xliff:g id="APP">%1$s</xliff:g>."</string>
-    <string name="pay_with" msgid="5531545488795798945">"الدفع بواسطة"</string>
-    <string name="complete_with" msgid="6797459104103012992">"إكمال باستخدام"</string>
-    <string name="default_pay_app_removed" msgid="4108250545457437360">"تمت إزالة خدمتك المفضلة للتوصيل والدفع. هل تريد اختيار خدمة أخرى؟"</string>
-    <string name="ask_nfc_tap" msgid="2925239870458286340">"انقر على جهاز آخر للإكمال"</string>
-    <string name="wifi_connect" msgid="6250727951843550671">"اتصال"</string>
-    <string name="status_unable_to_connect" msgid="9183908200295307657">"تعذر الاتصال بالشبكة"</string>
-    <string name="status_wifi_connected" msgid="5893022897732105739">"تم الاتصال"</string>
-    <string name="title_connect_to_network" msgid="2474034615817280146">"الاتصال بالشبكة"</string>
-    <string name="prompt_connect_to_network" msgid="8511683573657516114">"هل تريد الاتصال بالشبكة <xliff:g id="NETWORK_SSID">%1$s</xliff:g>؟"</string>
-    <string name="beam_requires_nfc_enabled" msgid="2800366967218600534">"‏يتطلب شعاع Android تفعيل ميزة NFC. هل تريد تفعيلها؟"</string>
-    <string name="android_beam" msgid="1666446406999492763">"‏شعاع Android"</string>
-    <string name="beam_requires_external_storage_permission" msgid="8798337545702206901">"لا يحتوي التطبيق على إذن مساحة تخزين خارجية، إلا أنه مطلوب لإرسال هذا الملف"</string>
-    <string name="title_confirm_url_open" msgid="8069968913244794478">"هل تريد فتح الرابط؟"</string>
-    <string name="summary_confirm_url_open" msgid="1246398412196449226">"‏تلقى هاتفك رابطًا عبر ميزة NFC:"</string>
-    <string name="summary_confirm_url_open_tablet" msgid="771152442325809851">"‏تلقّى جهازك اللوحي رابطًا من خلال تقنية NFC:"</string>
-    <string name="action_confirm_url_open" msgid="3458322738812921189">"فتح الرابط"</string>
-    <string name="tag_read_error" msgid="2485274498885877547">"‏حدث خطأ NFC. يُرجى إعادة المحاولة."</string>
-    <string name="tag_dispatch_failed" msgid="3562984995049738400">"‏ليس هناك تطبيق متوافق مع علامة NFC هذه."</string>
-    <string name="nfc_blocking_alert_title" msgid="1086172436984457085">"‏قد تكون تقنية NFC محظورة"</string>
-    <string name="nfc_blocking_alert_message" msgid="7003156052570107490">"انقر لمعرفة كيف يمكنك حلّ هذه المشكلة."</string>
-    <string name="nfc_tag_alert_title" msgid="197917719004551090">"‏تم تشغيل \"<xliff:g id="APPNAME">%1$s</xliff:g>\" من خلال تكنولوجيا NFC"</string>
-    <string name="nfc_tag_alert_message" msgid="3140894528184634873">"انقر لمعرفة كيفية إيقاف التطبيق."</string>
-    <string name="nfc_logging_alert_title" msgid="5300867034660942987">"‏يتم حاليًا تسجيل بيانات الاتصال القصير المدى (NFC)"</string>
-    <string name="nfc_logging_alert_message" msgid="1550187184825467942">"انقر لإيقاف التسجيل."</string>
-    <string name="title_package_enabling_nfc" msgid="5736481508428918024">"‏هل تريد السماح لحِزمة \"<xliff:g id="PKG">%1$s</xliff:g>\" بتفعيل NFC؟"</string>
-    <string name="enable_nfc_yes" msgid="694867197186062792">"نعم"</string>
-    <string name="enable_nfc_no" msgid="6549033065900624599">"لا"</string>
+    <string name="app_name" msgid="5975754765946896125">"‏خدمة NFC"</string>
+    <string name="nfcUserLabel" msgid="1264167300457896256">"NFC"</string>
+    <string name="accessibility_nfc_enabled" msgid="830589378553181410">"‏تم تفعيل NFC."</string>
+    <string name="tap_to_beam" msgid="2022424274840394451">"Tap to beam"</string>
+    <string name="beam_progress" msgid="1929294166633309327">"بيانات واردة..."</string>
+    <string name="beam_outgoing" msgid="5219329384828480018">"إرسال لاسلكي..."</string>
+    <string name="beam_complete" msgid="6147496341809579439">"اكتمل تبادل البيانات"</string>
+    <string name="beam_failed" msgid="4211620610434373359">"لم يكتمل تبادل البيانات"</string>
+    <string name="beam_canceled" msgid="512339558899479458">"تم إلغاء تبادل البيانات"</string>
+    <string name="cancel" msgid="2441041247172250936">"إلغاء"</string>
+    <string name="beam_tap_to_view" msgid="9147455481297418801">"انقر للعرض"</string>
+    <string name="beam_handover_not_supported" msgid="3930703977696510905">"جهاز المستلم لا يوفر نقل ملفات كبيرة عبر تبادل البيانات."</string>
+    <string name="beam_try_again" msgid="1962556612448345422">"تجميع الأجهزة معًا من جديد"</string>
+    <string name="beam_busy" msgid="8179024484757185047">"الشعاع مشغول حاليًا. يمكنك إعادة المحاولة عند اكتمال عملية النقل السابقة."</string>
+    <string name="device" msgid="6859793408635712424">"جهاز"</string>
+    <string name="connecting_peripheral" msgid="5023158537894294802">"جارٍ الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="connected_peripheral" msgid="2496731052957541047">"تم الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="connect_peripheral_failed" msgid="368937385551413385">"تعذر الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="disconnecting_peripheral" msgid="1121670272906082527">"جارٍ إلغاء الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="disconnected_peripheral" msgid="9009042963082667744">"تم إلغاء الاتصال بـ <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="pairing_peripheral" msgid="5319926791325775305">"جارٍ إقران <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="pairing_peripheral_failed" msgid="5905500974914016272">"تعذر إقران <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
+    <string name="failed_to_enable_bt" msgid="5978409523818027926">"تعذر تفعيل بلوتوث"</string>
+    <string name="confirm_pairing" msgid="6587809107551647782">"هل تريد فعلًا إقران جهاز بلوتوث <xliff:g id="DEVICE_NAME">%1$s</xliff:g>؟"</string>
+    <string name="pair_yes" msgid="3624986519335168604">"نعم"</string>
+    <string name="pair_no" msgid="1333098406083837138">"لا"</string>
+    <string name="tap_again_to_pay" msgid="4338572813931564301">"انقر مرة أخرى للدفع باستخدام <xliff:g id="APP">%1$s</xliff:g>"</string>
+    <string name="tap_again_to_complete" msgid="6649361012821973200">"انقر مرة أخرى للإكمال باستخدام <xliff:g id="APP">%1$s</xliff:g>"</string>
+    <string name="tap_again_description" msgid="7062073825398109427">"تثبيت الجهاز أمام القارئ"</string>
+    <string name="appchooser_description" msgid="4568068957993132082">"اختيار تطبيق لاستخدامه في المسح الضوئي"</string>
+    <string name="transaction_failure" msgid="6933419514549792555">"تعذر إكمال هذه المعاملة باستخدام <xliff:g id="APP">%1$s</xliff:g>."</string>
+    <string name="could_not_use_app" msgid="2945389413330489607">"تعذر استخدام <xliff:g id="APP">%1$s</xliff:g>."</string>
+    <string name="pay_with" msgid="5104112137995621262">"الدفع بواسطة"</string>
+    <string name="complete_with" msgid="6624789011610610450">"إكمال باستخدام"</string>
+    <string name="default_pay_app_removed" msgid="4678760785647557185">"تمت إزالة خدمتك المفضلة للتوصيل والدفع. هل تريد اختيار خدمة أخرى؟"</string>
+    <string name="ask_nfc_tap" msgid="7921925213499063051">"انقر على جهاز آخر للإكمال"</string>
+    <string name="wifi_connect" msgid="2726973850576310336">"اتصال"</string>
+    <string name="status_unable_to_connect" msgid="3282224066213036023">"تعذر الاتصال بالشبكة"</string>
+    <string name="status_wifi_connected" msgid="8878112079913521399">"تم الاتصال"</string>
+    <string name="title_connect_to_network" msgid="5617055452888255705">"الاتصال بالشبكة"</string>
+    <string name="prompt_connect_to_network" msgid="6954936151128422990">"هل تريد الاتصال بالشبكة <xliff:g id="NETWORK_SSID">%1$s</xliff:g>؟"</string>
+    <string name="beam_requires_nfc_enabled" msgid="1943159298389147033">"‏يتطلب شعاع Android تفعيل ميزة NFC. هل تريد تفعيلها؟"</string>
+    <string name="android_beam" msgid="5505991354821548221">"‏شعاع Android"</string>
+    <string name="beam_requires_external_storage_permission" msgid="1414485338750858306">"لا يحتوي التطبيق على إذن مساحة تخزين خارجية، إلا أنه مطلوب لإرسال هذا الملف"</string>
+    <string name="title_confirm_url_open" msgid="5517813934880640232">"هل تريد فتح الرابط؟"</string>
+    <string name="summary_confirm_url_open" msgid="7945693255033907131">"‏تلقى هاتفك رابطًا عبر ميزة NFC:"</string>
+    <string name="summary_confirm_url_open_tablet" msgid="7988255063558403447">"‏تلقّى جهازك اللوحي رابطًا من خلال تقنية NFC:"</string>
+    <string name="action_confirm_url_open" msgid="2280097397376867615">"فتح الرابط"</string>
+    <string name="tag_read_error" msgid="8591844088497440515">"‏حدث خطأ NFC. يُرجى إعادة المحاولة."</string>
+    <string name="tag_dispatch_failed" msgid="1105926115269578595">"‏ليس هناك تطبيق متوافق مع علامة NFC هذه."</string>
+    <string name="nfc_blocking_alert_title" msgid="3361011027125473371">"‏قد تكون تقنية NFC محظورة"</string>
+    <string name="nfc_blocking_alert_message" msgid="6427327924471665520">"انقر لمعرفة كيف يمكنك حلّ هذه المشكلة."</string>
+    <string name="tag_app_alert_title" msgid="6761163540731807246">"‏السماح للتطبيقات بقراءة علامات NFC"</string>
+    <string name="tag_app_alert_message" msgid="5518729638341784348">"‏بإمكان \"<xliff:g id="APPNAMES">%1$s</xliff:g>\" قراءة علامات NFC."</string>
+    <string name="tag_app_alert_message_multiple" msgid="6989858224684960030">"‏بإمكان التطبيقات الآتية قراءة علامات NFC: \"<xliff:g id="APPNAMES">%1$s</xliff:g>\""</string>
+    <string name="tag_app_alert_action_button" msgid="1442462487575846704">"يُرجى النقر لمعرفة طريقة الإيقاف."</string>
+    <string name="nfc_logging_alert_title" msgid="7355334076019926549">"‏يتم حاليًا تسجيل بيانات الاتصال القصير المدى (NFC)"</string>
+    <string name="nfc_logging_alert_message" msgid="3833608086332697579">"انقر لإيقاف التسجيل."</string>
+    <string name="title_package_enabling_nfc" msgid="7797373366778008307">"‏هل تريد السماح لحِزمة \"<xliff:g id="PKG">%1$s</xliff:g>\" بتفعيل NFC؟"</string>
+    <string name="enable_nfc_yes" msgid="3514504441883079276">"نعم"</string>
+    <string name="enable_nfc_no" msgid="4272144216339787073">"لا"</string>
+    <string name="device_ndef_nfcee_service_name" msgid="1035872251333915624">"علامة مُضمّنة"</string>
 </resources>

@@ -149,6 +149,18 @@ void HciEventManager::nfaHciCallback(tNFA_HCI_EVT event,
     return;
   }
 
+  // Check the event and check if it contains the AID
+  uint8_t* event_buff = eventData->rcvd_evt.p_evt_buf;
+  uint32_t event_buff_len = eventData->rcvd_evt.evt_len;
+  if (event != NFA_HCI_EVENT_RCVD_EVT ||
+      eventData->rcvd_evt.evt_code != NFA_HCI_EVT_TRANSACTION ||
+      event_buff_len <= 3 || event_buff == nullptr || event_buff[0] != 0x81) {
+    if (event_buff_len <= 3 || event_buff == nullptr || event_buff[0] != 0x81) {
+      LOG(WARNING) << "Invalid event";
+    }
+    return;
+  }
+
   LOG(DEBUG) << StringPrintf(
       "event=%d code=%d pipe=%d len=%d", event, eventData->rcvd_evt.evt_code,
       eventData->rcvd_evt.pipe, eventData->rcvd_evt.evt_len);
@@ -172,16 +184,6 @@ void HciEventManager::nfaHciCallback(tNFA_HCI_EVT event,
       LOG(WARNING) << "Incorrect Pipe Id";
       return;
     }
-  }
-
-  // Check the event and check if it contains the AID
-  uint8_t* event_buff = eventData->rcvd_evt.p_evt_buf;
-  uint32_t event_buff_len = eventData->rcvd_evt.evt_len;
-  if (event != NFA_HCI_EVENT_RCVD_EVT ||
-      eventData->rcvd_evt.evt_code != NFA_HCI_EVT_TRANSACTION ||
-      event_buff_len <= 3 || event_buff == nullptr || event_buff[0] != 0x81) {
-    LOG(WARNING) << "Invalid event";
-    return;
   }
 
   uint32_t aid_len = event_buff[1];

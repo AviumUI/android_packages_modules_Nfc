@@ -19,6 +19,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.SystemProperties;
+import android.sysprop.NfcProperties;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -27,6 +28,7 @@ import androidx.annotation.VisibleForTesting;
 import com.android.nfc.DeviceConfigFacade;
 import com.android.nfc.NfcService;
 import com.android.nfc.cardemulation.util.TelephonyUtils;
+import com.android.nfc.dhimpl.NativeNfcManager;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,12 +37,13 @@ import java.util.Optional;
 
 public class RoutingOptionManager {
     static final String TAG = "RoutingOptionManager";
-    static final boolean DBG = SystemProperties.getBoolean("persist.nfc.debug_enabled", false);
+    static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
 
     static final int ROUTE_UNKNOWN = -1;
     static final int ROUTE_DEFAULT = -2;
 
     public static final String DEVICE_HOST = "DH";
+    public static final String SE_NDEF_NFCEE = "NDEF-NFCEE";
     public static final String SE_PREFIX_SIM = "SIM";
     public static final String SE_PREFIX_ESE = "eSE";
 
@@ -58,6 +61,7 @@ public class RoutingOptionManager {
     int mDefaultOffHostRoute;
     int mDefaultFelicaRoute;
     int mDefaultScRoute;
+    int mNdefNfceeRoute;
     final byte[] mOffHostRouteUicc;
     final byte[] mOffHostRouteEse;
     final int mAidMatchingSupport;
@@ -140,12 +144,13 @@ public class RoutingOptionManager {
     native int doGetAidMatchingMode();
     native int doGetEuiccMepMode();
 
-    public static RoutingOptionManager getInstance() {
-        return RoutingOptionManager.Singleton.INSTANCE;
-    }
+    private static RoutingOptionManager sInstance;
 
-    private static class Singleton {
-        private static final RoutingOptionManager INSTANCE = new RoutingOptionManager();
+    public static RoutingOptionManager getInstance() {
+        if (sInstance == null) {
+            sInstance = new RoutingOptionManager();
+        }
+        return sInstance;
     }
 
     @VisibleForTesting
@@ -166,6 +171,8 @@ public class RoutingOptionManager {
         if (DBG) Log.d(TAG, "mOffHostRouteEse=" + Arrays.toString(mOffHostRouteEse));
         mAidMatchingSupport = doGetAidMatchingMode();
         if (DBG) Log.d(TAG, "mAidMatchingSupport=0x" + Integer.toHexString(mAidMatchingSupport));
+        mNdefNfceeRoute = NativeNfcManager.getInstance().getNdefNfceeRouteId();
+        if (DBG) Log.d(TAG, "mNdefNfceeRoute=0x" + Integer.toHexString(mNdefNfceeRoute));
 
         mPreferredSimSettings = new SimSettings((mOffHostRouteUicc != null) ?
                 mOffHostRouteUicc.length : 0, 1);
@@ -328,6 +335,9 @@ public class RoutingOptionManager {
 
         mRouteForSecureElement.putIfAbsent("default", ROUTE_DEFAULT);
         mSecureElementForRoute.put(ROUTE_DEFAULT, "default");
+
+        mRouteForSecureElement.putIfAbsent(SE_NDEF_NFCEE, mNdefNfceeRoute);
+        mSecureElementForRoute.put(mNdefNfceeRoute, SE_NDEF_NFCEE);
 
         addOrUpdateTableItems(SE_PREFIX_SIM, mOffHostRouteUicc);
         addOrUpdateTableItems(SE_PREFIX_ESE, mOffHostRouteEse);

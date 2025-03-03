@@ -20,9 +20,6 @@ import static android.Manifest.permission.BIND_NFC_SERVICE;
 import static android.nfc.OemLogItems.EVENT_DISABLE;
 import static android.nfc.OemLogItems.EVENT_ENABLE;
 
-import static com.android.nfc.NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__FOREGROUND_APP;
-import static com.android.nfc.NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__TRIGGER_SOURCE_UNKNOWN;
-import static com.android.nfc.NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__WALLET_ROLE_HOLDER;
 import static com.android.nfc.ScreenStateHelper.SCREEN_STATE_ON_LOCKED;
 import static com.android.nfc.ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED;
 
@@ -104,6 +101,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
 import android.os.SystemClock;
+import android.os.Trace;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.os.VibrationAttributes;
@@ -2300,12 +2298,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 }
                 int callingUid = Binder.getCallingUid();
                 UserHandle callingUser = Binder.getCallingUserHandle();
-                int triggerSource =
-                        NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__TRIGGER_SOURCE_UNKNOWN;
-                final int triggerSource_WalletRoleHolder =
-                        NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__WALLET_ROLE_HOLDER;
-                final int triggerSource_Foreground =
-                        NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__FOREGROUND_APP;
+                int triggerSource = StatsdUtils.TRIGGER_SOURCE_UNKNOWN;
+
                 if (!NfcInjector.isPrivileged(callingUid)) {
                     NfcPermissions.enforceUserPermissions(mContext);
                     if (packageName == null) {
@@ -2317,12 +2311,12 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                             if (packageName != null) {
                                 triggerSource =
                                         packageName.equals(getWalletRoleHolder(callingUser))
-                                                ? triggerSource_WalletRoleHolder
-                                                : triggerSource_Foreground;
+                                                ? StatsdUtils.TRIGGER_SOURCE_WALLET_ROLE_HOLDER
+                                                : StatsdUtils.TRIGGER_SOURCE_FOREGROUND_APP;
                             }
                         } else {
                             if (mForegroundUtils.isInForeground(callingUid)) {
-                                triggerSource = triggerSource_Foreground;
+                                triggerSource = StatsdUtils.TRIGGER_SOURCE_FOREGROUND_APP;
                             }
                         }
                     } else {
@@ -2346,7 +2340,9 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                                 + enable);
 
                 long start = SystemClock.elapsedRealtime();
+                Trace.beginSection("setObserveMode: " + enable);
                 boolean result = mDeviceHost.setObserveMode(enable);
+                Trace.endSection();
                 int latency = Math.toIntExact(SystemClock.elapsedRealtime() - start);
                 if (mStatsdUtils != null) {
                     mStatsdUtils.logObserveModeStateChanged(enable, triggerSource, latency);
@@ -3398,6 +3394,9 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                                 .build());
             }
             mPrefsEditor.clear();
+            if (mIsNfcUserChangeRestricted) {
+                mPrefsEditor.putBoolean(PREF_NFC_ON, getNfcOnSetting());
+            }
             mPrefsEditor.putBoolean(
                 PREF_NFC_READER_OPTION_ON, mDeviceConfigFacade.getDefaultReaderOption());
             mPrefsEditor.commit();
@@ -5810,7 +5809,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 screenState = ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED;
             }
         }
-        if (DBG) Log.d(TAG, "applyScreenState(): screenState=" + screenState );
+        if (DBG) {
+            Log.d(TAG, "applyScreenState(): screenState = "
+                    + ScreenStateHelper.screenStateToString(screenState));
+        }
         if (mScreenState != screenState) {
             if (nci_version != NCI_VERSION_2_0) {
                 new ApplyRoutingTask().execute(Integer.valueOf(screenState));
