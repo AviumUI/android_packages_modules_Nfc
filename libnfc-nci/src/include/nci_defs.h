@@ -247,6 +247,7 @@
 #define NCI_ANDROID_SET_PASSIVE_OBSERVER_EXIT_FRAME 0x06
 #define NCI_ANDROID_GET_PASSIVE_OBSERVER_EXIT_FRAME 0x07
 #define NCI_ANDROID_BLANK_NCI 0x8
+#define NCI_ANDROID_SET_TECH_A_POLLING_LOOP_ANNOTATION 0x9
 
 /* Android Get Proprietary Caps */
 #define NCI_ANDROID_GET_CAPS_PARAM_SIZE 0x1
@@ -620,7 +621,9 @@ typedef uint8_t tNCI_DISCOVERY_TYPE;
 #ifndef NCI_GET_CMD_BUF
 #if (HCI_USE_VARIABLE_SIZE_CMD_BUF == FALSE)
 /* Allocate fixed-size buffer from HCI_CMD_POOL (default case) */
-#define NCI_GET_CMD_BUF(paramlen) ((NFC_HDR*)GKI_getpoolbuf(NFC_NCI_POOL_ID))
+#define NCI_GET_CMD_BUF(paramlen)                              \
+  gki_utils ? (NFC_HDR*)gki_utils->getpoolbuf(NFC_NCI_POOL_ID) \
+            : (NFC_HDR*)(new GkiUtils())->getpoolbuf(NFC_NCI_POOL_ID)
 #else
 /* Allocate smallest possible buffer (for platforms with limited RAM) */
 #define NCI_GET_CMD_BUF(paramlen)                                    \

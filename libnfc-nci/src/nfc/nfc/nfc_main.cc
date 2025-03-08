@@ -375,12 +375,15 @@ void nfc_set_state(tNFC_STATE nfc_state) {
 *******************************************************************************/
 void nfc_gen_cleanup(void) {
   nfc_cb.flags &= ~NFC_FL_DEACTIVATING;
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
 
   /* the HAL pre-discover is still active - clear the pending flag/free the
    * buffer */
   if (nfc_cb.flags & NFC_FL_DISCOVER_PENDING) {
     nfc_cb.flags &= ~NFC_FL_DISCOVER_PENDING;
-    GKI_freebuf(nfc_cb.p_disc_pending);
+    gki_utils->freebuf(nfc_cb.p_disc_pending);
     nfc_cb.p_disc_pending = nullptr;
   }
 
@@ -393,7 +396,7 @@ void nfc_gen_cleanup(void) {
   nfc_reset_all_conn_cbs();
 
   if (nfc_cb.p_nci_init_rsp) {
-    GKI_freebuf(nfc_cb.p_nci_init_rsp);
+    gki_utils->freebuf(nfc_cb.p_nci_init_rsp);
     nfc_cb.p_nci_init_rsp = nullptr;
   }
 
@@ -551,6 +554,10 @@ void nfc_main_handle_hal_evt(tNFC_HAL_EVT_MSG* p_msg) {
 void nfc_main_flush_cmd_queue(void) {
   NFC_HDR* p_msg;
 
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
+
   LOG(VERBOSE) << __func__;
 
   /* initialize command window */
@@ -560,8 +567,9 @@ void nfc_main_flush_cmd_queue(void) {
   nfc_stop_timer(&nfc_cb.nci_wait_rsp_timer);
 
   /* dequeue and free buffer */
-  while ((p_msg = (NFC_HDR*)GKI_dequeue(&nfc_cb.nci_cmd_xmit_q)) != nullptr) {
-    GKI_freebuf(p_msg);
+  while ((p_msg = (NFC_HDR*)gki_utils->dequeue(&nfc_cb.nci_cmd_xmit_q)) !=
+         nullptr) {
+    gki_utils->freebuf(p_msg);
   }
 }
 
@@ -1249,7 +1257,11 @@ tNFC_STATUS NFC_FlushData(uint8_t conn_id) {
 
   if (p_cb) {
     status = NFC_STATUS_OK;
-    while ((p_buf = GKI_dequeue(&p_cb->tx_q)) != nullptr) GKI_freebuf(p_buf);
+    if (!gki_utils) {
+      gki_utils = new GkiUtils();
+    }
+    while ((p_buf = gki_utils->dequeue(&p_cb->tx_q)) != nullptr)
+      gki_utils->freebuf(p_buf);
   }
 
   return status;

@@ -31,10 +31,14 @@
 #include <cutils/properties.h>
 #include <hwbinder/ProcessState.h>
 
+#include <thread>
+
 #include "NfcVendorExtn.h"
 #include "debug_nfcsnoop.h"
 #include "nfa_api.h"
 #include "nfa_rw_api.h"
+#include "nfa_sys.h"
+#include "nfa_sys_int.h"
 #include "nfc_config.h"
 #include "nfc_int.h"
 
@@ -751,7 +755,16 @@ void NfcAdaptation::DeviceShutdown() {
 ** Returns:     None.
 **
 *******************************************************************************/
-void NfcAdaptation::Dump(int fd) { debug_nfcsnoop_dump(fd); }
+void NfcAdaptation::Dump(int fd) {
+  LOG(DEBUG) << StringPrintf("%s :enable_cplt_flags=0x%x, enable_cplt_mask=0x%x",
+                               __func__,
+                               nfa_sys_cb.enable_cplt_flags,
+                               nfa_sys_cb.enable_cplt_mask);
+  dprintf(fd, "enable_cplt_flags=0x%x, enable_cplt_mask=0x%x\n",
+          nfa_sys_cb.enable_cplt_flags,
+          nfa_sys_cb.enable_cplt_mask);
+  debug_nfcsnoop_dump(fd);
+}
 
 /*******************************************************************************
 **
@@ -917,18 +930,20 @@ void NfcAdaptation::HalTerminate() {
 
 /*******************************************************************************
 **
-** Function:    NfcAdaptation::HalOpen
+** Function:    NfcAdaptation::HalOpenInternal
 **
 ** Description: Turn on controller, download firmware.
 **
 ** Returns:     None.
 **
 *******************************************************************************/
-void NfcAdaptation::HalOpen(tHAL_NFC_CBACK* p_hal_cback,
-                            tHAL_NFC_DATA_CBACK* p_data_cback) {
-  const char* func = "NfcAdaptation::HalOpen";
+void NfcAdaptation::HalOpenInternal(tHAL_NFC_CBACK* p_hal_cback,
+                                    tHAL_NFC_DATA_CBACK* p_data_cback) {
+  const char* func = "NfcAdaptation::HalOpenInternal";
   LOG(VERBOSE) << StringPrintf("%s", func);
-
+  if (sVndExtnsPresent) {
+    sNfcVendorExtn->setNciCallback(p_hal_cback, p_data_cback);
+  }
   if (mAidlHal != nullptr) {
     mAidlCallback = ::ndk::SharedRefBase::make<NfcAidlClientCallback>(
         p_hal_cback, p_data_cback);
@@ -952,9 +967,25 @@ void NfcAdaptation::HalOpen(tHAL_NFC_CBACK* p_hal_cback,
     mCallback = new NfcClientCallback(p_hal_cback, p_data_cback);
     mHal->open(mCallback);
   }
-  if (sVndExtnsPresent) {
-    sNfcVendorExtn->setNciCallback(p_hal_cback, p_data_cback);
-  }
+}
+
+/*******************************************************************************
+**
+** Function:    NfcAdaptation::HalOpen
+**
+** Description: Invoke HalOpenInternal in separate thread to not to block
+**              caller.
+**
+** Returns:     None.
+**
+*******************************************************************************/
+void NfcAdaptation::HalOpen(tHAL_NFC_CBACK* p_hal_cback,
+                            tHAL_NFC_DATA_CBACK* p_data_cback) {
+  const char* func = "NfcAdaptation::HalOpen";
+  LOG(VERBOSE) << StringPrintf("%s", func);
+  std::thread([p_hal_cback, p_data_cback]() {
+    HalOpenInternal(p_hal_cback, p_data_cback);
+  }).detach();
 }
 
 /*******************************************************************************
@@ -1137,11 +1168,19 @@ bool NfcAdaptation::DownloadFirmware() {
   isDownloadFirmwareCompleted = false;
   LOG(VERBOSE) << StringPrintf("%s: enter", func);
   HalInitialize();
-
+  if (sVndExtnsPresent) {
+    sNfcVendorExtn->processEvent(HANDLE_DOWNLOAD_FIRMWARE_REQUEST, 0x00);
+  }
   mHalOpenCompletedEvent.lock();
   LOG(VERBOSE) << StringPrintf("%s: try open HAL", func);
   HalOpen(HalDownloadFirmwareCallback, HalDownloadFirmwareDataCallback);
-  mHalOpenCompletedEvent.wait();
+  // wait up to 60s, if not opened in this delay, give up and close anyway.
+  mHalOpenCompletedEvent.wait(60000);
+  mHalOpenCompletedEvent.unlock();
+
+  LOG(VERBOSE) << StringPrintf("%s: try core init HAL", func);
+  uint8_t coreInitRspParams = 0;
+  HalCoreInitialized(sizeof(uint8_t), &coreInitRspParams);
 
   LOG(VERBOSE) << StringPrintf("%s: try close HAL", func);
   HalClose();
@@ -1162,7 +1201,6 @@ bool NfcAdaptation::DownloadFirmware() {
 **
 *******************************************************************************/
 void NfcAdaptation::HalDownloadFirmwareCallback(nfc_event_t event,
-                                                __attribute__((unused))
                                                 nfc_status_t event_status) {
   const char* func = "NfcAdaptation::HalDownloadFirmwareCallback";
   LOG(VERBOSE) << StringPrintf("%s: event=0x%X", func, event);
@@ -1178,6 +1216,20 @@ void NfcAdaptation::HalDownloadFirmwareCallback(nfc_event_t event,
       break;
     }
   }
+  tNFC_HAL_EVT_MSG* p_msg =
+      (tNFC_HAL_EVT_MSG*)GKI_getbuf(sizeof(tNFC_HAL_EVT_MSG));
+  if (p_msg != nullptr) {
+    /* Initialize NFC_HDR */
+    p_msg->hdr.len = 0;
+    p_msg->hdr.event = BT_EVT_TO_NFC_MSGS;
+    p_msg->hdr.offset = 0;
+    p_msg->hdr.layer_specific = 0;
+    p_msg->hal_evt = event;
+    p_msg->status = event_status;
+    GKI_send_msg(NFC_TASK, NFC_MBOX_ID, p_msg);
+  } else {
+    LOG(ERROR) << StringPrintf("No buffer");
+  };
 }
 
 /*******************************************************************************
@@ -1189,10 +1241,31 @@ void NfcAdaptation::HalDownloadFirmwareCallback(nfc_event_t event,
 ** Returns:     None.
 **
 *******************************************************************************/
-void NfcAdaptation::HalDownloadFirmwareDataCallback(__attribute__((unused))
-                                                    uint16_t data_len,
-                                                    __attribute__((unused))
-                                                    uint8_t* p_data) {}
+void NfcAdaptation::HalDownloadFirmwareDataCallback(uint16_t data_len,
+                                                    uint8_t* p_data) {
+  const char* func = "NfcAdaptation::HalDownloadFirmwareDataCallback";
+  LOG(VERBOSE) << StringPrintf("%s: data_len= %d", func, data_len);
+  if (p_data == nullptr) {
+    LOG(ERROR) << StringPrintf("%s: Invalid data!", func);
+    return;
+  }
+  NFC_HDR* p_msg = (NFC_HDR*)GKI_getbuf(sizeof(NFC_HDR) +
+                                        NFC_RECEIVE_MSGS_OFFSET + data_len);
+  if (p_msg != nullptr) {
+    /* Initialize NFC_HDR */
+    p_msg->len = data_len;
+    p_msg->event = BT_EVT_TO_NFC_NCI;
+    p_msg->offset = NFC_RECEIVE_MSGS_OFFSET;
+
+    /* no need to check length, it always less than pool size */
+    memcpy((uint8_t*)(p_msg + 1) + p_msg->offset, p_data, p_msg->len);
+
+    GKI_send_msg(NFC_TASK, NFC_MBOX_ID, p_msg);
+    LOG(VERBOSE) << StringPrintf("GKI msg sent!");
+  } else {
+    LOG(ERROR) << StringPrintf("No buffer");
+  }
+}
 
 /*******************************************************************************
 **
@@ -1258,6 +1331,7 @@ ThreadCondVar::ThreadCondVar() {
   pthread_condattr_t CondAttr;
 
   pthread_condattr_init(&CondAttr);
+  pthread_condattr_setclock(&CondAttr, CLOCK_MONOTONIC);
   pthread_cond_init(&mCondVar, &CondAttr);
 
   pthread_condattr_destroy(&CondAttr);
@@ -1286,6 +1360,41 @@ ThreadCondVar::~ThreadCondVar() { pthread_cond_destroy(&mCondVar); }
 void ThreadCondVar::wait() {
   pthread_cond_wait(&mCondVar, *this);
   pthread_mutex_unlock(*this);
+}
+
+/*******************************************************************************
+**
+** Function:    ThreadCondVar::wait()
+**
+** Description: wait on the mCondVar for the indicated amount of time (ms)
+**
+** Returns:     true if wait succeeded
+**
+*******************************************************************************/
+bool ThreadCondVar::wait(long millisec) {
+  bool retVal = false;
+  struct timespec absoluteTime;
+
+  if (clock_gettime(CLOCK_MONOTONIC, &absoluteTime) == -1) {
+    LOG(ERROR) << StringPrintf("ThreadCondVar::wait: fail get time; errno=0x%X",
+                               errno);
+  } else {
+    absoluteTime.tv_sec += millisec / 1000;
+    long ns = absoluteTime.tv_nsec + ((millisec % 1000) * 1000000);
+    if (ns > 1000000000) {
+      absoluteTime.tv_sec++;
+      absoluteTime.tv_nsec = ns - 1000000000;
+    } else
+      absoluteTime.tv_nsec = ns;
+  }
+
+  int waitResult = pthread_cond_timedwait(&mCondVar, *this, &absoluteTime);
+  if ((waitResult != 0) && (waitResult != ETIMEDOUT))
+    LOG(ERROR) << StringPrintf("ThreadCondVar::wait: fail timed wait; error=0x%X",
+                               waitResult);
+  retVal = (waitResult == 0);  // waited successfully
+  if (retVal) pthread_mutex_unlock(*this);
+  return retVal;
 }
 
 /*******************************************************************************

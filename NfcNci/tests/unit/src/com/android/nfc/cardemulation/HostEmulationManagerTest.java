@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -788,7 +789,7 @@ public class HostEmulationManagerTest {
 
         assertEquals(HostEmulationManager.STATE_W4_SERVICE, mHostEmulationManager.getState());
         assertEquals(mockAidData, mHostEmulationManager.mSelectApdu);
-        verify(apduServiceInfo).getUid();
+        verify(apduServiceInfo, atLeastOnce()).getUid();
         verify(mStatsUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
         verify(mStatsUtils).setCardEmulationEventUid(eq(USER_ID));
         verify(mStatsUtils).notifyCardEmulationEventWaitingForResponse();
@@ -1354,6 +1355,54 @@ public class HostEmulationManagerTest {
 
         assertEquals(HostEmulationManager.STATE_IDLE, mHostEmulationManager.mState);
         assertNull(mHostEmulationManager.mPollingFramesToSend);
+        assertNull(mHostEmulationManager.mUnprocessedPollingFrames);
+    }
+
+    @Test
+    public void testOnPollingLoopDetected_bindPaymentServiceWhenSending() throws Exception {
+        when(mContext.bindServiceAsUser(any(), any(), anyInt(), any())).thenReturn(true);
+
+        ApduServiceInfo serviceWithFilter = mock(ApduServiceInfo.class);
+        when(serviceWithFilter.getPollingLoopFilters()).thenReturn(POLLING_LOOP_FILTER);
+        when(serviceWithFilter.getPollingLoopPatternFilters()).thenReturn(List.of());
+        mHostEmulationManager.updatePollingLoopFilters(USER_ID, List.of(serviceWithFilter));
+
+        // Preferred payment service is defined, but not bound
+        when(mRegisteredAidCache.getPreferredService())
+                .thenReturn(new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE));
+        when(mRegisteredAidCache.getPreferredPaymentService())
+                .thenReturn(new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE));
+        mHostEmulationManager.mPaymentServiceName = null;
+        assertNull(mHostEmulationManager.mPaymentService);
+        assertFalse(mHostEmulationManager.mPaymentServiceBound);
+
+        PollingFrame frame1 =
+                new PollingFrame(
+                        PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
+                        HexFormat.of().parseHex("42"),
+                        0,
+                        0,
+                        false);
+
+        mHostEmulationManager.onPollingLoopDetected(List.of(frame1));
+
+        assertNotNull(mHostEmulationManager.mPollingFramesToSend);
+        assertNotNull(mHostEmulationManager.mUnprocessedPollingFrames);
+
+        // Attempt to bind to payment service
+        verify(mContext).bindServiceAsUser(any(), eq(mHostEmulationManager.getPaymentConnection()),
+                anyInt(), eq(USER_HANDLE));
+
+
+        // Binding is complete and we sent any pending polling frames
+        IBinder mockBinder = mock(IBinder.class);
+        mHostEmulationManager.mLastBoundPaymentServiceName = WALLET_PAYMENT_SERVICE;
+        mHostEmulationManager.getPaymentConnection().onServiceConnected(
+                WALLET_PAYMENT_SERVICE, mockBinder);
+
+        verify(mockBinder).transact(eq(1), any(), eq(null), eq(1));
+
+        assertEquals(0, mHostEmulationManager.mPollingFramesToSend.size());
         assertNull(mHostEmulationManager.mUnprocessedPollingFrames);
     }
 

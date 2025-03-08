@@ -465,8 +465,7 @@ public final class NfcFCardEmulation {
     }
 
     void recoverService() {
-        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
-        sService = adapter.getNfcFCardEmulationService();
+        sService = getInstance(NfcAdapter.getDefaultAdapter(mContext)).sService;
     }
 
 }

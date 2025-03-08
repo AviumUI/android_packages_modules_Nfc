@@ -404,25 +404,8 @@ public class CardEmulationManagerTest {
     }
 
     @Test
-    public void testOnServicesUpdated_walletEnabledPollingLoopDisabled() {
-        when(mWalletRoleObserver.isWalletRoleFeatureEnabled()).thenReturn(true);
-        when(android.nfc.Flags.nfcReadPollingLoop()).thenReturn(false);
-
-        mCardEmulationManager.onServicesUpdated(USER_ID, UPDATED_SERVICES, false);
-
-        verify(mWalletRoleObserver, times(2)).isWalletRoleFeatureEnabled();
-        verify(mRegisteredAidCache).onServicesUpdated(eq(USER_ID), mServiceListCaptor.capture());
-        verify(mPreferredServices).onServicesUpdated();
-        assertEquals(UPDATED_SERVICES, mServiceListCaptor.getValue());
-        verify(mHostEmulationManager).setAidRoutingListener(any());
-        verifyZeroInteractions(mHostEmulationManager);
-        verify(mNfcService).onPreferredPaymentChanged(eq(NfcAdapter.PREFERRED_PAYMENT_UPDATED));
-    }
-
-    @Test
     public void testOnServicesUpdated_walletEnabledPollingLoopEnabled() {
         when(mWalletRoleObserver.isWalletRoleFeatureEnabled()).thenReturn(true);
-        when(android.nfc.Flags.nfcReadPollingLoop()).thenReturn(true);
 
         mCardEmulationManager.onServicesUpdated(USER_ID, UPDATED_SERVICES, false);
 
@@ -2098,7 +2081,6 @@ public class CardEmulationManagerTest {
 
         when(mRegisteredServicesCache.doesServiceShouldDefaultToObserveMode(anyInt(), any()))
                 .thenReturn(true);
-        when(android.nfc.Flags.nfcObserveMode()).thenReturn(true);
         ComponentNameAndUser componentNameAndUser =
                 new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE);
         mCardEmulationManager.onPreferredPaymentServiceChanged(componentNameAndUser);
@@ -2113,25 +2095,6 @@ public class CardEmulationManagerTest {
                 .onPreferredPaymentChanged(eq(NfcAdapter.PREFERRED_PAYMENT_CHANGED));
     }
 
-    @Test
-    public void testOnPreferredPaymentServiceChanged_observeModeDisabled() {
-
-        ComponentNameAndUser componentNameAndUser =
-                new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE);
-        when(mRegisteredServicesCache.doesServiceShouldDefaultToObserveMode(anyInt(), any()))
-                .thenReturn(true);
-        when(mRegisteredAidCache.getPreferredService()).thenReturn(componentNameAndUser);
-        when(android.nfc.Flags.nfcObserveMode()).thenReturn(false);
-        mCardEmulationManager.onPreferredPaymentServiceChanged(componentNameAndUser);
-
-        verify(mHostEmulationManager).onPreferredPaymentServiceChanged(eq(componentNameAndUser));
-        verify(mRegisteredAidCache)
-                .onWalletRoleHolderChanged(eq(WALLET_HOLDER_PACKAGE_NAME), eq(USER_ID));
-        verify(mRegisteredAidCache).onPreferredPaymentServiceChanged(eq(componentNameAndUser));
-        verify(mRegisteredServicesCache).initialize();
-        verify(mNfcService).onPreferredPaymentChanged(eq(NfcAdapter.PREFERRED_PAYMENT_CHANGED));
-        assertUpdateForShouldDefaultToObserveMode(false);
-    }
 
     @Test
     public void testOnPreferredForegroundServiceChanged_observeModeEnabled() {
@@ -2139,7 +2102,6 @@ public class CardEmulationManagerTest {
                 .thenReturn(true);
         when(mRegisteredAidCache.getPreferredService())
                 .thenReturn(new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE));
-        when(android.nfc.Flags.nfcObserveMode()).thenReturn(true);
 
         mCardEmulationManager.onPreferredForegroundServiceChanged(
                 new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE));
@@ -2151,27 +2113,6 @@ public class CardEmulationManagerTest {
                         eq(new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE)));
         verify(mRegisteredServicesCache).initialize();
         verify(mNfcService).onPreferredPaymentChanged(eq(NfcAdapter.PREFERRED_PAYMENT_CHANGED));
-    }
-
-    @Test
-    public void testOnPreferredForegroundServiceChanged_observeModeDisabled() {
-        when(mRegisteredServicesCache.doesServiceShouldDefaultToObserveMode(anyInt(), any()))
-                .thenReturn(true);
-        when(mRegisteredAidCache.getPreferredService())
-                .thenReturn(new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE));
-        when(android.nfc.Flags.nfcObserveMode()).thenReturn(false);
-
-        mCardEmulationManager.onPreferredForegroundServiceChanged(
-                new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE));
-
-        verify(mHostEmulationManager)
-                .onPreferredForegroundServiceChanged(
-                        eq(new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE)));
-        verify(mRegisteredAidCache)
-                .onWalletRoleHolderChanged(eq(WALLET_HOLDER_PACKAGE_NAME), eq(USER_ID));
-        verify(mRegisteredServicesCache).initialize();
-        verify(mNfcService).onPreferredPaymentChanged(eq(NfcAdapter.PREFERRED_PAYMENT_CHANGED));
-        assertUpdateForShouldDefaultToObserveMode(false);
     }
 
     @Test
@@ -2180,7 +2121,6 @@ public class CardEmulationManagerTest {
                 .thenReturn(true);
         when(mRegisteredAidCache.getPreferredService())
                 .thenReturn(new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE));
-        when(android.nfc.Flags.nfcObserveMode()).thenReturn(true);
 
         mCardEmulationManager.onPreferredPaymentServiceChanged(
                 new ComponentNameAndUser(USER_ID, null));
@@ -2195,7 +2135,6 @@ public class CardEmulationManagerTest {
                 .thenReturn(true);
         when(mRegisteredAidCache.getPreferredService())
                 .thenReturn(new ComponentNameAndUser(USER_ID, WALLET_PAYMENT_SERVICE));
-        when(android.nfc.Flags.nfcObserveMode()).thenReturn(true);
 
         mCardEmulationManager.onPreferredForegroundServiceChanged(
                 new ComponentNameAndUser(USER_ID, null));

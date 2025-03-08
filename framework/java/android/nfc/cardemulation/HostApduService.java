@@ -414,7 +414,7 @@ public abstract class HostApduService extends Service {
                     }
                     break;
                 case MSG_POLLING_LOOP:
-                    if (android.nfc.Flags.nfcReadPollingLoop()) {
+                    {
                         ArrayList<PollingFrame> pollingFrames =
                                 msg.getData().getParcelableArrayList(
                                         KEY_POLLING_LOOP_FRAMES_BUNDLE, PollingFrame.class);
@@ -517,11 +517,10 @@ public abstract class HostApduService extends Service {
      * service must override this method inorder to receive polling frames,
      * otherwise the base implementation drops the frame.
      *
-     * @param frame A description of the polling frame.
+     * @param frames A description of the polling frame.
      */
     @SuppressLint("OnNameExpected")
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
-    public void processPollingFrames(@NonNull List<PollingFrame> frame) {
+    public void processPollingFrames(@NonNull List<PollingFrame> frames) {
     }
 
     /**

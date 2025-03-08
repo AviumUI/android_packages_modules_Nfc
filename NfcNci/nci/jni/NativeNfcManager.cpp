@@ -1165,20 +1165,15 @@ void static nfaVSCallback(uint8_t event, uint16_t param_len, uint8_t* p_param) {
         }
           FALLTHROUGH_INTENDED;
         case NCI_ANDROID_SET_PASSIVE_OBSERVER_TECH:
-        case NCI_ANDROID_PASSIVE_OBSERVE: {
+        case NCI_ANDROID_PASSIVE_OBSERVE:
+        case NCI_ANDROID_SET_TECH_A_POLLING_LOOP_ANNOTATION:
+        case NCI_ANDROID_SET_PASSIVE_OBSERVER_EXIT_FRAME: {
           gVSCmdStatus = p_param[4];
-          LOG(INFO) << StringPrintf("Observe mode RSP: status: %x",
-                                    gVSCmdStatus);
+          LOG(INFO) << StringPrintf("RSP status: %x to Android proprietary cmd %x",
+                                    gVSCmdStatus, android_sub_opcode);
           SyncEventGuard guard(gNfaVsCommand);
           gNfaVsCommand.notifyOne();
         } break;
-        case NCI_ANDROID_SET_PASSIVE_OBSERVER_EXIT_FRAME: {
-              gVSCmdStatus = p_param[4];
-              LOG(INFO) << StringPrintf("Set exit frame table RSP: status: %x",
-                                        gVSCmdStatus);
-              SyncEventGuard guard(gNfaVsCommand);
-              gNfaVsCommand.notifyOne();
-          } break;
         case NCI_ANDROID_GET_CAPS: {
           gVSCmdStatus = p_param[4];
           SyncEventGuard guard(gNfaVsCommand);
@@ -1336,20 +1331,17 @@ bool isObserveModeSupportedWithoutRfDeactivation(JNIEnv* e, jobject o) {
   return e->CallBooleanMethod(o, isSupported);
 }
 
-bool usePerTechObserveModeCommand(JNIEnv* e, jobject o) {
-  ScopedLocalRef<jclass> cls(e, e->GetObjectClass(o));
-  jmethodID isSupported = e->GetMethodID(
-      cls.get(), "usePerTechObserveModeCommand", "()Z");
-  return e->CallBooleanMethod(o, isSupported);
-}
-
 static jboolean nfcManager_setObserveMode(JNIEnv* e, jobject o,
                                           jboolean enable) {
   if (isObserveModeSupported(e, o) == JNI_FALSE) {
+    LOG(DEBUG) << "setObserveMode called when it isn't supported, returning false";
     return false;
   }
 
-  bool needToTurnOffRadio = !isObserveModeSupportedWithoutRfDeactivation(e, o);
+  if (isObserveModeSupportedWithoutRfDeactivation(e, o) == JNI_FALSE) {
+    LOG(DEBUG) << "setObserveMode called when it requires RF off/on, returning false";
+    return false;
+  }
 
   if ((gObserveModeEnabled == enable) &&
       ((enable != JNI_FALSE) ==
@@ -1360,22 +1352,11 @@ static jboolean nfcManager_setObserveMode(JNIEnv* e, jobject o,
         (gObserveModeEnabled != JNI_FALSE ? "TRUE" : "FALSE"));
     return true;
   }
-  bool reenbleDiscovery = false;
-  if (sRfEnabled && needToTurnOffRadio) {
-    startRfDiscovery(false);
-    reenbleDiscovery = true;
-  }
-  bool useOldCommand  = needToTurnOffRadio || !usePerTechObserveModeCommand(e, o);
   uint8_t cmd[] = {
-      static_cast<uint8_t>(
-        useOldCommand
-                         ? NCI_ANDROID_PASSIVE_OBSERVE
-                         : NCI_ANDROID_SET_PASSIVE_OBSERVER_TECH),
+      static_cast<uint8_t>(NCI_ANDROID_SET_PASSIVE_OBSERVER_TECH),
       static_cast<uint8_t>(
           enable != JNI_FALSE
-              ? (useOldCommand
-                     ? NCI_ANDROID_PASSIVE_OBSERVE_PARAM_ENABLE
-                     : NCI_ANDROID_PASSIVE_OBSERVE_PARAM_ENABLE_A |
+              ? (NCI_ANDROID_PASSIVE_OBSERVE_PARAM_ENABLE_A |
                            NCI_ANDROID_PASSIVE_OBSERVE_PARAM_ENABLE_B |
                            NCI_ANDROID_PASSIVE_OBSERVE_PARAM_ENABLE_V)
               : NCI_ANDROID_PASSIVE_OBSERVE_PARAM_DISABLE)};
@@ -1396,9 +1377,6 @@ static jboolean nfcManager_setObserveMode(JNIEnv* e, jobject o,
                                  __FUNCTION__);
       gVSCmdStatus = NFA_STATUS_FAILED;
     }
-  }
-  if (reenbleDiscovery) {
-    startRfDiscovery(true);
   }
 
   if (gVSCmdStatus == NFA_STATUS_OK) {
@@ -1515,10 +1493,8 @@ static jboolean doPartialInit() {
     SyncEventGuard guard(sNfaEnableEvent);
     tHAL_NFC_ENTRY* halFuncEntries = theInstance.GetHalEntryFuncs();
     NFA_Partial_Init(halFuncEntries, gPartialInitMode);
-    if (android_nfc_nfc_read_polling_loop() || android_nfc_nfc_vendor_cmd()) {
-      LOG(DEBUG) << StringPrintf("%s: register VS callbacks", __func__);
-      NFA_RegVSCback(true, &nfaVSCallback);
-    }
+    LOG(DEBUG) << StringPrintf("%s: register VS callbacks", __func__);
+    NFA_RegVSCback(true, &nfaVSCallback);
 
     LOG(DEBUG) << StringPrintf("%s: calling enable", __func__);
     stat = NFA_Enable(nfaDeviceManagementCallback, nfaConnectionCallback);
@@ -1578,10 +1554,8 @@ static jboolean nfcManager_doInitialize(JNIEnv* e, jobject o) {
 
       NFA_Init(halFuncEntries);
 
-      if (android_nfc_nfc_read_polling_loop() || android_nfc_nfc_vendor_cmd()) {
-        LOG(DEBUG) << StringPrintf("%s: register VS callbacks", __func__);
-        NFA_RegVSCback(true, &nfaVSCallback);
-      }
+      LOG(DEBUG) << StringPrintf("%s: register VS callbacks", __func__);
+      NFA_RegVSCback(true, &nfaVSCallback);
 
       if (gIsDtaEnabled == true) {
         // Allows to set appl_dta_mode_flag
@@ -1717,6 +1691,40 @@ static void nfcManager_configNfccConfigControl(bool flag) {
     }
 }
 
+static tNFA_STATUS setTechAPollingLoopAnnotation(JNIEnv* env, jobject o,
+                                          jbyteArray tech_a_polling_loop_annotation) {
+    if (tech_a_polling_loop_annotation == NULL) {
+      LOG(ERROR) << "annotation is null, returning early";
+      return STATUS_SUCCESS;
+    }
+    std::vector<uint8_t> command;
+    command.push_back(NCI_ANDROID_SET_TECH_A_POLLING_LOOP_ANNOTATION);
+    command.push_back(0x01);
+    command.push_back(0x00);
+
+    ScopedByteArrayRO annotationBytes(env, tech_a_polling_loop_annotation);
+    command.push_back(annotationBytes.size() + 3);
+    command.push_back(0x0a);
+    if (annotationBytes.size() > 0) {
+      command.insert(command.end(), &annotationBytes[0],
+                    &annotationBytes[annotationBytes.size()]);
+    }
+    command.push_back(0x00);
+    command.push_back(0x00);
+    SyncEventGuard guard(gNfaVsCommand);
+    tNFA_STATUS status =
+        NFA_SendVsCommand(NCI_MSG_PROP_ANDROID, command.size(), command.data(), nfaVSCallback);
+    if (status == NFA_STATUS_OK) {
+      if (!gNfaVsCommand.wait(1000)) {
+        LOG(ERROR) << StringPrintf(
+            "%s: Timed out waiting for a response to setting a polling loop annotation ",
+            __FUNCTION__);
+        gVSCmdStatus = NFA_STATUS_FAILED;
+      }
+    }
+    return gVSCmdStatus;
+}
+
 /*******************************************************************************
 **
 ** Function:        nfcManager_enableDiscovery
@@ -1737,6 +1745,7 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
                                        jboolean enable_lptd,
                                        jboolean reader_mode,
                                        jboolean enable_host_routing,
+                                       jbyteArray tech_a_polling_loop_annotation,
                                        jboolean restart) {
   tNFA_TECHNOLOGY_MASK tech_mask = DEFAULT_TECH_MASK;
   struct nfc_jni_native_data* nat = getNative(e, o);
@@ -1763,6 +1772,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
   // Check polling configuration
   if (tech_mask != 0) {
     stopPolling_rfDiscoveryDisabled();
+    setTechAPollingLoopAnnotation(e, o, tech_a_polling_loop_annotation);
+
     startPolling_rfDiscoveryDisabled(tech_mask);
 
     if (sPollingEnabled) {
@@ -1880,10 +1891,8 @@ static jboolean doPartialDeinit() {
   }
   sIsDisabling = false;
 
-  if (android_nfc_nfc_read_polling_loop() || android_nfc_nfc_vendor_cmd()) {
-    LOG(DEBUG) << StringPrintf("%s: deregister VS callbacks", __func__);
-    NFA_RegVSCback(false, &nfaVSCallback);
-  }
+  LOG(DEBUG) << StringPrintf("%s: deregister VS callbacks", __func__);
+  NFA_RegVSCback(false, &nfaVSCallback);
 
   NfcAdaptation& theInstance = NfcAdaptation::GetInstance();
   LOG(DEBUG) << StringPrintf("%s: exit", __func__);
@@ -1953,10 +1962,8 @@ static jboolean nfcManager_doDeinitialize(JNIEnv*, jobject) {
     sNfaEnableDisablePollingEvent.notifyOne();
   }
 
-  if (android_nfc_nfc_read_polling_loop() || android_nfc_nfc_vendor_cmd()) {
-    LOG(DEBUG) << StringPrintf("%s: deregister VS callbacks", __func__);
-    NFA_RegVSCback(false, &nfaVSCallback);
-  }
+  LOG(DEBUG) << StringPrintf("%s: deregister VS callbacks", __func__);
+  NFA_RegVSCback(false, &nfaVSCallback);
 
   NfcAdaptation& theInstance = NfcAdaptation::GetInstance();
   theInstance.Finalize();
@@ -2019,15 +2026,11 @@ static jboolean nfcManager_doDownload(JNIEnv*, jobject) {
   NfcAdaptation& theInstance = NfcAdaptation::GetInstance();
   bool result = JNI_FALSE;
   theInstance.Initialize();  // start GKI, NCI task, NFC task
-  if (android_nfc_nfc_read_polling_loop() || android_nfc_nfc_vendor_cmd()) {
-    tHAL_NFC_ENTRY* halFuncEntries = theInstance.GetHalEntryFuncs();
-    NFA_Partial_Init(halFuncEntries, gPartialInitMode);
-    NFA_RegVSCback(true, &nfaVSCallback);
-  }
+  tHAL_NFC_ENTRY* halFuncEntries = theInstance.GetHalEntryFuncs();
+  NFA_Partial_Init(halFuncEntries, ENABLE_MODE_TRANSPARENT);
+  NFA_RegVSCback(true, &nfaVSCallback);
   result = theInstance.DownloadFirmware();
-  if (android_nfc_nfc_read_polling_loop() || android_nfc_nfc_vendor_cmd()) {
-    NFA_RegVSCback(false, &nfaVSCallback);
-  }
+  NFA_RegVSCback(false, &nfaVSCallback);
   theInstance.Finalize();
   LOG(DEBUG) << StringPrintf("%s: exit", __func__);
   return result;
@@ -2641,7 +2644,7 @@ static JNINativeMethod gMethods[] = {
 
     {"getLfT3tMax", "()I", (void*)nfcManager_getLfT3tMax},
 
-    {"doEnableDiscovery", "(IZZZZ)V", (void*)nfcManager_enableDiscovery},
+    {"doEnableDiscovery", "(IZZZ[BZ)V", (void*)nfcManager_enableDiscovery},
 
     {"doStartStopPolling", "(Z)V", (void*)nfcManager_doStartStopPolling},
 

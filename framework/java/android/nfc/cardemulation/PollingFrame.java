@@ -37,7 +37,6 @@ import java.util.List;
  * match a given frame in a loop and will be delivered through calls to
  * {@link HostApduService#processPollingFrames(List)}.
  */
-@FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
 public final class PollingFrame implements Parcelable {
 
     /**
@@ -53,7 +52,6 @@ public final class PollingFrame implements Parcelable {
             POLLING_LOOP_TYPE_UNKNOWN
         })
     @Retention(RetentionPolicy.SOURCE)
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public @interface PollingFrameType {}
 
     /**
@@ -61,7 +59,6 @@ public final class PollingFrame implements Parcelable {
      * POLLING_LOOP_TYPE  in the Bundle passed to {@link HostApduService#processPollingFrames(List)}
      * when the polling loop is for NFC-A.
      */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public static final int POLLING_LOOP_TYPE_A = 'A';
 
     /**
@@ -69,7 +66,6 @@ public final class PollingFrame implements Parcelable {
      * POLLING_LOOP_TYPE  in the Bundle passed to {@link HostApduService#processPollingFrames(List)}
      * when the polling loop is for NFC-B.
      */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public static final int POLLING_LOOP_TYPE_B = 'B';
 
     /**
@@ -77,7 +73,6 @@ public final class PollingFrame implements Parcelable {
      * POLLING_LOOP_TYPE  in the Bundle passed to {@link HostApduService#processPollingFrames(List)}
      * when the polling loop is for NFC-F.
      */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public static final int POLLING_LOOP_TYPE_F = 'F';
 
     /**
@@ -85,7 +80,6 @@ public final class PollingFrame implements Parcelable {
      * POLLING_LOOP_TYPE  in the Bundle passed to {@link HostApduService#processPollingFrames(List)}
      * when the polling loop turns on.
      */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public static final int POLLING_LOOP_TYPE_ON = 'O';
 
     /**
@@ -93,7 +87,6 @@ public final class PollingFrame implements Parcelable {
      * POLLING_LOOP_TYPE  in the Bundle passed to {@link HostApduService#processPollingFrames(List)}
      * when the polling loop turns off.
      */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public static final int POLLING_LOOP_TYPE_OFF = 'X';
 
     /**
@@ -101,42 +94,36 @@ public final class PollingFrame implements Parcelable {
      * POLLING_LOOP_TYPE  in the Bundle passed to {@link HostApduService#processPollingFrames(List)}
      * when the polling loop frame isn't recognized.
      */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public static final int POLLING_LOOP_TYPE_UNKNOWN = 'U';
 
     /**
      * KEY_POLLING_LOOP_TYPE is the Bundle key for the type of
      * polling loop frame in the Bundle included in MSG_POLLING_LOOP.
      */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     private static final String KEY_POLLING_LOOP_TYPE = "android.nfc.cardemulation.TYPE";
 
     /**
      * KEY_POLLING_LOOP_DATA is the Bundle key for the raw data of captured from
      * the polling loop frame in the Bundle included in MSG_POLLING_LOOP.
      */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     private static final String KEY_POLLING_LOOP_DATA = "android.nfc.cardemulation.DATA";
 
     /**
      * KEY_POLLING_LOOP_GAIN is the Bundle key for the field strength of
      * the polling loop frame in the Bundle included in MSG_POLLING_LOOP.
     */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     private static final String KEY_POLLING_LOOP_GAIN = "android.nfc.cardemulation.GAIN";
 
     /**
      * KEY_POLLING_LOOP_TIMESTAMP is the Bundle key for the timestamp of
      * the polling loop frame in the Bundle included in MSG_POLLING_LOOP.
     */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     private static final String KEY_POLLING_LOOP_TIMESTAMP = "android.nfc.cardemulation.TIMESTAMP";
 
     /**
      * KEY_POLLING_LOOP_TIMESTAMP is the Bundle key for whether this polling frame triggered
      * autoTransact in the Bundle included in MSG_POLLING_LOOP.
     */
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     private static final String KEY_POLLING_LOOP_TRIGGERED_AUTOTRANSACT =
             "android.nfc.cardemulation.TRIGGERED_AUTOTRANSACT";
 

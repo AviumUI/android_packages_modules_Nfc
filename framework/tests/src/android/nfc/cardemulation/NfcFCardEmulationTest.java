@@ -159,7 +159,7 @@ public class NfcFCardEmulationTest {
         mNfcFCardEmulation.getSystemCodeForService(mComponentName);
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testGetSystemCodeForServiceWithRecoveryFail()
             throws NoSuchFieldException, RemoteException {
         mNfcFCardEmulation = createEmulationInstance();
@@ -170,7 +170,7 @@ public class NfcFCardEmulationTest {
                 .thenThrow(new RemoteException());
         when(NfcAdapter.getDefaultAdapter(mContext)).thenReturn(mNfcAdapter);
         when(NfcAdapter.getNfcFCardEmulationService()).thenReturn(null);
-        assertNull(mNfcFCardEmulation.getSystemCodeForService(mComponentName));
+        mNfcFCardEmulation.getSystemCodeForService(mComponentName);
     }
 
     @Test
@@ -238,14 +238,14 @@ public class NfcFCardEmulationTest {
         assertEquals(1, mNfcFCardEmulation.getMaxNumOfRegisterableSystemCodes());
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testGetMaxNumOfRegisterableSystemCodesServiceIsNull()
             throws RemoteException, NoSuchFieldException {
         mNfcFCardEmulation = createEmulationInstance();
         when(mService.getMaxNumOfRegisterableSystemCodes())
                 .thenThrow(RemoteException.class);
         when(NfcAdapter.getDefaultAdapter(mContext)).thenReturn(null);
-        assertEquals(-1, mNfcFCardEmulation.getMaxNumOfRegisterableSystemCodes());
+        mNfcFCardEmulation.getMaxNumOfRegisterableSystemCodes();
     }
 
     @Test(expected = RemoteException.class)
@@ -275,7 +275,7 @@ public class NfcFCardEmulationTest {
         assertEquals(nfcFServiceInfoList, mNfcFCardEmulation.getNfcFServices());
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testGetNfcFServiceWithNullServices()
             throws NoSuchFieldException, RemoteException {
         mNfcFCardEmulation = createEmulationInstance();
@@ -285,7 +285,7 @@ public class NfcFCardEmulationTest {
         when(mService.getNfcFServices(1)).thenThrow(RemoteException.class);
         when(NfcAdapter.getDefaultAdapter(mContext)).thenReturn(null);
 
-        assertNull(mNfcFCardEmulation.getNfcFServices());
+        mNfcFCardEmulation.getNfcFServices();
     }
 
     @Test
@@ -346,7 +346,7 @@ public class NfcFCardEmulationTest {
         assertTrue(mNfcFCardEmulation.disableService(mActivity));
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testDisableServiceWithNoService()
             throws NoSuchFieldException, RemoteException {
         mNfcFCardEmulation = createEmulationInstance();
@@ -356,7 +356,7 @@ public class NfcFCardEmulationTest {
         when(NfcAdapter.getDefaultAdapter(mContext)).thenReturn(mNfcAdapter);
         when(mNfcAdapter.getNfcFCardEmulationService()).thenReturn(null);
 
-        assertFalse(mNfcFCardEmulation.disableService(mActivity));
+        mNfcFCardEmulation.disableService(mActivity);
     }
 
     @Test
@@ -477,7 +477,7 @@ public class NfcFCardEmulationTest {
         mNfcFCardEmulation.setNfcid2ForService(null, null);
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testSetNfcid2ForServiceWithException()
             throws NoSuchFieldException, RemoteException {
         String nfcid2 = "nfcid2";
@@ -490,7 +490,7 @@ public class NfcFCardEmulationTest {
         when(NfcAdapter.getDefaultAdapter(mContext)).thenReturn(mNfcAdapter);
         when(mNfcAdapter.getNfcFCardEmulationService()).thenReturn(null);
 
-        assertFalse(mNfcFCardEmulation.setNfcid2ForService(mComponentName, nfcid2));
+        mNfcFCardEmulation.setNfcid2ForService(mComponentName, nfcid2);
     }
 
     @Test
@@ -550,7 +550,7 @@ public class NfcFCardEmulationTest {
         mNfcFCardEmulation.getNfcid2ForService(null);
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testGetNfcid2ForServiceWithException()
             throws NoSuchFieldException, RemoteException {
         mNfcFCardEmulation = createEmulationInstance();
@@ -562,7 +562,7 @@ public class NfcFCardEmulationTest {
         when(NfcAdapter.getDefaultAdapter(mContext)).thenReturn(mNfcAdapter);
         when(mNfcAdapter.getNfcFCardEmulationService()).thenReturn(null);
 
-        assertNull(mNfcFCardEmulation.getNfcid2ForService(mComponentName));
+        mNfcFCardEmulation.getNfcid2ForService(mComponentName);
     }
 
     @Test
@@ -621,7 +621,7 @@ public class NfcFCardEmulationTest {
         mNfcFCardEmulation.unregisterSystemCodeForService(null);
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testUnregisterSystemCodeForServiceWithException()
             throws NoSuchFieldException, RemoteException {
         mNfcFCardEmulation = createEmulationInstance();
@@ -633,8 +633,7 @@ public class NfcFCardEmulationTest {
         when(NfcAdapter.getDefaultAdapter(mContext)).thenReturn(mNfcAdapter);
         when(mNfcAdapter.getNfcFCardEmulationService()).thenReturn(null);
 
-        assertFalse(
-                mNfcFCardEmulation.unregisterSystemCodeForService(mComponentName));
+        mNfcFCardEmulation.unregisterSystemCodeForService(mComponentName);
     }
 
     @Test
@@ -690,7 +689,7 @@ public class NfcFCardEmulationTest {
         mNfcFCardEmulation.registerSystemCodeForService(null, null);
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testRegisterSystemCodeForServiceWithException()
             throws NoSuchFieldException, RemoteException {
         String systemCode = "systemCode";
@@ -703,8 +702,7 @@ public class NfcFCardEmulationTest {
         when(NfcAdapter.getDefaultAdapter(mContext)).thenReturn(mNfcAdapter);
         when(mNfcAdapter.getNfcFCardEmulationService()).thenReturn(null);
 
-        assertFalse(mNfcFCardEmulation.registerSystemCodeForService(mComponentName,
-                systemCode));
+        mNfcFCardEmulation.registerSystemCodeForService(mComponentName, systemCode);
     }
 
     @Test

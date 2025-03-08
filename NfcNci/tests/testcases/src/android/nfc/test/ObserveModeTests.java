@@ -62,7 +62,6 @@ public class ObserveModeTests {
   }
 
   @Test(timeout = 20000)
-  @RequiresFlagsEnabled(android.nfc.Flags.FLAG_NFC_OBSERVE_MODE)
   public void testObserveModeStress() throws InterruptedException {
     final NfcAdapter adapter = initNfcAdapterWithObserveModeOrSkipTest();
     CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
@@ -106,7 +105,6 @@ public class ObserveModeTests {
   }
 
   @Test
-  @RequiresFlagsEnabled(android.nfc.Flags.FLAG_NFC_OBSERVE_MODE)
   public void testInterleavePlfAndAid() {
     final NfcAdapter adapter = initNfcAdapterWithObserveModeOrSkipTest();
     adapter.notifyHceDeactivated();
@@ -164,7 +162,6 @@ public class ObserveModeTests {
   }
 
   @Test
-  @RequiresFlagsEnabled(android.nfc.Flags.FLAG_NFC_OBSERVE_MODE)
   public void testInterleavePlfSecondServiceAndAid() {
     final NfcAdapter adapter = initNfcAdapterWithObserveModeOrSkipTest();
     adapter.notifyHceDeactivated();
@@ -230,7 +227,6 @@ public class ObserveModeTests {
    * A regression test for a HostEmulationManager deadlock as seen in b/361084133.
    */
   @Test
-  @RequiresFlagsEnabled(android.nfc.Flags.FLAG_NFC_OBSERVE_MODE)
   public void testOnPauseAndOnResume() throws InterruptedException {
     final NfcAdapter adapter = initNfcAdapterWithObserveModeOrSkipTest();
     final CardEmulation cardEmulation = CardEmulation.getInstance(adapter);

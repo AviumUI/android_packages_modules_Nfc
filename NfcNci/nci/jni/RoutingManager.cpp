@@ -994,7 +994,7 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateTechnologyABFRoute(int route,
 *******************************************************************************/
 tNFA_TECHNOLOGY_MASK RoutingManager::updateEeTechRouteSetting() {
   static const char fn[] = "RoutingManager::updateEeTechRouteSetting";
-  tNFA_TECHNOLOGY_MASK allSeTechMask = 0x00;
+  tNFA_TECHNOLOGY_MASK allSeTechMask = 0x00, hostTechMask = 0x00;
 
   LOG(DEBUG) << StringPrintf("%s; Default route A/B: 0x%x", fn,
                              mDefaultOffHostRoute);
@@ -1004,12 +1004,6 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateEeTechRouteSetting() {
   LOG(DEBUG) << StringPrintf("%s; Nb NFCEE: %d", fn, mEeInfo.num_ee);
 
   tNFA_STATUS nfaStat;
-
-  bool offHostRouteFound = false;
-  bool felicaRouteFound = false;
-
-  int defaultFelicaRoute = mDefaultFelicaRoute;
-  int defaultOffHostRoute = mDefaultOffHostRoute;
 
   for (uint8_t i = 0; i < mEeInfo.num_ee; i++) {
     tNFA_HANDLE eeHandle = mEeInfo.ee_disc_info[i].ee_handle;
@@ -1025,7 +1019,6 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateEeTechRouteSetting() {
 
     if ((mDefaultOffHostRoute != NFC_DH_ID) &&
         (eeHandle == (mDefaultOffHostRoute | NFA_HANDLE_GROUP_EE))) {
-      offHostRouteFound = true;
       if (mEeInfo.ee_disc_info[i].la_protocol != 0) {
         seTechMask |= NFA_TECHNOLOGY_MASK_A;
       }
@@ -1036,11 +1029,8 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateEeTechRouteSetting() {
 
     if ((mDefaultFelicaRoute != NFC_DH_ID) &&
         (eeHandle == (mDefaultFelicaRoute | NFA_HANDLE_GROUP_EE))) {
-      felicaRouteFound = true;
       if (mEeInfo.ee_disc_info[i].lf_protocol != 0) {
         seTechMask |= NFA_TECHNOLOGY_MASK_F;
-      } else {
-        defaultFelicaRoute = NFC_DH_ID;
       }
     }
 
@@ -1063,67 +1053,38 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateEeTechRouteSetting() {
           mSecureNfcEnabled ? 0 : seTechMask,
           mSecureNfcEnabled ? 0 : seTechMask);
       if (nfaStat != NFA_STATUS_OK)
-        LOG(ERROR) << fn << ": Failed to configure UICC technology routing.";
+        LOG(ERROR) << StringPrintf(
+            "%s: Failed to configure 0x%x technology routing", fn, eeHandle);
 
       allSeTechMask |= seTechMask;
     }
   }
 
-  if (!offHostRouteFound) {
-    defaultOffHostRoute = NFC_DH_ID;
+  // Check if some tech should be routed to DH
+  if (!(allSeTechMask & NFA_TECHNOLOGY_MASK_A) &&
+      (mOffHostListenTechMask & NFA_TECHNOLOGY_MASK_A)) {
+    hostTechMask |= NFA_TECHNOLOGY_MASK_A;
   }
-  if (!felicaRouteFound) {
-    defaultFelicaRoute = NFC_DH_ID;
+  // Check if some tech should be routed to DH
+  if (!(allSeTechMask & NFA_TECHNOLOGY_MASK_B) &&
+      (mOffHostListenTechMask & NFA_TECHNOLOGY_MASK_B)) {
+    hostTechMask |= NFA_TECHNOLOGY_MASK_B;
+  }
+  // Check if some tech should be routed to DH
+  if (!(allSeTechMask & NFA_TECHNOLOGY_MASK_F) &&
+      (mOffHostListenTechMask & NFA_TECHNOLOGY_MASK_F)) {
+    hostTechMask |= NFA_TECHNOLOGY_MASK_F;
   }
 
-  tNFA_TECHNOLOGY_MASK hostTechMask = 0;
-  if (defaultOffHostRoute == NFC_DH_ID || defaultFelicaRoute == NFC_DH_ID) {
-    if (defaultOffHostRoute == NFC_DH_ID) {
-      LOG(DEBUG) << StringPrintf(
-          "%s: Setting technology route to host with A,B type", fn);
-      hostTechMask |= NFA_TECHNOLOGY_MASK_A;
-      hostTechMask |= NFA_TECHNOLOGY_MASK_B;
-    }
-    if (defaultFelicaRoute == NFC_DH_ID) {
-      LOG(DEBUG) << StringPrintf(
-          "%s: Setting technology route to host with F type", fn);
-      hostTechMask |= NFA_TECHNOLOGY_MASK_F;
-    }
-    hostTechMask &= mHostListenTechMask;
+  if (hostTechMask) {
     nfaStat = NFA_EeSetDefaultTechRouting(NFC_DH_ID, hostTechMask, 0, 0,
                                           mSecureNfcEnabled ? 0 : hostTechMask,
                                           mSecureNfcEnabled ? 0 : hostTechMask,
                                           mSecureNfcEnabled ? 0 : hostTechMask);
     if (nfaStat != NFA_STATUS_OK)
-      LOG(ERROR) << fn << "Failed to configure DH technology routing.";
-    nfaStat = NFA_CeConfigureUiccListenTech(NFC_DH_ID, hostTechMask);
-    if (nfaStat != NFA_STATUS_OK)
-      LOG(ERROR) << fn << "Failed to configure DH UICC listen technologies.";
+      LOG(ERROR) << fn << ": Failed to configure DH technology routing.";
   }
 
-  // Clear DH technology route on NFC-A
-  if ((mHostListenTechMask & NFA_TECHNOLOGY_MASK_A) &&
-      (allSeTechMask & NFA_TECHNOLOGY_MASK_A) != 0) {
-    nfaStat = NFA_EeClearDefaultTechRouting(NFC_DH_ID, NFA_TECHNOLOGY_MASK_A);
-    if (nfaStat != NFA_STATUS_OK)
-      LOG(ERROR) << "Failed to clear DH technology routing on NFC-A.";
-  }
-
-  // Clear DH technology route on NFC-B
-  if ((mHostListenTechMask & NFA_TECHNOLOGY_MASK_B) &&
-      (allSeTechMask & NFA_TECHNOLOGY_MASK_B) != 0) {
-    nfaStat = NFA_EeClearDefaultTechRouting(NFC_DH_ID, NFA_TECHNOLOGY_MASK_B);
-    if (nfaStat != NFA_STATUS_OK)
-      LOG(ERROR) << "Failed to clear DH technology routing on NFC-B.";
-  }
-
-  // Clear DH technology route on NFC-F
-  if ((mHostListenTechMask & NFA_TECHNOLOGY_MASK_F) &&
-      (allSeTechMask & NFA_TECHNOLOGY_MASK_F) != 0) {
-    nfaStat = NFA_EeClearDefaultTechRouting(NFC_DH_ID, NFA_TECHNOLOGY_MASK_F);
-    if (nfaStat != NFA_STATUS_OK)
-      LOG(ERROR) << "Failed to clear DH technology routing on NFC-F.";
-  }
   return allSeTechMask;
 }
 
@@ -1373,6 +1334,7 @@ int RoutingManager::registerT3tIdentifier(uint8_t* t3tId, uint8_t t3tIdLen) {
       return NFA_HANDLE_INVALID;
     }
     LOG(DEBUG) << StringPrintf("%s: Succeed to register system code on DH", fn);
+    mEeInfoChanged = true;
     // add handle and system code pair to the map
     mMapScbrHandle.emplace(mNfcFOnDhHandle, systemCode);
   } else {
@@ -1418,6 +1380,7 @@ void RoutingManager::deregisterT3tIdentifier(int handle) {
         tNFA_STATUS nfaStat = NFA_EeRemoveSystemCodeRouting(systemCode);
         if (nfaStat == NFA_STATUS_OK) {
           mRoutingEvent.wait();
+          mEeInfoChanged = true;
           LOG(DEBUG) << StringPrintf(
               "%s: Succeeded in deregistering system Code on DH", fn);
         } else {

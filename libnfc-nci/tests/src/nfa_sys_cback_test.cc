@@ -37,13 +37,18 @@ TEST_F(NfaSysCbackTest, PowerCompleteTest) {
       nfa_sys_cb.p_proc_nfcc_pwr_mode_cmpl_cback);
   EXPECT_EQ(nfa_sys_cb.proc_nfcc_pwr_mode_cplt_flags, 0);
 }
-TEST_F(NfaSysCbackTest, NotifyompleteTest) {
+TEST_F(NfaSysCbackTest, NotifyCompleteTest) {
+  nfa_sys_cb.enable_cplt_flags = 0;
+  nfa_sys_cb.enable_cplt_mask = 0;
+  nfa_sys_cb.proc_nfcc_pwr_mode_cplt_flags = 0;
+  nfa_sys_cb.proc_nfcc_pwr_mode_cplt_mask = 0;
+  nfa_sys_cb.p_enable_cback = mock_callback;
   nfa_sys_cb.enable_cplt_mask |= (0x0001 << NFA_ID_EE);
   nfa_sys_cback_notify_enable_complete(NFA_ID_EE);
   EXPECT_EQ(nfa_sys_cb.p_enable_cback, nullptr);
-  nfa_sys_cb.p_enable_cback = mock_callback;
   nfa_sys_cback_notify_partial_enable_complete(NFA_ID_SYS);
   EXPECT_EQ(nfa_sys_cb.p_enable_cback, nullptr);
+  nfa_sys_cb.enable_cplt_flags = 0;
   nfa_sys_cb.proc_nfcc_pwr_mode_cplt_mask |= (0x0001 << NFA_ID_EE);
   nfa_sys_cback_notify_nfcc_power_mode_proc_complete(NFA_ID_EE);
   EXPECT_EQ(nfa_sys_cb.p_proc_nfcc_pwr_mode_cmpl_cback, nullptr);
