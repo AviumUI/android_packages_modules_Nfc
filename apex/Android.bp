@@ -59,8 +59,14 @@ custom_apex {
             bootclasspath_fragments: ["com.android.nfcservices-bootclasspath-fragment"],
         },
     },
-
+    // For non-mainline builds
     required: [
+        // Provide a default libnfc-nci.conf in /system/etc for devices that
+        // does not ship one in /product
+        "libnfc-nci.conf-default",
+    ],
+    // For mainline builds
+    prebuilts: [
         // Provide a default libnfc-nci.conf in /system/etc for devices that
         // does not ship one in /product
         "libnfc-nci.conf-default",

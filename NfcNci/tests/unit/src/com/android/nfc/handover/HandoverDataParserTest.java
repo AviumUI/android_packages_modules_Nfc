@@ -26,11 +26,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 
@@ -56,11 +58,14 @@ public class HandoverDataParserTest {
     @Mock
     private HandoverDataParser mockHandoverDataParser;
     private HandoverDataParser mHandoverDataParser;
+    private byte[] mTestCarrierId;
+    private static final int CARRIER_POWER_STATE_ACTIVATING = 2;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(mNdefMessage.getRecords()).thenReturn(new NdefRecord[]{mNdefRecord});
+        mTestCarrierId = "testCarrier".getBytes();
         byte[] macAddress =
                 new byte[]{(byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89,
                         (byte) 0xAB};
@@ -509,6 +514,74 @@ public class HandoverDataParserTest {
         payload.put((byte) 0x09);
         payload.put(deviceName.getBytes(StandardCharsets.UTF_8));
         payload.flip();
+        return payload;
+    }
+
+    @Test
+    public void testCreateBluetoothOobDataRecord() {
+        String mLocalBluetoothAddress = "01:23:45:67:89:AB";
+        when(mBluetoothAdapter.getAddress()).thenReturn(mLocalBluetoothAddress);
+
+        mHandoverDataParser.createBluetoothOobDataRecord();
+        verify(mBluetoothAdapter).getAddress();
+    }
+
+    @Test
+    public void testCreateHandoverRequestMessage() {
+        String mLocalBluetoothAddress = "01:23:45:67:89:AB";
+        when(mBluetoothAdapter.getAddress()).thenReturn(mLocalBluetoothAddress);
+
+        mHandoverDataParser.createHandoverRequestMessage();
+        verify(mBluetoothAdapter).getAddress();
+    }
+
+    @Test
+    public void testCreateBluetoothHandoverSelectMessage() {
+        String mLocalBluetoothAddress = "01:23:45:67:89:AB";
+        when(mBluetoothAdapter.getAddress()).thenReturn(mLocalBluetoothAddress);
+
+        mHandoverDataParser.createBluetoothHandoverSelectMessage(true);
+        verify(mBluetoothAdapter).getAddress();
+        assertNotNull(mBluetoothAdapter);
+    }
+
+    @Test
+    public void testGetIncomingHandoverData() {
+        when(mNdefMessage.getRecords()).thenReturn(new NdefRecord[]{mNdefRecord});
+        when(mNdefRecord.getTnf()).thenReturn(NdefRecord.TNF_WELL_KNOWN);
+        when(mNdefRecord.getType()).thenReturn(NdefRecord.RTD_HANDOVER_REQUEST);
+        String mLocalBluetoothAddress = "01:23:45:67:89:AB";
+        when(mBluetoothAdapter.getAddress()).thenReturn(mLocalBluetoothAddress);
+        when(mBluetoothAdapter.isEnabled()).thenReturn(false);
+
+        mHandoverDataParser.getIncomingHandoverData(mNdefMessage);
+        verify(mNdefMessage, times(2)).getRecords();
+        verify(mNdefRecord, times(2)).getTnf();
+    }
+
+    @Test
+    public void testIsCarrierActivatingCorrectCarrierIdAndActivatingState()
+            throws Exception {
+        byte[] validNdefPayload = createNdefPayload(mTestCarrierId, CARRIER_POWER_STATE_ACTIVATING);
+        when(mNdefRecord.getPayload()).thenReturn(validNdefPayload);
+
+        boolean result = mHandoverDataParser.isCarrierActivating(mNdefRecord, mTestCarrierId);
+        assertTrue(result);
+    }
+
+    private byte[] createNdefPayload(byte[] carrierId, int carrierPowerState)
+            throws FormatException {
+        ByteBuffer buffer = ByteBuffer.allocate(2 + carrierId.length);
+        buffer.put((byte) carrierPowerState);
+        buffer.put((byte) carrierId.length);
+        buffer.put(carrierId);
+
+        NdefRecord ndefRecord = NdefRecord.createExternal("example.com", "altCarrier",
+                buffer.array());
+        NdefMessage ndefMessage = new NdefMessage(new NdefRecord[]{ndefRecord});
+        byte[] payload = new byte[ndefMessage.toByteArray().length + 1];
+        System.arraycopy(ndefMessage.toByteArray(), 0, payload, 1,
+                ndefMessage.toByteArray().length);
         return payload;
     }
 }

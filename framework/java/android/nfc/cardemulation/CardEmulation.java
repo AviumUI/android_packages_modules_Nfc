@@ -443,7 +443,6 @@ public final class CardEmulation {
      * @param enable Whether the service should default to observe mode or not
      * @return whether the change was successful.
      */
-    @FlaggedApi(Flags.FLAG_NFC_OBSERVE_MODE)
     public boolean setShouldDefaultToObserveModeForService(@NonNull ComponentName service,
             boolean enable) {
         return callServiceReturn(() ->
@@ -466,7 +465,6 @@ public final class CardEmulation {
      * @return true if the filter was registered, false otherwise
      * @throws IllegalArgumentException if the passed in string doesn't parse to at least one byte
      */
-    @FlaggedApi(Flags.FLAG_NFC_READ_POLLING_LOOP)
     public boolean registerPollingLoopFilterForService(@NonNull ComponentName service,
             @NonNull String pollingLoopFilter, boolean autoTransact) {
         final String pollingLoopFilterV = validatePollingLoopFilter(pollingLoopFilter);
@@ -485,7 +483,6 @@ public final class CardEmulation {
      * @return true if the filter was removed, false otherwise
      * @throws IllegalArgumentException if the passed in string doesn't parse to at least one byte
      */
-    @FlaggedApi(Flags.FLAG_NFC_READ_POLLING_LOOP)
     public boolean removePollingLoopFilterForService(@NonNull ComponentName service,
             @NonNull String pollingLoopFilter) {
         final String pollingLoopFilterV = validatePollingLoopFilter(pollingLoopFilter);
@@ -516,7 +513,6 @@ public final class CardEmulation {
      *         numbers and `.`, `?` and `*` operators
      * @throws java.util.regex.PatternSyntaxException if the regex syntax is invalid
      */
-    @FlaggedApi(Flags.FLAG_NFC_READ_POLLING_LOOP)
     public boolean registerPollingLoopPatternFilterForService(@NonNull ComponentName service,
             @NonNull String pollingLoopPatternFilter, boolean autoTransact) {
         final String pollingLoopPatternFilterV =
@@ -542,7 +538,6 @@ public final class CardEmulation {
      *         numbers and `.`, `?` and `*` operators
      * @throws java.util.regex.PatternSyntaxException if the regex syntax is invalid
      */
-    @FlaggedApi(Flags.FLAG_NFC_READ_POLLING_LOOP)
     public boolean removePollingLoopPatternFilterForService(@NonNull ComponentName service,
             @NonNull String pollingLoopPatternFilter) {
         final String pollingLoopPatternFilterV =
@@ -903,7 +898,6 @@ public final class CardEmulation {
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_NFC_READ_POLLING_LOOP)
     public static @NonNull String validatePollingLoopFilter(@NonNull String pollingLoopFilter) {
         // Verify hex characters
         byte[] plfBytes = HexFormat.of().parseHex(pollingLoopFilter);
@@ -920,7 +914,6 @@ public final class CardEmulation {
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_NFC_READ_POLLING_LOOP)
     public static @NonNull String validatePollingLoopPatternFilter(
         @NonNull String pollingLoopPatternFilter) {
         // Verify hex characters

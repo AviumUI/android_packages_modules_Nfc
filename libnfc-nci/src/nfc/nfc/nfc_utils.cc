@@ -151,11 +151,16 @@ tNFC_CONN_CB* nfc_find_conn_cb_by_conn_id(uint8_t conn_id) {
 void nfc_free_conn_cb(tNFC_CONN_CB* p_cb) {
   void* p_buf;
 
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
   if (p_cb == nullptr) return;
 
-  while ((p_buf = GKI_dequeue(&p_cb->rx_q)) != nullptr) GKI_freebuf(p_buf);
+  while ((p_buf = gki_utils->dequeue(&p_cb->rx_q)) != nullptr)
+    gki_utils->freebuf(p_buf);
 
-  while ((p_buf = GKI_dequeue(&p_cb->tx_q)) != nullptr) GKI_freebuf(p_buf);
+  while ((p_buf = gki_utils->dequeue(&p_cb->tx_q)) != nullptr)
+    gki_utils->freebuf(p_buf);
 
   if (p_cb->conn_id <= NFC_MAX_CONN_ID) {
     nfc_cb.conn_id[p_cb->conn_id] = 0;

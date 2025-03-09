@@ -152,7 +152,7 @@ public final class T4tNdefNfcee {
     public @WriteDataStatus int writeData(@IntRange(from = 0, to = 65535) int fileId,
             @NonNull byte[] data) {
         return NfcAdapter.callServiceReturn(() ->
-                NfcAdapter.sNdefNfceeService.writeData(fileId, data), WRITE_DATA_ERROR_INTERNAL);
+                NfcAdapter.getNdefNfceeService().writeData(fileId, data), WRITE_DATA_ERROR_INTERNAL);
     }
 
     /**
@@ -176,7 +176,7 @@ public final class T4tNdefNfcee {
     @RequiresPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
     public byte[] readData(@IntRange(from = 0, to = 65535) int fileId) {
         return NfcAdapter.callServiceReturn(() ->
-            NfcAdapter.sNdefNfceeService.readData(fileId), null);
+            NfcAdapter.getNdefNfceeService().readData(fileId), null);
     }
 
     /**
@@ -226,7 +226,7 @@ public final class T4tNdefNfcee {
     @RequiresPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
     public @ClearDataStatus int clearData() {
         return NfcAdapter.callServiceReturn(() ->
-            NfcAdapter.sNdefNfceeService.clearNdefData(), CLEAR_DATA_FAILED_INTERNAL);
+            NfcAdapter.getNdefNfceeService().clearNdefData(), CLEAR_DATA_FAILED_INTERNAL);
     }
 
     /**
@@ -239,7 +239,7 @@ public final class T4tNdefNfcee {
     @RequiresPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
     public boolean isOperationOngoing() {
         return NfcAdapter.callServiceReturn(() ->
-            NfcAdapter.sNdefNfceeService.isNdefOperationOngoing(), false);
+            NfcAdapter.getNdefNfceeService().isNdefOperationOngoing(), false);
     }
 
     /**
@@ -253,7 +253,7 @@ public final class T4tNdefNfcee {
     @RequiresPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
     public boolean isSupported() {
         return NfcAdapter.callServiceReturn(() ->
-            NfcAdapter.sNdefNfceeService.isNdefNfceeEmulationSupported(), false);
+            NfcAdapter.getNdefNfceeService().isNdefNfceeEmulationSupported(), false);
     }
 
     /**
@@ -271,6 +271,6 @@ public final class T4tNdefNfcee {
     @Nullable
     public T4tNdefNfceeCcFileInfo readCcfile() {
         return NfcAdapter.callServiceReturn(() ->
-            NfcAdapter.sNdefNfceeService.readCcfile(), null);
+            NfcAdapter.getNdefNfceeService().readCcfile(), null);
     }
 }

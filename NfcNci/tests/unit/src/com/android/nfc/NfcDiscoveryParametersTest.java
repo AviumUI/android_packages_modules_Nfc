@@ -16,8 +16,19 @@
 
 package com.android.nfc;
 
-import android.content.Context;
-import android.content.pm.PackageManager;
+import static com.android.nfc.NfcDiscoveryParameters.NFC_POLL_DEFAULT;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
+import android.util.proto.ProtoOutputStream;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -27,10 +38,7 @@ import org.junit.runner.RunWith;
 import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import java.util.Objects;
 
 @RunWith(AndroidJUnit4.class)
 public class NfcDiscoveryParametersTest {
@@ -78,10 +86,10 @@ public class NfcDiscoveryParametersTest {
         boolean shouldEnableReaderMode = nfcDiscoveryParameters.shouldEnableReaderMode();
         boolean shouldEnableHostRouting = nfcDiscoveryParameters.shouldEnableHostRouting();
 
-        Assert.assertFalse(shouldEnableDiscovery);
-        Assert.assertTrue(shouldEnableLowPowerDiscovery);
-        Assert.assertFalse(shouldEnableReaderMode);
-        Assert.assertFalse(shouldEnableHostRouting);
+        assertFalse(shouldEnableDiscovery);
+        assertTrue(shouldEnableLowPowerDiscovery);
+        assertFalse(shouldEnableReaderMode);
+        assertFalse(shouldEnableHostRouting);
 
         nfcDiscoveryParameters = computeDiscoveryParameters();
         shouldEnableDiscovery = nfcDiscoveryParameters.shouldEnableDiscovery();
@@ -89,11 +97,94 @@ public class NfcDiscoveryParametersTest {
         shouldEnableReaderMode = nfcDiscoveryParameters.shouldEnableReaderMode();
         shouldEnableHostRouting = nfcDiscoveryParameters.shouldEnableHostRouting();
 
-        Assert.assertTrue(shouldEnableDiscovery);
-        Assert.assertFalse(shouldEnableLowPowerDiscovery);
-        Assert.assertTrue(shouldEnableReaderMode);
-        Assert.assertTrue(shouldEnableHostRouting);
+        assertTrue(shouldEnableDiscovery);
+        assertFalse(shouldEnableLowPowerDiscovery);
+        assertTrue(shouldEnableReaderMode);
+        assertTrue(shouldEnableHostRouting);
 
     }
 
+    @Test
+    public void testDefaultInstance() {
+        ProtoOutputStream proto = mock(ProtoOutputStream.class);
+        NfcDiscoveryParameters nfcDiscoveryParameters = NfcDiscoveryParameters.getDefaultInstance();
+        nfcDiscoveryParameters.dumpDebug(proto);
+
+        assertNotNull(nfcDiscoveryParameters);
+    }
+
+    @Test
+    public void testToStringDefault() {
+        NfcDiscoveryParameters.Builder builder = NfcDiscoveryParameters.newBuilder();
+        builder.setTechMask(NFC_POLL_DEFAULT);
+        builder.setEnableLowPowerDiscovery(true);
+        builder.setEnableReaderMode(true);
+        builder.setEnableHostRouting(true);
+        NfcDiscoveryParameters nfcDiscoveryParameters = builder.build();
+        String stringBuilder = """
+                mTechMask: default
+                mEnableLPD: false
+                mEnableReader: true
+                mEnableHostRouting: true
+                """;
+
+        assertEquals(stringBuilder, nfcDiscoveryParameters.toString());
+    }
+
+    @Test
+    public void testToString() {
+        NfcDiscoveryParameters.Builder builder = NfcDiscoveryParameters.newBuilder();
+        builder.setTechMask(1);
+        builder.setEnableLowPowerDiscovery(true);
+        builder.setEnableReaderMode(true);
+        builder.setEnableHostRouting(true);
+        NfcDiscoveryParameters nfcDiscoveryParameters = builder.build();
+
+        String stringBuilder = """
+                mTechMask: 1
+                mEnableLPD: false
+                mEnableReader: true
+                mEnableHostRouting: true
+                """;
+
+        assertEquals(stringBuilder, nfcDiscoveryParameters.toString());
+    }
+
+    @Test
+    public void testHashCode() {
+        NfcDiscoveryParameters.Builder builder = NfcDiscoveryParameters.newBuilder();
+        builder.setTechMask(NFC_POLL_DEFAULT);
+        builder.setEnableLowPowerDiscovery(true);
+        builder.setEnableReaderMode(true);
+        builder.setEnableHostRouting(true);
+        NfcDiscoveryParameters nfcDiscoveryParameters = builder.build();
+        int expectedCode = Objects.hash(NFC_POLL_DEFAULT, false, true, true);
+
+        assertEquals(expectedCode, nfcDiscoveryParameters.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        NfcDiscoveryParameters.Builder builder = NfcDiscoveryParameters.newBuilder();
+        builder.setTechMask(NFC_POLL_DEFAULT);
+        builder.setEnableLowPowerDiscovery(true);
+        builder.setEnableReaderMode(true);
+        builder.setEnableHostRouting(true);
+        NfcDiscoveryParameters nfcDiscoveryParameters = builder.build();
+        NfcDiscoveryParameters obj = builder.build();
+
+        assertTrue(nfcDiscoveryParameters.equals(obj));
+    }
+
+    @Test
+    public void testEqualsWithNullObject() {
+        NfcDiscoveryParameters.Builder builder = NfcDiscoveryParameters.newBuilder();
+        builder.setTechMask(NFC_POLL_DEFAULT);
+        builder.setEnableLowPowerDiscovery(true);
+        builder.setEnableReaderMode(true);
+        builder.setEnableHostRouting(true);
+        NfcDiscoveryParameters nfcDiscoveryParameters = builder.build();
+
+        assertFalse(nfcDiscoveryParameters.equals(null));
+    }
 }

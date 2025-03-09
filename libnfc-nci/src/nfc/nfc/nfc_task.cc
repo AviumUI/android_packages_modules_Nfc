@@ -151,11 +151,14 @@ void nfc_process_timer_evt(void) {
 **
 *******************************************************************************/
 void nfc_stop_timer(TIMER_LIST_ENT* p_tle) {
-  GKI_remove_from_timer_list(&nfc_cb.timer_queue, p_tle);
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
+  gki_utils->remove_from_timer_list(&nfc_cb.timer_queue, p_tle);
 
   /* if timer list is empty stop periodic GKI timer */
-  if (GKI_timer_list_empty(&nfc_cb.timer_queue)) {
-    GKI_stop_timer(NFC_TIMER_ID);
+  if (gki_utils->timer_list_empty(&nfc_cb.timer_queue)) {
+    gki_utils->stop_timer(NFC_TIMER_ID);
   }
 }
 
@@ -298,10 +301,13 @@ void nfc_process_quick_timer_evt(void) {
 *******************************************************************************/
 void nfc_task_shutdown_nfcc(void) {
   NFC_HDR* p_msg;
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
 
   /* Free any messages still in the mbox */
-  while ((p_msg = (NFC_HDR*)GKI_read_mbox(NFC_MBOX_ID)) != nullptr) {
-    GKI_freebuf(p_msg);
+  while ((p_msg = (NFC_HDR*)gki_utils->read_mbox(NFC_MBOX_ID)) != nullptr) {
+    gki_utils->freebuf(p_msg);
   }
 
   nfc_gen_cleanup();
@@ -319,9 +325,9 @@ void nfc_task_shutdown_nfcc(void) {
     /* Perform final clean up */
 
     /* Stop the timers */
-    GKI_stop_timer(NFC_TIMER_ID);
-    GKI_stop_timer(NFC_QUICK_TIMER_ID);
-    GKI_stop_timer(NFA_TIMER_ID);
+    gki_utils->stop_timer(NFC_TIMER_ID);
+    gki_utils->stop_timer(NFC_QUICK_TIMER_ID);
+    gki_utils->stop_timer(NFA_TIMER_ID);
   }
 }
 

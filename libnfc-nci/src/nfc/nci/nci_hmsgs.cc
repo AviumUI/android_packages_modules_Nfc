@@ -242,7 +242,9 @@ uint8_t nci_snd_core_conn_create(uint8_t dest_type, uint8_t num_tlv,
   NFC_HDR* p;
   uint8_t* pp;
   uint8_t size = NCI_CORE_PARAM_SIZE_CON_CREATE + tlv_size;
-
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
   p = NCI_GET_CMD_BUF(size);
   if (p == nullptr) return (NCI_STATUS_FAILED);
 

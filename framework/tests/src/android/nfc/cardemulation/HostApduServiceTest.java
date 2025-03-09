@@ -183,7 +183,6 @@ public class HostApduServiceTest {
     public void testHandleMessageWithPollingLoop() {
         Message msg = mock(Message.class);
         msg.what = HostApduService.MSG_POLLING_LOOP;
-        when(Flags.nfcReadPollingLoop()).thenReturn(true);
         when(com.android.nfc.module.flags.Flags.nfcHceLatencyEvents()).thenReturn(true);
 
         mHandler.post(() -> {

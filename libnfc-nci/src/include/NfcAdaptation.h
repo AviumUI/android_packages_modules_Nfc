@@ -62,6 +62,7 @@ class ThreadCondVar : public ThreadMutex {
   virtual ~ThreadCondVar();
   void signal();
   void wait();
+  bool wait(long millisec);
   explicit operator pthread_cond_t*() { return &mCondVar; }
   // NOLINTNEXTLINE(google-explicit-constructor)
   operator pthread_mutex_t*() {
@@ -124,6 +125,8 @@ class NfcAdaptation {
 
   static void HalInitialize();
   static void HalTerminate();
+  static void HalOpenInternal(tHAL_NFC_CBACK* p_hal_cback,
+                              tHAL_NFC_DATA_CBACK* p_data_cback);
   static void HalOpen(tHAL_NFC_CBACK* p_hal_cback,
                       tHAL_NFC_DATA_CBACK* p_data_cback);
   static void HalClose();

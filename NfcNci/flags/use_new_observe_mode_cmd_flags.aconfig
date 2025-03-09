@@ -1,9 +1,0 @@
-package: "com.android.nfc.flags"
-container: "system"
-
-flag {
-    name: "use_new_observe_mode_cmd"
-    namespace: "wallet_integration"
-    description: "Use the per technology observe mode command."
-    bug: "365533082"
-}

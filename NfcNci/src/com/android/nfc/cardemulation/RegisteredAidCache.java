@@ -16,7 +16,6 @@
 
 package com.android.nfc.cardemulation;
 
-import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -138,17 +137,15 @@ public class RegisteredAidCache {
         List<ApduServiceInfo> services = new ArrayList<ApduServiceInfo>();
         ApduServiceInfo defaultService = null;
         String category = null;
-        boolean mustRoute = true; // Whether this AID should be routed at all
         ResolvedPrefixConflictAid prefixInfo = null;
         List<String> unCheckedOffHostSecureElement = new ArrayList<>();
         @Override
         public String toString() {
-            return "AidResolveInfo{" +
-                    "services=" + services +
-                    ", defaultService=" + defaultService +
-                    ", category='" + category + '\'' +
-                    ", mustRoute=" + mustRoute +
-                    '}';
+            return "AidResolveInfo{"
+                    + "services=" + services
+                    + ", defaultService=" + defaultService
+                    + ", category='" + category
+                    + '}';
         }
 
         String getCategory() {
@@ -292,7 +289,6 @@ public class RegisteredAidCache {
     }
 
     @TargetApi(35)
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     ApduServiceInfo resolvePollingLoopFilterConflict(List<ApduServiceInfo> conflictingServices) {
         ApduServiceInfo matchedForeground = null;
         List<ApduServiceInfo> roleHolderServices = new ArrayList<>();
@@ -980,7 +976,6 @@ public class RegisteredAidCache {
                             // host, so we can ask the user which service is preferred.
                             // Since these are all "children" of the prefix, they don't need
                             // to be routed, since the prefix will already get routed to the host
-                            resolveInfo.mustRoute = false;
                             ArrayList<ApduServiceInfo> list = new ArrayList<>();
                             for (int i = 0; i < entry.getValue().size(); i++) {
                                 list.add(entry.getValue().get(i).service);
@@ -1073,7 +1068,6 @@ public class RegisteredAidCache {
                             // host, so we can ask the user which service is preferred.
                             // Since these are all "children" of the subset, they don't need
                             // to be routed, since the subset will already get routed to the host
-                            resolveInfo.mustRoute = false;
                             ArrayList<ApduServiceInfo> list = new ArrayList<>();
                             for (int i = 0; i < entry.getValue().size(); i++) {
                                 list.add(entry.getValue().get(i).service);
@@ -1170,10 +1164,6 @@ public class RegisteredAidCache {
                 mAidCache.entrySet()) {
             String aid = aidEntry.getKey();
             AidResolveInfo resolveInfo = aidEntry.getValue();
-            if (!resolveInfo.mustRoute) {
-                if (DBG) Log.d(TAG, "Not routing AID " + aid + " on request.");
-                continue;
-            }
             AidRoutingManager.AidEntry aidType = mRoutingManager.new AidEntry();
             if (aid.endsWith("#")) {
                 aidType.aidInfo |= AID_ROUTE_QUAL_SUBSET;

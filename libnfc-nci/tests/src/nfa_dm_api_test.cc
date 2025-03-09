@@ -230,18 +230,18 @@ protected:
 };
 
 TEST_F(NfaRegisterNDefUriHandlerTest, ValidParameters) {
-    uint8_t uri[] = "tel:";
-    uint8_t uri_len = sizeof(uri) - 1;
-    tNFA_DM_API_REG_NDEF_HDLR expected_msg = {};
-    expected_msg.flags = NFA_NDEF_FLAGS_WKT_URI;
-    expected_msg.tnf = NFA_TNF_WKT;
-    expected_msg.uri_id = NFA_NDEF_URI_ID_ABSOLUTE;
-    expected_msg.name_len = uri_len;
-    memcpy(expected_msg.name, uri, uri_len);
-    expected_msg.p_ndef_cback = &mock_callback;
-    EXPECT_EQ(NFA_RegisterNDefUriHandler(
-            true, NFA_NDEF_URI_ID_ABSOLUTE,
-            uri, uri_len, mock_callback), NFA_STATUS_OK);
+  uint8_t uri[] = { 'U' };
+  uint8_t uri_len = sizeof(uri);
+  tNFA_DM_API_REG_NDEF_HDLR expected_msg = {};
+  expected_msg.flags = NFA_NDEF_FLAGS_WKT_URI;
+  expected_msg.tnf = NFA_TNF_WKT;
+  expected_msg.uri_id = NFA_NDEF_URI_ID_ABSOLUTE;
+  expected_msg.name_len = uri_len;
+  memcpy(expected_msg.name, uri, uri_len);
+  expected_msg.p_ndef_cback = &mock_callback;
+  EXPECT_EQ(NFA_RegisterNDefUriHandler(true, NFA_NDEF_URI_ID_ABSOLUTE, uri,
+                                       uri_len, mock_callback),
+            NFA_STATUS_OK);
 }
 
 TEST_F(NfaRegisterNDefUriHandlerTest, NullCallback) {
@@ -259,17 +259,17 @@ TEST_F(NfaRegisterNDefUriHandlerTest, MemoryAllocationFailure) {
 }
 
 TEST_F(NfaRegisterNDefUriHandlerTest, InvalidUriId) {
-    uint8_t uri[] = "tel:";
-    uint8_t uri_len = sizeof(uri) - 1;
-    tNFA_DM_API_REG_NDEF_HDLR expected_msg = {};
-    expected_msg.flags = NFA_NDEF_FLAGS_WKT_URI;
-    expected_msg.tnf = NFA_TNF_WKT;
-    expected_msg.uri_id = NFA_NDEF_URI_ID_HTTP;
-    expected_msg.name_len = 0;
-    expected_msg.p_ndef_cback = &mock_callback;
-    EXPECT_EQ(NFA_RegisterNDefUriHandler(
-            true, NFA_NDEF_URI_ID_HTTP, uri,
-            uri_len, &mock_callback), NFA_STATUS_OK);
+  uint8_t uri[] = { 'U' };
+  uint8_t uri_len = sizeof(uri);
+  tNFA_DM_API_REG_NDEF_HDLR expected_msg = {};
+  expected_msg.flags = NFA_NDEF_FLAGS_WKT_URI;
+  expected_msg.tnf = NFA_TNF_WKT;
+  expected_msg.uri_id = NFA_NDEF_URI_ID_HTTP;
+  expected_msg.name_len = 0;
+  expected_msg.p_ndef_cback = &mock_callback;
+  EXPECT_EQ(NFA_RegisterNDefUriHandler(true, NFA_NDEF_URI_ID_HTTP, uri, uri_len,
+                                       &mock_callback),
+            NFA_STATUS_OK);
 }
 
 class NfaReleaseExclusiveRfControlTest : public testing::Test {

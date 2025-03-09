@@ -1198,7 +1198,6 @@ public final class NfcServiceTest {
         PollingFrame pollingFrame = mock(PollingFrame.class);
         List<PollingFrame> frames = new ArrayList<>();
         frames.add(pollingFrame);
-        when(android.nfc.Flags.nfcReadPollingLoop()).thenReturn(true);
         when(Flags.postCallbacks()).thenReturn(true);
         mNfcService.onPollingLoopDetected(frames);
         mLooper.dispatchAll();

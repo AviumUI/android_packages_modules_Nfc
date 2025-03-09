@@ -1735,6 +1735,9 @@ void nfc_data_event(tNFC_CONN_CB* p_cb) {
   NFC_HDR* p_evt;
   tNFC_DATA_CEVT data_cevt;
   uint8_t* p;
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
 
   if (p_cb->p_cback) {
     while ((p_evt = (NFC_HDR*)GKI_getfirst(&p_cb->rx_q)) != nullptr) {
@@ -1824,6 +1827,9 @@ void nfc_ncif_proc_data(NFC_HDR* p_msg) {
   uint16_t size;
   NFC_HDR* p_max = nullptr;
   uint16_t len;
+  if (!gki_utils) {
+    gki_utils = new GkiUtils();
+  }
 
   pp = (uint8_t*)(p_msg + 1) + p_msg->offset;
   LOG(VERBOSE) << StringPrintf("nfc_ncif_proc_data 0x%02x%02x%02x", pp[0], pp[1],
@@ -1839,7 +1845,7 @@ void nfc_ncif_proc_data(NFC_HDR* p_msg) {
       NFC_SetReassemblyFlag(true);
       p_msg->layer_specific = NFC_RAS_FRAGMENTED;
     }
-    p_last = (NFC_HDR*)GKI_getlast(&p_cb->rx_q);
+    p_last = (NFC_HDR*)gki_utils->getlast(&p_cb->rx_q);
     if (p_last && (p_last->layer_specific & NFC_RAS_FRAGMENTED)) {
       /* last data buffer is not last fragment, append this new packet to the
        * last */
@@ -1849,7 +1855,7 @@ void nfc_ncif_proc_data(NFC_HDR* p_msg) {
          * fragment, p_msg */
         if (size != GKI_MAX_BUF_SIZE) {
           /* try the biggest GKI pool */
-          p_max = (NFC_HDR*)GKI_getpoolbuf(GKI_MAX_BUF_SIZE_POOL_ID);
+          p_max = (NFC_HDR*)gki_utils->getpoolbuf(GKI_MAX_BUF_SIZE_POOL_ID);
           if (p_max) {
             /* copy the content of last buffer to the new buffer */
             memcpy(p_max, p_last, NFC_HDR_SIZE);
@@ -1858,9 +1864,9 @@ void nfc_ncif_proc_data(NFC_HDR* p_msg) {
             memcpy(pd, ps, p_last->len);
 
             /* place the new buffer in the queue instead */
-            GKI_remove_from_queue(&p_cb->rx_q, p_last);
-            GKI_freebuf(p_last);
-            GKI_enqueue(&p_cb->rx_q, p_max);
+            gki_utils->remove_from_queue(&p_cb->rx_q, p_last);
+            gki_utils->freebuf(p_last);
+            gki_utils->enqueue(&p_cb->rx_q, p_max);
             p_last = p_max;
           }
         }
@@ -1882,14 +1888,14 @@ void nfc_ncif_proc_data(NFC_HDR* p_msg) {
          * They are stripped off at NFC_DATA_CEVT and len may exceed 255 */
         LOG(VERBOSE) << StringPrintf("nfc_ncif_proc_data len:%d", p_last->len);
         p_last->layer_specific = p_msg->layer_specific;
-        GKI_freebuf(p_msg);
+        gki_utils->freebuf(p_msg);
         nfc_data_event(p_cb);
       } else {
         /* Not enough memory to add new buffer
          * Send data already in queue first with status Continue */
         nfc_data_event(p_cb);
         /* now enqueue the new buffer to the rx queue */
-        GKI_enqueue(&p_cb->rx_q, p_msg);
+        gki_utils->enqueue(&p_cb->rx_q, p_msg);
       }
     } else {
       /* if this is the first fragment on RF link */
@@ -1899,12 +1905,12 @@ void nfc_ncif_proc_data(NFC_HDR* p_msg) {
         (*p_cb->p_cback)(p_cb->conn_id, NFC_DATA_START_CEVT, nullptr);
       }
       /* enqueue the new buffer to the rx queue */
-      GKI_enqueue(&p_cb->rx_q, p_msg);
+      gki_utils->enqueue(&p_cb->rx_q, p_msg);
       nfc_data_event(p_cb);
     }
     return;
   }
-  GKI_freebuf(p_msg);
+  gki_utils->freebuf(p_msg);
 }
 
 /*******************************************************************************

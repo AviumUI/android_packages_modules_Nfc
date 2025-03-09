@@ -69,7 +69,6 @@ import androidx.test.filters.RequiresDevice;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -609,7 +608,6 @@ public class NfcAdapterTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_NFC_OBSERVE_MODE)
     public void testShouldDefaultToObserveModeAfterNfcOffOn() throws InterruptedException {
         NfcAdapter adapter = getDefaultAdapter();
         adapter.notifyHceDeactivated();
@@ -639,7 +637,6 @@ public class NfcAdapterTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_NFC_OBSERVE_MODE)
     public void testShouldDefaultToObserveModeWithNfcOff() throws InterruptedException {
         NfcAdapter adapter = getDefaultAdapter();
         adapter.notifyHceDeactivated();
@@ -751,12 +748,26 @@ public class NfcAdapterTest {
 
     @Test
     @RequiresDevice
-    @Ignore
     @RequiresFlagsEnabled(Flags.FLAG_NFC_OEM_EXTENSION)
-    public void testOemExtensionMaybeTriggerFirmwareUpdate()
+    public void testOemExtensionMaybeTriggerFirmwareUpdateWhenEnabled()
             throws InterruptedException, RemoteException {
         NfcAdapter nfcAdapter = getDefaultAdapter();
         Assert.assertNotNull(nfcAdapter);
+        NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
+        Assert.assertNotNull(nfcOemExtension);
+        nfcOemExtension.maybeTriggerFirmwareUpdate();
+    }
+
+    @Test
+    @RequiresDevice
+    @RequiresFlagsEnabled(Flags.FLAG_NFC_OEM_EXTENSION)
+    public void testOemExtensionMaybeTriggerFirmwareUpdateWhenDisabled()
+            throws InterruptedException, RemoteException {
+        NfcAdapter nfcAdapter = getDefaultAdapter();
+        Assert.assertNotNull(nfcAdapter);
+        // Disable NFC
+        Assert.assertTrue(NfcUtils.disableNfc(nfcAdapter, mContext));
+        Assert.assertFalse(nfcAdapter.isEnabled());
         NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
         Assert.assertNotNull(nfcOemExtension);
         nfcOemExtension.maybeTriggerFirmwareUpdate();

@@ -1195,7 +1195,6 @@ public class RegisteredServicesCache {
         return true;
     }
 
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public boolean registerPollingLoopFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopFilter,
             boolean autoTransact) {
@@ -1230,7 +1229,6 @@ public class RegisteredServicesCache {
         return true;
     }
 
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public boolean removePollingLoopFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopFilter) {
         ArrayList<ApduServiceInfo> newServices = null;
@@ -1257,7 +1255,6 @@ public class RegisteredServicesCache {
         return true;
     }
 
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public boolean registerPollingLoopPatternFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopPatternFilter,
             boolean autoTransact) {
@@ -1292,7 +1289,6 @@ public class RegisteredServicesCache {
         return true;
     }
 
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
     public boolean removePollingLoopPatternFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopPatternFilter) {
         ArrayList<ApduServiceInfo> newServices = null;
