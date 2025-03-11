@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class RoutingOptionManager {
-    static final String TAG = "RoutingOptionManager";
+    static final String TAG = "NfcRoutingOptionManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
 
     static final int ROUTE_UNKNOWN = -1;
@@ -155,23 +155,41 @@ public class RoutingOptionManager {
     @VisibleForTesting
     RoutingOptionManager() {
         mDefaultRoute = doGetDefaultRouteDestination();
-        if (DBG) Log.d(TAG, "mDefaultRoute=0x" + Integer.toHexString(mDefaultRoute));
+        if (DBG) {
+            Log.d(TAG, "mDefaultRoute=0x" + Integer.toHexString(mDefaultRoute));
+        }
         mDefaultIsoDepRoute = doGetDefaultIsoDepRouteDestination();
-        if (DBG) Log.d(TAG, "mDefaultIsoDepRoute=0x" + Integer.toHexString(mDefaultIsoDepRoute));
+        if (DBG) {
+            Log.d(TAG, "mDefaultIsoDepRoute=0x" + Integer.toHexString(mDefaultIsoDepRoute));
+        }
         mDefaultOffHostRoute = doGetDefaultOffHostRouteDestination();
-        if (DBG) Log.d(TAG, "mDefaultOffHostRoute=0x" + Integer.toHexString(mDefaultOffHostRoute));
+        if (DBG) {
+            Log.d(TAG, "mDefaultOffHostRoute=0x" + Integer.toHexString(mDefaultOffHostRoute));
+        }
         mDefaultFelicaRoute = doGetDefaultFelicaRouteDestination();
-        if (DBG) Log.d(TAG, "mDefaultFelicaRoute=0x" + Integer.toHexString(mDefaultFelicaRoute));
+        if (DBG) {
+            Log.d(TAG, "mDefaultFelicaRoute=0x" + Integer.toHexString(mDefaultFelicaRoute));
+        }
         mDefaultScRoute = doGetDefaultScRouteDestination();
-        if (DBG) Log.d(TAG, "mDefaultScRoute=0x" + Integer.toHexString(mDefaultScRoute));
+        if (DBG) {
+            Log.d(TAG, "mDefaultScRoute=0x" + Integer.toHexString(mDefaultScRoute));
+        }
         mOffHostRouteUicc = doGetOffHostUiccDestination();
-        if (DBG) Log.d(TAG, "mOffHostRouteUicc=" + Arrays.toString(mOffHostRouteUicc));
+        if (DBG) {
+            Log.d(TAG, "mOffHostRouteUicc=" + Arrays.toString(mOffHostRouteUicc));
+        }
         mOffHostRouteEse = doGetOffHostEseDestination();
-        if (DBG) Log.d(TAG, "mOffHostRouteEse=" + Arrays.toString(mOffHostRouteEse));
+        if (DBG) {
+            Log.d(TAG, "mOffHostRouteEse=" + Arrays.toString(mOffHostRouteEse));
+        }
         mAidMatchingSupport = doGetAidMatchingMode();
-        if (DBG) Log.d(TAG, "mAidMatchingSupport=0x" + Integer.toHexString(mAidMatchingSupport));
+        if (DBG) {
+            Log.d(TAG, "mAidMatchingSupport=0x" + Integer.toHexString(mAidMatchingSupport));
+        }
         mNdefNfceeRoute = NativeNfcManager.getInstance().getNdefNfceeRouteId();
-        if (DBG) Log.d(TAG, "mNdefNfceeRoute=0x" + Integer.toHexString(mNdefNfceeRoute));
+        if (DBG) {
+            Log.d(TAG, "mNdefNfceeRoute=0x" + Integer.toHexString(mNdefNfceeRoute));
+        }
 
         mPreferredSimSettings = new SimSettings((mOffHostRouteUicc != null) ?
                 mOffHostRouteUicc.length : 0, 1);
@@ -343,6 +361,15 @@ public class RoutingOptionManager {
 
         addOrUpdateTableItems(SE_PREFIX_SIM, mOffHostRouteUicc);
         addOrUpdateTableItems(SE_PREFIX_ESE, mOffHostRouteEse);
+
+        for (Map.Entry<String, Integer> entry : mRouteForSecureElement.entrySet()) {
+            Log.d(TAG, "createLookUpTable: route=" + entry.getKey() + ", nfceeId="
+                    + Integer.toHexString(entry.getValue()));
+        }
+        for (Map.Entry<Integer, String> entry : mSecureElementForRoute.entrySet()) {
+            Log.d(TAG, "createLookUpTable: nfceeId=" + Integer.toHexString(entry.getKey())
+                    + ", route=" + entry.getValue());
+        }
     }
 
     boolean isRoutingTableOverwrittenOrOverlaid(
@@ -467,15 +494,6 @@ public class RoutingOptionManager {
                 mRouteForSecureElement.putIfAbsent(name, route);
                 mSecureElementForRoute.putIfAbsent(route, name);
             }
-        }
-
-        for (Map.Entry<String, Integer> entry : mRouteForSecureElement.entrySet()) {
-            Log.d(TAG, "addOrUpdateTableItems: route: " + entry.getKey() + ", nfceeId: "
-                    + Integer.toHexString(entry.getValue()));
-        }
-        for (Map.Entry<Integer, String> entry : mSecureElementForRoute.entrySet()) {
-            Log.d(TAG, "addOrUpdateTableItems: nfceeId: " + Integer.toHexString(entry.getKey())
-                    + ", route: " + entry.getValue());
         }
     }
 }

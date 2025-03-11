@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PreferredSubscriptionService implements TelephonyUtils.Callback {
-    static final String TAG = "PreferredSubscriptionService";
+    static final String TAG = "NFCPreferredSubscriptionService";
     static final String PREF_SUBSCRIPTION = "SubscriptionPref";
     static final String PREF_PREFERRED_SUB_ID = "pref_sub_id";
     private SharedPreferences mSubscriptionPrefs = null;

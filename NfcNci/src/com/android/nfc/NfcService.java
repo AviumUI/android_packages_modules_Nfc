@@ -116,7 +116,6 @@ import android.util.EventLog;
 import android.util.Log;
 import android.util.Pair;
 import android.util.proto.ProtoOutputStream;
-import android.view.Display;
 import android.widget.Toast;
 
 import androidx.annotation.VisibleForTesting;
@@ -177,7 +176,7 @@ import java.util.stream.Collectors;
 
 public class NfcService implements DeviceHostListener, ForegroundUtils.Callback {
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    private static final boolean VDBG = false; // turn on for local testing.
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
     static final String TAG = "NfcService";
     private static final int APP_INFO_FLAGS_SYSTEM_APP =
             ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
@@ -5256,7 +5255,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
                 case MSG_APPLY_SCREEN_STATE:
                     mScreenState = (Integer)msg.obj;
-                    Log.d(TAG, "handleMessage: MSG_APPLY_SCREEN_STATE"
+                    Log.d(TAG, "handleMessage: MSG_APPLY_SCREEN_STATE "
                             + ScreenStateHelper.screenStateToString(mScreenState));
 
                     synchronized (NfcService.this) {

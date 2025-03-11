@@ -66,7 +66,7 @@ public class RegisteredNfcFServicesCache {
     static final String XML_INDENT_OUTPUT_FEATURE = "http://xmlpull.org/v1/doc/features.html#indent-output";
     static final String TAG = "RegisteredNfcFServicesCache";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    private static final boolean VDBG = false; // turn on for local testing.
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
 
     final Context mContext;
     final AtomicReference<BroadcastReceiver> mReceiver;

@@ -28,6 +28,7 @@ import android.nfc.cardemulation.ApduServiceInfo;
 import android.nfc.cardemulation.CardEmulation;
 import android.os.Bundle;
 import android.os.UserHandle;
+import android.sysprop.NfcProperties;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -41,7 +42,8 @@ import com.android.nfc.cardemulation.util.AlertActivity;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class TapAgainDialog extends AlertActivity implements DialogInterface.OnClickListener {
-    private static final String TAG = "TapAgainDialog";
+    private static final String TAG = "NfcTapAgainDialog";
+    static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
     public static final String ACTION_CLOSE =
             "com.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG";
     public static final String EXTRA_APDU_SERVICE = "apdu_service";
@@ -56,7 +58,9 @@ public class TapAgainDialog extends AlertActivity implements DialogInterface.OnC
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        if (DBG) {
+            Log.d(TAG, "onCreate");
+        }
         setTheme(com.android.nfc.R.style.TapAgainDayNight);
 
         final NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
