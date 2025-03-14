@@ -29,6 +29,15 @@
 
 using namespace std;
 
+typedef struct {
+  tNFA_HANDLE nfcee_id;
+  tNFA_TECHNOLOGY_MASK tech_mask;
+} t_NfceeListenConfig;
+typedef struct {
+  t_NfceeListenConfig config[NFA_EE_MAX_EE_SUPPORTED];
+  uint8_t nb_config;
+} t_NfceeListenInfo;
+
 class RoutingManager {
  public:
   static RoutingManager& getInstance();
@@ -80,6 +89,8 @@ class RoutingManager {
   void updateDefaultRoute();
   bool isTypeATypeBTechSupportedInEe(tNFA_HANDLE eeHandle);
 
+  bool checkUiccListenConfigNeeded(tNFA_HANDLE eeHandle,
+                                   tNFA_TECHNOLOGY_MASK seTechMask);
   // See AidRoutingManager.java for corresponding
   // AID_MATCHING_ constants
 
@@ -144,6 +155,7 @@ class RoutingManager {
   tNFA_EE_DISCOVER_REQ mEeInfo;
   tNFA_TECHNOLOGY_MASK mSeTechMask;
   static const JNINativeMethod sMethods[];
+  t_NfceeListenInfo mNfceeListenConfig;
   SyncEvent mEeRegisterEvent;
   SyncEvent mEeInfoEvent;
   SyncEvent mEeSetModeEvent;
