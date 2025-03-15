@@ -82,12 +82,5 @@ flag {
     bug: "312390070"
 }
 
-flag {
-    name: "removal_detection"
-    namespace: "nfc"
-    description: "Use removal detection to replace legacy presence check"
-    bug: "357505987"
-}
-
 # Don't add any new flags for Android 16+ targeting features. Use the flags
 # in com.android.nfc.module.flags (packages/modules/Nfc/flags) instead.

@@ -30,6 +30,7 @@ import static com.android.nfc.NfcService.SOUND_ERROR;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyFloat;
@@ -2243,12 +2244,15 @@ public final class NfcServiceTest {
 
     @Test
     public void testSetFirmwareExitFrameTable() {
+        createNfcServiceWithoutStatsdUtils();
         ArgumentCaptor<ExitFrame[]> frameCaptor = ArgumentCaptor.forClass(ExitFrame[].class);
         ArgumentCaptor<byte[]> timeoutCaptor = ArgumentCaptor.forClass(byte[].class);
+        when(mDeviceHost.setFirmwareExitFrameTable(any(), any())).thenReturn(true);
 
-        mNfcService.setFirmwareExitFrameTable(Collections.singletonList(new ExitFrame("1234")),
-                5000);
+        boolean result = mNfcService.setFirmwareExitFrameTable(
+            Collections.singletonList(new ExitFrame("1234")), 5000);
 
+        assertTrue("setFirmwareExitFrameTable should return true", result);
         verify(mDeviceHost).setFirmwareExitFrameTable(frameCaptor.capture(),
                 timeoutCaptor.capture());
         ExitFrame[] frames = frameCaptor.getValue();
@@ -2257,18 +2261,22 @@ public final class NfcServiceTest {
         byte[] timeoutBytes = timeoutCaptor.getValue();
         // 5000 in little-endian bytes
         assertArrayEquals(new byte[] {(byte) 0x88, 0x13}, timeoutBytes);
+        verify(mStatsdUtils).logExitFrameTableChanged(1, 5000);
     }
-
 
     @Test
     public void testSetFirmwareExitFrameTable_largeTimeout() {
+        createNfcServiceWithoutStatsdUtils();
         ArgumentCaptor<byte[]> timeoutCaptor = ArgumentCaptor.forClass(byte[].class);
+        when(mDeviceHost.setFirmwareExitFrameTable(any(), any())).thenReturn(true);
 
-        mNfcService.setFirmwareExitFrameTable(Collections.singletonList(new ExitFrame("1234")),
-                500000);
+        boolean result = mNfcService.setFirmwareExitFrameTable(
+            Collections.singletonList(new ExitFrame("1234")), 500000);
 
+        assertTrue("setFirmwareExitFrameTable should return true", result);
         verify(mDeviceHost).setFirmwareExitFrameTable(any(), timeoutCaptor.capture());
         byte[] timeoutBytes = timeoutCaptor.getValue();
         assertArrayEquals(new byte[] {(byte) 0xFF, (byte) 0xFF}, timeoutBytes);
+        verify(mStatsdUtils).logExitFrameTableChanged(1, 500000);
     }
 }

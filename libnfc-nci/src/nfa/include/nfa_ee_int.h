@@ -530,6 +530,8 @@ typedef struct {
   tNFA_EE_FLAGS ee_flags;      /* flags                            */
   uint8_t route_block_control; /* controls route block feature   */
   bool isDiscoveryStopped;     /* discovery status                  */
+  uint8_t nfcee_id;            /* NFCEE ID */
+  uint8_t mode;                /* Mode */
 } tNFA_EE_CB;
 
 /* Order of Routing entries in Routing Table */

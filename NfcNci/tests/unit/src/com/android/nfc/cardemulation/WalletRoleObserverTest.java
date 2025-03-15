@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
@@ -231,7 +231,7 @@ public class WalletRoleObserverTest {
         mWalletRoleObserver.mOnRoleHoldersChangedListener
                 .onRoleHoldersChanged(RoleManager.ROLE_ASSISTANT, USER_HANDLE);
 
-        verifyZeroInteractions(mCallback);
+        verifyNoMoreInteractions(mCallback);
     }
 
     @Test

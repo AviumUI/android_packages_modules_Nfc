@@ -25,6 +25,7 @@ import static com.android.nfc.ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED;
 
 import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.Application;
@@ -289,7 +290,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
     // Time to wait for routing to be applied before watchdog
     // goes off
-    static final int ROUTING_WATCHDOG_MS = 10000;
+    static final int ROUTING_WATCHDOG_MS = 6000;
 
     // Default delay used for presence checks
     static final int DEFAULT_PRESENCE_CHECK_DELAY = 125;
@@ -334,11 +335,11 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     private static final int NCI_STATUS_MESSAGE_CORRUPTED = 0x02;
     private static final int NCI_STATUS_FAILED = 0x03;
     private static final int SEND_VENDOR_CMD_TIMEOUT_MS = 3_000;
-    private static final int CHECK_FIRMWARE_TIMEOUT_MS = 8_000;
+    private static final int CHECK_FIRMWARE_TIMEOUT_MS = 60_000;
     private static final int NCI_GID_PROP = 0x0F;
     private static final int NCI_MSG_PROP_ANDROID = 0x0C;
     private static final int NCI_MSG_PROP_ANDROID_POWER_SAVING = 0x01;
-    private static final int NCI_PROP_ANDROID_QUERY_POWER_SAVING_STATUS_CMD = 0x05;
+    private static final int NCI_PROP_ANDROID_QUERY_POWER_SAVING_STATUS_CMD = 0x0A;
     private static final int POWER_STATE_SWITCH_ON = 0x01;
 
     public static final int WAIT_FOR_OEM_CALLBACK_TIMEOUT_MS = 3000;
@@ -528,6 +529,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     private final FeatureFlags mFeatureFlags;
     private final Set<INfcWlcStateListener> mWlcStateListener =
             Collections.synchronizedSet(new HashSet<>());
+    @Nullable
     private final StatsdUtils mStatsdUtils;
     private final boolean mCheckDisplayStateForScreenState;
 
@@ -1178,8 +1180,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             addThermalStatusListener();
         }
 
-        mIsRDCapable = Flags.removalDetection() &&
-                mContext.getResources().getBoolean(R.bool.removal_detection_default);
+        mIsRDCapable = mContext.getResources().getBoolean(R.bool.removal_detection_default);
 
         mIsHceCapable =
                 pm.hasSystemFeature(PackageManager.FEATURE_NFC_HOST_CARD_EMULATION) ||
@@ -4725,9 +4726,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
      * get info on NDEF-NFCEE feature from HAL config file
      */
     public boolean isNdefNfceefeatureEnabled() {
-        boolean status = mDeviceHost.isNdefNfceefeatureEnabled();
-        if (DBG) Log.d(TAG, "isNdefNfceefeatureEnabled() - status:" + status);
-        return status;
+        return mDeviceHost.isNdefNfceefeatureEnabled();
     }
 
     public boolean sendData(byte[] data) {
@@ -4852,12 +4851,20 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         if (mState == NfcAdapter.STATE_OFF
                                 || mState == NfcAdapter.STATE_TURNING_OFF) {
                             Log.d(TAG, "Skip commit routing when NFCC is off or turning off");
+                            if (mCommitRoutingCountDownLatch != null) {
+                                mCommitRoutingStatus = STATUS_UNKNOWN_ERROR;
+                                mCommitRoutingCountDownLatch.countDown();
+                            }
                             return;
                         }
                         if (mCurrentDiscoveryParameters.shouldEnableDiscovery()) {
                             if (mNfcOemExtensionCallback != null) {
                                 if (receiveOemCallbackResult(ACTION_ON_ROUTING_CHANGED)) {
                                     Log.e(TAG, "Oem skip commitRouting");
+                                    if (mCommitRoutingCountDownLatch != null) {
+                                        mCommitRoutingStatus = STATUS_UNKNOWN_ERROR;
+                                        mCommitRoutingCountDownLatch.countDown();
+                                    }
                                     return;
                                 }
                             }
@@ -5168,9 +5175,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     if (!isNfcEnabled()) break;
                     if (DBG) Log.d(TAG, "Clear routing table");
                     int clearFlags = (Integer)msg.obj;
-                    if (isNfcEnabled()) {
-                        mDeviceHost.clearRoutingEntry(clearFlags);
-                    }
+                    mDeviceHost.clearRoutingEntry(clearFlags);
                     break;
                 case MSG_UPDATE_ISODEP_PROTOCOL_ROUTE:
                     if (DBG) Log.d(TAG, "Update IsoDep Protocol Route");
@@ -6131,8 +6136,14 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             timeoutBytes[1] = (byte) (timeoutMs >> 8);
         }
 
-        return mDeviceHost.setFirmwareExitFrameTable(exitFrames.toArray(ExitFrame[]::new),
+        boolean result = mDeviceHost.setFirmwareExitFrameTable(exitFrames.toArray(ExitFrame[]::new),
                 timeoutBytes);
+
+        if (result && mStatsdUtils != null) {
+            mStatsdUtils.logExitFrameTableChanged(exitFrames.size(), timeoutMs);
+        }
+
+        return result;
     }
 }
 

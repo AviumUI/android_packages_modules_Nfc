@@ -16,7 +16,7 @@
 
 import logging
 import struct
-from typing import Optional, Dict
+from typing import Any, Dict, Mapping, Optional, Sequence
 from enum import IntEnum
 from binascii import hexlify
 
@@ -29,6 +29,7 @@ from .tag import TypeATag, TypeBTag
 from .nfcutils import ByteStruct, snake_to_camel, s_to_us
 from .nfcutils.reader import Reader, CONFIGURATION_A_LONG
 
+MOBLY_CONTROLLER_CONFIG_NAME = "PN532"
 
 _LONG_PREAMBLE = bytes(20)
 _ACK_FRAME = bytes.fromhex("0000ff00ff00")
@@ -290,13 +291,54 @@ class Status(IntEnum):
     INTERNAL_BUFFER_OVERFLOW = 0x0E
     INVALID_PARAMETER = 0x10
 
+class Error(Exception):
+  """The PN532 controller configs encounters error."""
+
+
+def create(configs: list[dict[str, Any]]) -> list["PN532"]:
+    """Creates PN532 instances."""
+    if not configs:
+        raise Error(f'Missing configuration {configs!r}.')
+    return [PN532(config["path"]) for config in configs]
+
+
+def destroy(devices: list["PN532"]) -> None:
+    """Closes all created PN532 instances."""
+    del devices  # Unused.
+
+
+def get_info(devices: Sequence["PN532"]) -> Sequence[Mapping[str, Any]]:
+    """Gets info from the PN532 objects used in a test run.
+
+    Args:
+        devices: A list of PN532 objects.
+
+    Returns:
+        A list of dict, each representing info for a device object.
+    """
+    return [d.get_info() for d in devices]
+
 
 class PN532(Reader):
-    """Implements an NFC reader with a PN532 chip"""
+    """Implements an NFC reader with a PN532 chip.
+
+    Mobly uses this to instantiate PN532 controller objects from configs.
+    The configs come from Mobly configs that look like:
+
+        ```config.yaml
+        TestBeds:
+        - Name: SampleTestBed
+          Controllers:
+            PN532:
+            - path: '/dev/ttyUSB0'
+        ```
+    """
 
     def __init__(self, path):
         """Initializes device on path,
         or first available serial port if none is provided."""
+        self.path = path
+
         if len(comports()) == 0:
             raise IndexError(
                 "Could not find device on serial port"
@@ -332,6 +374,9 @@ class PN532(Reader):
                 0x00,  # MxRtyPassiveActivation
             ],
         )
+
+    def get_info(self) -> dict[str, Any]:
+        return {"serial": self.path}
 
     # Custom functions
 

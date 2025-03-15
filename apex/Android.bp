@@ -45,7 +45,6 @@ custom_apex {
     manifest: "manifest.json",
     apps: ["NfcNciApex"],
     defaults: ["b-launched-apex-module"],
-    min_sdk_version: "36",
     multilib: {
         first: {
             // Extractor process runs only with the primary ABI.

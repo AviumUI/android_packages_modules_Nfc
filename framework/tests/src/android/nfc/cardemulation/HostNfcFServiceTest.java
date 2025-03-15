@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import android.os.Bundle;
@@ -120,7 +120,7 @@ public class HostNfcFServiceTest {
         when(mMockMessage.getData()).thenReturn(null);
 
         mhandler.handleMessage(mMockMessage);
-        verifyZeroInteractions(mHostNfcFService);
+        verifyNoMoreInteractions(mHostNfcFService);
     }
 
     @Test

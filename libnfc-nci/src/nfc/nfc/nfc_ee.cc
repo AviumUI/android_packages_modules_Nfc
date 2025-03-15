@@ -27,6 +27,7 @@
 
 #include "gki.h"
 #include "nci_hmsgs.h"
+#include "nfa_ee_int.h"
 #include "nfc_api.h"
 #include "nfc_int.h"
 #include "nfc_target.h"
@@ -81,6 +82,8 @@ tNFC_STATUS NFC_NfceeModeSet(uint8_t nfcee_id, tNFC_NFCEE_MODE mode) {
     if (nfc_cb.flags & NFC_FL_WAIT_MODE_SET_NTF)
       status = NFC_STATUS_REFUSED;
     else {
+      nfa_ee_cb.nfcee_id = nfcee_id;
+      nfa_ee_cb.mode = mode;
       status = nci_snd_nfcee_mode_set(nfcee_id, mode);
       if (status == NCI_STATUS_OK) {
         /* Mode set command is successfully queued or sent.

@@ -156,8 +156,8 @@ public class RegisteredComponentCache {
     protected void finalize() throws Throwable {
         if (mReceiver.get() != null) {
             Log.e(TAG, "RegisteredServicesCache finalized without being closed");
+            close();
         }
-        close();
         super.finalize();
     }
 

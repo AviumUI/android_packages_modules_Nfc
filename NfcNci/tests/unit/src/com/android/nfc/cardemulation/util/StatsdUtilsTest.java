@@ -18,37 +18,59 @@ package com.android.nfc.cardemulation.util;
 
 import static android.nfc.cardemulation.PollingFrame.POLLING_LOOP_TYPE_UNKNOWN;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
 import static com.android.nfc.NfcStatsLog.NFC_POLLING_LOOP_NOTIFICATION_REPORTED__PROPRIETARY_FRAME_TYPE__ECP_V1;
 import static com.android.nfc.NfcStatsLog.NFC_POLLING_LOOP_NOTIFICATION_REPORTED__PROPRIETARY_FRAME_TYPE__ECP_V2;
 import static com.android.nfc.NfcStatsLog.NFC_POLLING_LOOP_NOTIFICATION_REPORTED__PROPRIETARY_FRAME_TYPE__PROPRIETARY_FRAME_UNKNOWN;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_HCE_OTHER;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_HCE_PAYMENT;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_NO_ROUTING;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_OFFHOST;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_OFFHOST_OTHER;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_OFFHOST_PAYMENT;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_OTHER_DC_BOUND;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_OTHER_DC_RESPONSE;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_OTHER_WRONG_SETTING;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_PAYMENT_DC_BOUND;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_PAYMENT_DC_RESPONSE;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_PAYMENT_WRONG_SETTING;
+import static com.android.nfc.cardemulation.util.StatsdUtils.CE_UNKNOWN;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.nfc.cardemulation.PollingFrame;
-import android.os.Bundle;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import com.android.nfc.NfcStatsLog;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Rule;
-import org.junit.runner.RunWith;
-import org.mockito.MockitoSession;
-
-import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
-import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import android.nfc.cardemulation.CardEmulation;
+import android.nfc.cardemulation.PollingFrame;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.android.nfc.NfcStatsLog;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.MockitoSession;
+
+import java.lang.reflect.Field;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.util.Objects;
 
 @RunWith(AndroidJUnit4.class)
 public class StatsdUtilsTest {
     private final StatsdUtils mStatsdUtils = spy(new StatsdUtils(new StatsdUtilsContext()));
+
+    class CoverageSample extends StatsdUtils.PollingFrameLog {
+        CoverageSample(byte[] data) {
+            super(data);
+        }
+    }
 
     @Test
     public void testGetFrameType() {
@@ -171,9 +193,9 @@ public class StatsdUtilsTest {
                     LATENCY_MS);
 
             verify(() -> NfcStatsLog.write(NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED,
-                NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__STATE__OBSERVE_MODE_ENABLED,
-                NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__FOREGROUND_APP,
-                LATENCY_MS));
+                    NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__STATE__OBSERVE_MODE_ENABLED,
+                    NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__FOREGROUND_APP,
+                    LATENCY_MS));
         } finally {
             session.finishMocking();
         }
@@ -189,14 +211,255 @@ public class StatsdUtilsTest {
                     LATENCY_MS);
 
             verify(() -> NfcStatsLog.write(NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED,
-                NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__STATE__OBSERVE_MODE_ENABLED,
-                NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__AUTO_TRANSACT,
-                LATENCY_MS));
+                    NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__STATE__OBSERVE_MODE_ENABLED,
+                    NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__AUTO_TRANSACT,
+                    LATENCY_MS));
         } finally {
             session.finishMocking();
         }
     }
 
+    @Test
+    public void testGetCardEmulationStatsdCategoryForSuccessResultPayment()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, -100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+        mStatsdUtils.logErrorEvent(NfcStatsLog.NFC_ERROR_OCCURRED__TYPE__HCE_LATE_BINDING);
+        mStatsdUtils.notifyCardEmulationEventResponseReceived();
+
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_PAYMENT);
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_HCE_PAYMENT, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForSuccessWithOther()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, -100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_OTHER);
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_HCE_OTHER, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForSuccessWithUnknown()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, -100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.setCardEmulationEventCategory("unknown");
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_UNKNOWN, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForDcBefrBoundWithPayment()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, 100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_PAYMENT);
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_PAYMENT_DC_BOUND, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForDcBefrBoundWithOther()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, 100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_OTHER);
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_OTHER_DC_BOUND, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForcBefrBoundWithUnknown()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, 100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.setCardEmulationEventCategory("unknown");
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_UNKNOWN, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForDcBefrResponseWithPayment()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, -100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.notifyCardEmulationEventWaitingForResponse();
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_PAYMENT);
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_PAYMENT_DC_RESPONSE, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForDcBefrResponseWithOther()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, -100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.notifyCardEmulationEventWaitingForResponse();
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_OTHER);
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_OTHER_DC_RESPONSE, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForDcBefrResponseWithUnknown()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mBindingStartTimeMillis");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, -100);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.notifyCardEmulationEventWaitingForResponse();
+        mStatsdUtils.setCardEmulationEventCategory("unknown");
+        mStatsdUtils.logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_UNKNOWN, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForWrongAppWithPayment() {
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_PAYMENT);
+
+        mStatsdUtils.logCardEmulationWrongSettingEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_PAYMENT_WRONG_SETTING, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForWrongAppWithOther() {
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_OTHER);
+
+        mStatsdUtils.logCardEmulationWrongSettingEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_OTHER_WRONG_SETTING, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForWrongAppWithUnknown() {
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+        mStatsdUtils.setCardEmulationEventCategory("unknown");
+
+        mStatsdUtils.logCardEmulationWrongSettingEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_UNKNOWN, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetCardEmulationStatsdCategoryForNoRoutingForAid() {
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+        mStatsdUtils.setCardEmulationEventCategory("unknown");
+
+        mStatsdUtils.logCardEmulationNoRoutingEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_NO_ROUTING, captor.getValue().intValue());
+    }
+
+
+    @Test
+    public void testPollingFrameLogToString() {
+        CoverageSample coverageSample = new CoverageSample(ECP_V1_PAYMENT);
+        String expected = "PollingFrameLog{repeatCount="
+                + 1
+                + ", frameType="
+                + NFC_POLLING_LOOP_NOTIFICATION_REPORTED__PROPRIETARY_FRAME_TYPE__ECP_V1
+                + "}";
+
+        assertEquals(expected, coverageSample.toString());
+    }
+
+    @Test
+    public void testPollingFrameLogHashCode() {
+        CoverageSample coverageSample = new CoverageSample(ECP_V1_PAYMENT);
+
+        assertEquals(Objects.hash(1,
+                        NFC_POLLING_LOOP_NOTIFICATION_REPORTED__PROPRIETARY_FRAME_TYPE__ECP_V1),
+                coverageSample.hashCode());
+    }
+
+    @Test
+    public void testLogCardEmulationNoRoutingEvent()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mTransactionCategory");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, CardEmulation.EXTRA_CATEGORY);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.logCardEmulationNoRoutingEvent();
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_NO_ROUTING, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testLogCardEmulationOffhostEventForOffHostPayment()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mTransactionCategory");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, CardEmulation.CATEGORY_PAYMENT);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.logCardEmulationOffhostEvent("");
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_OFFHOST_PAYMENT, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testLogCardEmulationOffhostEventForOffHostOthers()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = StatsdUtils.class.getDeclaredField("mTransactionCategory");
+        field.setAccessible(true);
+        field.set(mStatsdUtils, CardEmulation.CATEGORY_OTHER);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.logCardEmulationOffhostEvent("");
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_OFFHOST_OTHER, captor.getValue().intValue());
+    }
+
+    @Test
+    public void testLogCardEmulationOffhostEvent() {
+        mStatsdUtils.setCardEmulationEventCategory(CardEmulation.EXTRA_CATEGORY);
+        ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+
+        mStatsdUtils.logCardEmulationOffhostEvent("");
+        verify(mStatsdUtils).logCardEmulationEvent(captor.capture());
+        assertEquals(CE_OFFHOST, captor.getValue().intValue());
+    }
 
     private static final int GAIN_1 = 42;
     private static final int GAIN_2 = 25;

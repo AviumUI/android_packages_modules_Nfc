@@ -434,7 +434,8 @@ public final class NfcAdapter {
     /**
      * Flags for use with {@link #setDiscoveryTechnology(Activity, int, int)}.
      * <p>
-     * Setting this flag makes listening to keep the current technology configuration.
+     * Setting this flag makes listening to be set to the current stored default technology
+     * configuration.
      */
     @FlaggedApi(Flags.FLAG_ENABLE_NFC_SET_DISCOVERY_TECH)
     public static final int FLAG_LISTEN_KEEP = 0x80000000;
@@ -442,7 +443,8 @@ public final class NfcAdapter {
     /**
      * Flags for use with {@link #setDiscoveryTechnology(Activity, int, int)}.
      * <p>
-     * Setting this flag makes polling to keep the current technology configuration.
+     * Setting this flag makes polling to be set to the current stored default technology
+     * configuration.
      */
     @FlaggedApi(Flags.FLAG_ENABLE_NFC_SET_DISCOVERY_TECH)
     public static final int FLAG_READER_KEEP = 0x80000000;

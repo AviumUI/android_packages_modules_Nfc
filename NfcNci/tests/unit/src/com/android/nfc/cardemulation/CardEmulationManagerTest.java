@@ -37,7 +37,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
@@ -242,8 +241,8 @@ public class CardEmulationManagerTest {
         verify(mHostEmulationManager).onHostEmulationActivated();
         verify(mPreferredServices).onHostEmulationActivated();
         assertFalse(mCardEmulationManager.mNotSkipAid);
-        verifyZeroInteractions(mHostNfcFEmulationManager);
-        verifyZeroInteractions(mEnabledNfcFServices);
+        verifyNoMoreInteractions(mHostNfcFEmulationManager);
+        verifyNoMoreInteractions(mEnabledNfcFServices);
     }
 
     @Test
@@ -260,8 +259,8 @@ public class CardEmulationManagerTest {
         verify(mRegisteredNfcFServicesCache).onHostEmulationActivated();
         verify(mEnabledNfcFServices).onHostEmulationActivated();
         verify(mHostEmulationManager).setAidRoutingListener(any());
-        verifyZeroInteractions(mHostEmulationManager);
-        verifyZeroInteractions(mPreferredServices);
+        verifyNoMoreInteractions(mHostEmulationManager);
+        verifyNoMoreInteractions(mPreferredServices);
     }
 
     @Test
@@ -301,8 +300,8 @@ public class CardEmulationManagerTest {
 
         verify(mHostEmulationManager).onHostEmulationData(mDataCaptor.capture());
         assertEquals(PROPER_SKIP_DATA_NDF1_HEADER, mDataCaptor.getValue());
-        verifyZeroInteractions(mHostNfcFEmulationManager);
-        verifyZeroInteractions(mPowerManager);
+        verifyNoMoreInteractions(mHostNfcFEmulationManager);
+        verifyNoMoreInteractions(mPowerManager);
     }
 
     @Test
@@ -313,7 +312,7 @@ public class CardEmulationManagerTest {
         verify(mHostNfcFEmulationManager).onHostEmulationData(mDataCaptor.capture());
         assertEquals(PROPER_SKIP_DATA_NDF1_HEADER, mDataCaptor.getValue());
         verify(mHostEmulationManager).setAidRoutingListener(any());
-        verifyZeroInteractions(mHostEmulationManager);
+        verifyNoMoreInteractions(mHostEmulationManager);
         verify(mPowerManager)
                 .userActivity(anyLong(), eq(PowerManager.USER_ACTIVITY_EVENT_TOUCH), eq(0));
     }
@@ -325,9 +324,9 @@ public class CardEmulationManagerTest {
         assertConstructorMethodCalls();
         verify(mHostEmulationManager).onHostEmulationDeactivated();
         verify(mPreferredServices).onHostEmulationDeactivated();
-        verifyZeroInteractions(mHostNfcFEmulationManager);
-        verifyZeroInteractions(mRegisteredNfcFServicesCache);
-        verifyZeroInteractions(mEnabledNfcFServices);
+        verifyNoMoreInteractions(mHostNfcFEmulationManager);
+        verifyNoMoreInteractions(mRegisteredNfcFServicesCache);
+        verifyNoMoreInteractions(mEnabledNfcFServices);
     }
 
     @Test
@@ -339,8 +338,8 @@ public class CardEmulationManagerTest {
         verify(mRegisteredNfcFServicesCache).onHostEmulationDeactivated();
         verify(mEnabledNfcFServices).onHostEmulationDeactivated();
         verify(mHostEmulationManager).setAidRoutingListener(any());
-        verifyZeroInteractions(mHostEmulationManager);
-        verifyZeroInteractions(mPreferredServices);
+        verifyNoMoreInteractions(mHostEmulationManager);
+        verifyNoMoreInteractions(mPreferredServices);
     }
 
     @Test
@@ -526,7 +525,7 @@ public class CardEmulationManagerTest {
                 () -> {
                     NfcPermissions.enforceUserPermissions(mContext);
                 });
-        verifyZeroInteractions(mWalletRoleObserver);
+        verifyNoMoreInteractions(mWalletRoleObserver);
         verify(mRegisteredServicesCache).invalidateCache(eq(USER_ID), eq(true));
         verify(mRegisteredServicesCache, times(2))
                 .hasService(eq(USER_ID), eq(WALLET_PAYMENT_SERVICE));
@@ -580,7 +579,7 @@ public class CardEmulationManagerTest {
         verify(mRegisteredServicesCache).invalidateCache(eq(USER_ID), eq(true));
         verify(mRegisteredServicesCache, times(2))
                 .hasService(eq(USER_ID), eq(WALLET_PAYMENT_SERVICE));
-        verifyZeroInteractions(mRegisteredAidCache);
+        verifyNoMoreInteractions(mRegisteredAidCache);
     }
 
     @Test
@@ -629,7 +628,7 @@ public class CardEmulationManagerTest {
                 .hasService(eq(USER_ID), eq(WALLET_PAYMENT_SERVICE));
         verify(mPreferredServices)
                 .onWalletRoleHolderChanged(eq(WALLET_HOLDER_PACKAGE_NAME), eq(USER_ID));
-        verifyZeroInteractions(mPreferredServices);
+        verifyNoMoreInteractions(mPreferredServices);
     }
 
     @Test

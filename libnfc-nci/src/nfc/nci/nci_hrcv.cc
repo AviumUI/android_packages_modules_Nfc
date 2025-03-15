@@ -31,6 +31,7 @@
 #include "gki.h"
 #include "nci_defs.h"
 #include "nci_hmsgs.h"
+#include "nfa_ee_int.h"
 #include "nfc_api.h"
 #include "nfc_int.h"
 #include "nfc_target.h"
@@ -426,7 +427,6 @@ void nci_proc_ee_management_ntf(NFC_HDR* p_msg) {
   tNFC_RESPONSE_CBACK* p_cback = nfc_cb.p_resp_cback;
   tNFC_RESPONSE nfc_response;
   tNFC_RESPONSE_EVT event = NFC_NFCEE_INFO_REVT;
-  uint8_t* p_old = nfc_cb.last_nfcee_cmd;
   uint8_t xx;
   uint8_t yy;
   tNFC_NFCEE_TLV* p_tlv;
@@ -503,8 +503,8 @@ void nci_proc_ee_management_ntf(NFC_HDR* p_msg) {
       } else {
         nfc_response.mode_set.status = *pp;
       }
-      nfc_response.mode_set.nfcee_id = *p_old++;
-      nfc_response.mode_set.mode = *p_old++;
+      nfc_response.mode_set.nfcee_id = nfa_ee_cb.nfcee_id;
+      nfc_response.mode_set.mode = nfa_ee_cb.mode;
       event = NFC_NFCEE_MODE_SET_REVT;
       nfc_cb.flags &= ~NFC_FL_WAIT_MODE_SET_NTF;
       nfc_stop_timer(&nfc_cb.nci_mode_set_ntf_timer);

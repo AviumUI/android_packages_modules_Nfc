@@ -122,6 +122,11 @@ public abstract class NfcSnippet implements Snippet {
         }
     }
 
+    @Rpc(description = "Kills process with given pid")
+    public void killProcess(int pid) {
+        android.os.Process.killProcess(pid);
+    }
+
     /** Creates a SnippetBroadcastReceiver that listens for when the specified action is received */
     protected void registerSnippetBroadcastReceiver(
             String callbackId, String eventName, String action) {

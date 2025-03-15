@@ -571,6 +571,9 @@ void NfcAdaptation::GetVendorConfigs(
 *******************************************************************************/
 void NfcAdaptation::Initialize() {
   const char* func = "NfcAdaptation::Initialize";
+  if (sVndExtnsPresent) {
+    sNfcVendorExtn->processEvent(HANDLE_NFC_ADAPTATION_INIT, HAL_NFC_STATUS_OK);
+  }
   // Init log tag
   android::base::InitLogging(nullptr);
   android::base::SetDefaultTag("libnfc_nci");
@@ -1078,6 +1081,9 @@ void NfcAdaptation::HalCoreInitialized(uint16_t data_len,
 bool NfcAdaptation::HalPrediscover() {
   const char* func = "NfcAdaptation::HalPrediscover";
   LOG(VERBOSE) << StringPrintf("%s", func);
+  if (sVndExtnsPresent) {
+    sNfcVendorExtn->processEvent(HANDLE_NFC_PRE_DISCOVER, HAL_NFC_STATUS_OK);
+  }
   if (mAidlHal != nullptr) {
     Status status = mAidlHal->preDiscover();
     if (status.isOk()) {
@@ -1169,7 +1175,8 @@ bool NfcAdaptation::DownloadFirmware() {
   LOG(VERBOSE) << StringPrintf("%s: enter", func);
   HalInitialize();
   if (sVndExtnsPresent) {
-    sNfcVendorExtn->processEvent(HANDLE_DOWNLOAD_FIRMWARE_REQUEST, 0x00);
+    sNfcVendorExtn->processEvent(HANDLE_DOWNLOAD_FIRMWARE_REQUEST,
+                                 HAL_NFC_STATUS_OK);
   }
   mHalOpenCompletedEvent.lock();
   LOG(VERBOSE) << StringPrintf("%s: try open HAL", func);

@@ -26,6 +26,7 @@ import java.util.List;
 import androidx.annotation.VisibleForTesting;
 
 public class ForegroundUtils implements ActivityManager.OnUidImportanceListener {
+    static final boolean VDBG = false;
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
     private final String TAG = "ForegroundUtils";
     private final ActivityManager mActivityManager;
@@ -157,7 +158,7 @@ public class ForegroundUtils implements ActivityManager.OnUidImportanceListener 
             if (importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE) {
                 mForegroundUids.delete(uid);
                 mBackgroundCallbacks.remove(uid);
-                if (DBG) Log.d(TAG, "UID: " + Integer.toString(uid) + " deleted.");
+                if (VDBG) Log.d(TAG, "UID: " + Integer.toString(uid) + " deleted.");
                 return;
             }
             if (importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
@@ -172,7 +173,7 @@ public class ForegroundUtils implements ActivityManager.OnUidImportanceListener 
         if (uidToBackground) {
             handleUidToBackground(uid);
         }
-        if (DBG) {
+        if (VDBG) {
             Log.d(TAG, "Foreground UID status:");
             synchronized (mLock) {
                 for (int j = 0; j < mForegroundUids.size(); j++) {

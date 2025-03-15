@@ -83,6 +83,7 @@ public class CardEmulationTest {
     private static final String PAYMENT_AID_3 = "A000000004101013";
     private static final List<String> PAYMENT_AIDS =
         List.of(PAYMENT_AID_1, PAYMENT_AID_2, PAYMENT_AID_3);
+    private static final int SUBSCRIPTION_ID_UICC= 0x100000;
 
     private Context mContext;
 
@@ -2463,12 +2464,9 @@ public class CardEmulationTest {
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         Assert.assertTrue(NfcUtils.enableNfc(adapter, mContext));
         CardEmulation instance = CardEmulation.getInstance(adapter);
-        int originalSubscriptionId = instance.getDefaultNfcSubscriptionId();
 
-        instance.setDefaultNfcSubscriptionId(0); // This may not be set on all OEM devices.
-        instance.getDefaultNfcSubscriptionId(); // This may not be set on all OEM devices.
-
-        instance.setDefaultNfcSubscriptionId(originalSubscriptionId);
+        instance.setDefaultNfcSubscriptionId(SUBSCRIPTION_ID_UICC);
+        Assert.assertEquals(SUBSCRIPTION_ID_UICC, instance.getDefaultNfcSubscriptionId());
     }
 
     @RequiresFlagsEnabled(Flags.FLAG_NFC_APDU_SERVICE_INFO_CONSTRUCTOR)

@@ -52,7 +52,6 @@ def generate_test(
         "Error occurred while opening file: {}".format(file_path)
     ) from e
   file.write(create_imports())
-  file.write(create_replace_aids_method())
   file.write(create_polling_loop_methods())
   file.write(create_apdu_exchange_method())
   file.write(create_setup())
@@ -103,9 +102,13 @@ def update_android_bp(local_file_path, test_name):
   s += create_line('main: "{}",'.format(local_file_path), indent=1)
   s += create_line('srcs: ["{}"],'.format(local_file_path), indent=1)
   s += create_line('test_config: "AndroidTest.xml",', indent=1)
+  s += create_line('device_common_data: [', indent=1)
+  s += create_line('":NfcEmulatorApduApp",', indent=2)
+  s += create_line('"config.yaml",', indent=2)
+  s += create_line('],', indent=1)
   s += create_line("test_options: {", indent=1)
   s += create_line("unit_test: false,", indent=2)
-  s += create_line('tags: ["mobly"],', indent=2)
+  s += create_line('runner: "mobly",', indent=2)
   s += create_line("},", indent=1)
   s += create_line('defaults: ["GeneratedTestsPythonDefaults"],', indent=1)
   s += create_line("}")
@@ -140,6 +143,9 @@ def create_test_opening(name: str):
   s += create_line("apdu_cmds = []", indent=2)
   s += create_line("apdu_rsps = []", indent=2)
   s += create_line("if file_path_name:", indent=2)
+  s += create_line('with open(file_path_name, "r") as json_str:', indent=3)
+  s += create_line('self.emulator.nfc_emulator.startMainActivity(json_str.read())', indent=4)
+  s += create_line()
   s += create_line('with open(file_path_name, "r") as json_data:', indent=3)
   s += create_line("d = json.load(json_data)", indent=4)
   s += create_line("for entry in d:", indent=4)
@@ -200,8 +206,6 @@ def create_apdu_test(entry: FullApduEntry, last_timestamp: int):
   s += create_line("time.sleep({})".format(sleep_time), indent=2)
 
   s += create_line("commands = apdu_cmds[0]", indent=2)
-  s += create_line("if self.with_emulator_app:", indent=2)
-  s += create_line("commands = replace_aids(commands)", indent=3)
   s += create_line("responses = apdu_rsps[0]", indent=2)
   s += create_line(
       "tag_found, transacted = conduct_apdu_exchange(self.reader, commands,"
@@ -243,43 +247,6 @@ def create_imports():
   s += create_line("_NUM_POLLING_LOOPS = 50")
   s += create_line()
   return s
-
-
-def create_replace_aids_method():
-  """Create a method that replaces the AIDs sent by the test with the ones
-
-  that are used by the emulator app.
-  """
-  s = create_line("_EMULATOR_AIDS = [")
-  s += create_line('bytearray.fromhex("00a4040008a000000151000000"),', indent=1)
-  s += create_line('bytearray.fromhex("00a4040008a000000003000000"),', indent=1)
-  s += create_line("]")
-  s += create_line()
-  s += create_line()
-  s += create_line("def replace_aids(commands: list[bytearray]):")
-  s += create_line(
-      '"""Replaces SELECT AID commands with AIDs from the emulator app."""',
-      indent=1,
-  )
-  s += create_line("new_commands = []", indent=1)
-  s += create_line("is_first_aid = True", indent=1)
-  s += create_line("for command in commands:", indent=1)
-  s += create_line(
-      'if command.startswith(bytearray.fromhex("00a40400")):', indent=2
-  )
-  s += create_line("if is_first_aid:", indent=3)
-  s += create_line(
-      "new_commands.append(_EMULATOR_AIDS[0])",
-      indent=4,
-  )
-  s += create_line("is_first_aid = False", indent=4)
-  s += create_line("else:", indent=3)
-  s += create_line("new_commands.append(_EMULATOR_AIDS[1])", indent=4)
-  s += create_line("else:", indent=2)
-  s += create_line("new_commands.append(command)", indent=3)
-  s += create_line("return new_commands", indent=1)
-  return s
-
 
 def create_polling_loop_methods():
   """Create methods that send polling loops to the reader.
@@ -340,20 +307,21 @@ def create_apdu_exchange_method():
       " list[bytearray]",
       indent=2,
   )
-  s += create_line(") -> tuple[bool, bool]:")
+  s += create_line(") -> tuple[pn532.tag.TypeATag | None, bool]:")
   s += create_line(
       '"""Conducts an APDU exchange with the PN532 reader."""', indent=1
   )
-  s += create_line("transacted = False", indent=1)
-  s += create_line("tag = None", indent=1)
-  s += create_line("for _ in range(_NUM_POLLING_LOOPS):", indent=1)
-  s += create_line("tag = reader.poll_a()", indent=2)
-  s += create_line("if tag is not None:", indent=2)
-  s += create_line("transacted = tag.transact(commands, responses)", indent=3)
-  s += create_line("reader.mute()", indent=3)
-  s += create_line("break", indent=3)
-  s += create_line("reader.mute()", indent=2)
-  s += create_line("return tag, transacted", indent=1)
+  s += create_line('for _ in range(_NUM_POLLING_LOOPS):', indent=1)
+  s += create_line('tag = reader.poll_a()', indent=2)
+  s += create_line('if tag is not None:', indent=2)
+  s += create_line('transacted = tag.transact(commands, responses)', indent=3)
+  s += create_line('reader.mute()', indent=3)
+  s += create_line('# edge case: expect no response', indent=3)
+  s += create_line('if not responses or responses[0] == bytearray.fromhex(""):', indent=3)
+  s += create_line('return tag, True', indent=4)
+  s += create_line('return tag, transacted', indent=3)
+  s += create_line('reader.mute()', indent=2)
+  s += create_line('return None, False', indent=1)
   return s
 
 
@@ -377,15 +345,14 @@ def create_setup():
       "self.emulator = self.register_controller(android_device)[0]", indent=2
   )
   s += create_line('self.emulator.debug_tag = "emulator"', indent=2)
+  s += create_line('if (hasattr(self.emulator, "dimensions") and "pn532_serial_path" in self.emulator.dimensions):', indent=2)
+  s += create_line('pn532_serial_path = self.emulator.dimensions["pn532_serial_path"]', indent=3)
+  s += create_line('else:', indent=2)
   s += create_line(
       'pn532_serial_path = self.user_params.get("pn532_serial_path", "")',
-      indent=2,
+      indent=3,
   )
-  s += create_line(
-      'self.with_emulator_app = self.user_params.get("with_emulator_app",'
-      " False)",
-      indent=2,
-  )
+  s += create_line('self.emulator.load_snippet("nfc_emulator", "com.android.nfc.emulatorapp")', indent=2)
   s += create_line(
       'self.emulator.adb.shell(["svc", "nfc", "disable"])', indent=2
   )
