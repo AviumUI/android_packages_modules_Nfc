@@ -16,6 +16,9 @@
 package com.android.nfc.cardemulation.util;
 
 import static com.google.common.truth.Truth.assertThat;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -80,6 +83,32 @@ public class NfcFileUtilsTest {
         when(Files.move(any(), any(), any())).thenReturn(mock(Path.class));
         int result = NfcFileUtils.moveFiles(sourceDir, targetDir);
         assertThat(result).isEqualTo(1);
+    }
 
+    @Test
+    public void testMoveFileWithoutSourceFile() {
+        File sourceDir = mock(File.class);
+        when(sourceDir.listFiles()).thenReturn(null);
+
+        assertEquals(-1, NfcFileUtils.moveFiles(sourceDir, null));
+    }
+
+    @Test
+    public void testMoveFileWithMigrationFailure() throws IOException {
+        File sourceDir = mock(File.class);
+        File file = mock(File.class);
+        when(file.getName()).thenReturn("test");
+        when(sourceDir.listFiles()).thenReturn(new File[]{file});
+        File targetDir = new File("test");
+        when(sourceDir.toPath()).thenReturn(mock(Path.class));
+        when(Files.move(any(), any(), any())).thenThrow(IOException.class);
+
+        assertEquals(-1, NfcFileUtils.moveFiles(sourceDir, targetDir));
+    }
+
+    @Test
+    public void testConstructor() {
+        NfcFileUtils nfcFileUtils = new NfcFileUtils();
+        assertNotNull(nfcFileUtils);
     }
 }

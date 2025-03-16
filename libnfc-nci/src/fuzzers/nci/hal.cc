@@ -1,4 +1,7 @@
 #include "fuzz.h"
+#include "nfa_ee_int.h"
+
+tNFA_EE_CB nfa_ee_cb;
 
 void hal_inject_event(uint8_t hal_evt, tHAL_NFC_STATUS status) {
   tNFC_HAL_EVT_MSG msg = {};

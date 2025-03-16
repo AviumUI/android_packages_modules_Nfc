@@ -30,7 +30,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import android.app.KeyguardManager;
@@ -501,7 +500,7 @@ public class HostEmulationManagerTest {
 
         mHostEmulationManager.onHostEmulationData(emptyData);
 
-        verifyZeroInteractions(mNfcService);
+        verifyNoMoreInteractions(mNfcService);
         verify(mContext).getSystemService(eq(PowerManager.class));
         verify(mContext).getSystemService(eq(KeyguardManager.class));
         verifyNoMoreInteractions(mContext);
@@ -514,7 +513,7 @@ public class HostEmulationManagerTest {
 
         mHostEmulationManager.onHostEmulationData(emptyData);
 
-        verifyZeroInteractions(mNfcService);
+        verifyNoMoreInteractions(mNfcService);
         verify(mContext).getSystemService(eq(PowerManager.class));
         verify(mContext).getSystemService(eq(KeyguardManager.class));
         verifyNoMoreInteractions(mContext);
@@ -1029,7 +1028,7 @@ public class HostEmulationManagerTest {
         assertFalse(mHostEmulationManager.mServiceBound);
         verify(mContext).getSystemService(eq(PowerManager.class));
         verify(mContext).getSystemService(eq(KeyguardManager.class));
-        verifyZeroInteractions(mMessenger);
+        verifyNoMoreInteractions(mMessenger);
         verifyNoMoreInteractions(mMessenger);
         verifyNoMoreInteractions(mContext);
         verify(mStatsUtils).logCardEmulationDeactivatedEvent();
@@ -1104,7 +1103,7 @@ public class HostEmulationManagerTest {
         Intent intent = mIntentArgumentCaptor.getValue();
         assertEquals(TapAgainDialog.ACTION_CLOSE, intent.getAction());
         assertEquals(NFC_PACKAGE, intent.getPackage());
-        verifyZeroInteractions(mMessenger);
+        verifyNoMoreInteractions(mMessenger);
         verifyNoMoreInteractions(mContext);
     }
 
@@ -1159,7 +1158,7 @@ public class HostEmulationManagerTest {
                 .getServiceConnection()
                 .onServiceConnected(WALLET_PAYMENT_SERVICE, service);
 
-        verifyZeroInteractions(service);
+        verifyNoMoreInteractions(service);
     }
 
     @Test

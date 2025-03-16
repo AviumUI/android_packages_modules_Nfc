@@ -33,9 +33,12 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+
 import androidx.appcompat.widget.Toolbar;
 
 import com.android.nfc.cardemulation.util.AlertActivity;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TapAgainDialog extends AlertActivity implements DialogInterface.OnClickListener {
     private static final String TAG = "TapAgainDialog";
@@ -48,13 +51,7 @@ public class TapAgainDialog extends AlertActivity implements DialogInterface.OnC
     // Variables below only accessed on the main thread
     private CardEmulation mCardEmuManager;
     private boolean mClosedOnRequest = false;
-    final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            mClosedOnRequest = true;
-            finish();
-        }
-    };
+    private AtomicReference<BroadcastReceiver> mReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +60,11 @@ public class TapAgainDialog extends AlertActivity implements DialogInterface.OnC
         setTheme(com.android.nfc.R.style.TapAgainDayNight);
 
         final NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
+        if (adapter == null) {
+            Log.e(TAG, "adapter is null");
+            finish();
+            return;
+        }
         mCardEmuManager = CardEmulation.getInstance(adapter);
         Intent intent = getIntent();
         ApduServiceInfo serviceInfo = intent.getParcelableExtra(EXTRA_APDU_SERVICE);
@@ -71,9 +73,18 @@ public class TapAgainDialog extends AlertActivity implements DialogInterface.OnC
             finish();
             return;
         }
+
+        final BroadcastReceiver receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mClosedOnRequest = true;
+                finish();
+            }
+        };
+        mReceiver = new AtomicReference<BroadcastReceiver>(receiver);
         IntentFilter filter = new IntentFilter(ACTION_CLOSE);
         filter.addAction(Intent.ACTION_SCREEN_OFF);
-        registerReceiver(mReceiver, filter);
+        registerReceiver(receiver, filter);
 
         View view = getLayoutInflater().inflate(com.android.nfc.R.layout.tapagain, null);
         Toolbar toolbar = (Toolbar) view.findViewById(com.android.nfc.R.id.tap_again_toolbar);
@@ -100,20 +111,29 @@ public class TapAgainDialog extends AlertActivity implements DialogInterface.OnC
         window.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
     }
 
+    /**
+     * Safely unregister the broadcast receiver and empty the mReceiver internal elements.
+     */
+    public void close() {
+        final BroadcastReceiver receiver = mReceiver.getAndSet(null);
+        if (receiver != null) {
+            unregisterReceiver(receiver);
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        try {
-            unregisterReceiver(mReceiver);
-        } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Failed to unregister receiver", e);
+        if (mReceiver.get() != null) {
+            Log.e(TAG, "TapAgainDialog destroy without being closed");
+            close();
         }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (!mClosedOnRequest) {
+        if (!mClosedOnRequest && mCardEmuManager != null) {
             mCardEmuManager.setDefaultForNextTap(null);
         }
     }

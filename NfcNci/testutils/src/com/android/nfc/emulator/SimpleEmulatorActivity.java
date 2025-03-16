@@ -27,6 +27,7 @@ public class SimpleEmulatorActivity extends BaseEmulatorActivity {
     public static final String EXTRA_IS_PAYMENT_ACTIVITY = "EXTRA_IS_PAYMENT_ACTIVITY";
     public static final String EXTRA_PREFERRED_SERVICE = "EXTRA_PREFERRED_SERVICE";
     public static final String EXTRA_EXPECTED_SERVICE = "EXTRA_EXPECTED_SERVICE";
+    public static final String EXTRA_SHOULD_DISABLE_SERVICES_ON_DESTROY = "EXTRA_SHOULD_DISABLE_SERVICES_ON_DESTROY";
 
     private ComponentName mPreferredService = null;
 
@@ -50,12 +51,16 @@ public class SimpleEmulatorActivity extends BaseEmulatorActivity {
         if (mPreferredService != null) {
             mCardEmulation.setPreferredService(this, mPreferredService);
         }
+        mShouldDisableServicesOnDestroy =
+                getIntent().getBooleanExtra(EXTRA_SHOULD_DISABLE_SERVICES_ON_DESTROY, true);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mCardEmulation.unsetPreferredService(this);
+        if (mPreferredService != null) {
+            mCardEmulation.unsetPreferredService(this);
+        }
     }
 
     @Override

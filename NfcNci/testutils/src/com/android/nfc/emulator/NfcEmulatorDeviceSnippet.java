@@ -54,13 +54,16 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
      * @param serviceClassNames - service class names to enable
      * @param testPassClassName - class name of service that should handle the APDUs
      * @param isPaymentActivity - whether or not it is a payment activity
+     * @param shouldDisableServicesOnDestroy - whether or not to disable services on destroy
      */
     @Rpc(description = "Start simple emulator activity")
     public void startSimpleEmulatorActivity(
-            String[] serviceClassNames, String testPassClassName, boolean isPaymentActivity) {
+            String[] serviceClassNames, String testPassClassName,
+            boolean isPaymentActivity, boolean shouldDisableServicesOnDestroy) {
         Intent intent =
                 buildSimpleEmulatorActivityIntent(
-                        serviceClassNames, testPassClassName, null, isPaymentActivity);
+                        serviceClassNames, testPassClassName, null, isPaymentActivity,
+                        shouldDisableServicesOnDestroy);
         mActivity =
                 (SimpleEmulatorActivity)
                         InstrumentationRegistry.getInstrumentation().startActivitySync(intent);
@@ -85,7 +88,8 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
                         serviceClassNames,
                         testPassClassName,
                         preferredServiceClassName,
-                        isPaymentActivity);
+                        isPaymentActivity,
+                        true);
         mActivity =
                 (SimpleEmulatorActivity)
                         InstrumentationRegistry.getInstrumentation().startActivitySync(intent);
@@ -590,8 +594,8 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
             String[] serviceClassNames,
             String expectedServiceClassName,
             String preferredServiceClassName,
-            boolean isPaymentActivity) {
-
+            boolean isPaymentActivity,
+            boolean shouldDisableServicesOnDestroy) {
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.setClassName(
@@ -619,7 +623,9 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
         }
 
         intent.putExtra(SimpleEmulatorActivity.EXTRA_IS_PAYMENT_ACTIVITY, isPaymentActivity);
-
+        intent.putExtra(
+                SimpleEmulatorActivity.EXTRA_SHOULD_DISABLE_SERVICES_ON_DESTROY,
+                shouldDisableServicesOnDestroy);
         return intent;
     }
 }

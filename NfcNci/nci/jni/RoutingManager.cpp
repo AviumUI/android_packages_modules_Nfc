@@ -1062,17 +1062,17 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateEeTechRouteSetting() {
 
   // Check if some tech should be routed to DH
   if (!(allSeTechMask & NFA_TECHNOLOGY_MASK_A) &&
-      (mOffHostListenTechMask & NFA_TECHNOLOGY_MASK_A)) {
+      (mHostListenTechMask & NFA_TECHNOLOGY_MASK_A)) {
     hostTechMask |= NFA_TECHNOLOGY_MASK_A;
   }
   // Check if some tech should be routed to DH
   if (!(allSeTechMask & NFA_TECHNOLOGY_MASK_B) &&
-      (mOffHostListenTechMask & NFA_TECHNOLOGY_MASK_B)) {
+      (mHostListenTechMask & NFA_TECHNOLOGY_MASK_B)) {
     hostTechMask |= NFA_TECHNOLOGY_MASK_B;
   }
   // Check if some tech should be routed to DH
   if (!(allSeTechMask & NFA_TECHNOLOGY_MASK_F) &&
-      (mOffHostListenTechMask & NFA_TECHNOLOGY_MASK_F)) {
+      (mHostListenTechMask & NFA_TECHNOLOGY_MASK_F)) {
     hostTechMask |= NFA_TECHNOLOGY_MASK_F;
   }
 

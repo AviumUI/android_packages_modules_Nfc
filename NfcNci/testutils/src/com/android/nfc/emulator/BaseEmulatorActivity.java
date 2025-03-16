@@ -59,6 +59,7 @@ public abstract class BaseEmulatorActivity extends Activity {
     protected NfcAdapter mAdapter;
     protected CardEmulation mCardEmulation;
     protected RoleManager mRoleManager;
+    protected boolean mShouldDisableServicesOnDestroy = true;
     private boolean mIsNfcSupported;
 
     final BroadcastReceiver mReceiver =
@@ -106,7 +107,9 @@ public abstract class BaseEmulatorActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mReceiver);
-        disableServices();
+        if (mShouldDisableServicesOnDestroy) {
+            disableServices();
+        }
     }
 
     public void disableServices() {

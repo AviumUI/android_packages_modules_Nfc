@@ -304,6 +304,7 @@ cc_fuzz {
         "nfc/tags/*.cc",
     ],
     cflags: [
+        "-DDYN_ALLOC=1",
         "-DNFC_INTEGRATION_FUZZER",
     ],
     local_include_dirs: [
