@@ -94,7 +94,7 @@ tNFC_STATUS NFC_SendRawVsCommand(NFC_HDR* p_data, tNFC_VS_CBACK* p_cback) {
   }
   /* Validate parameters */
   if (p_data == nullptr || (p_data->len > NCI_MAX_VSC_SIZE)) {
-    LOG(ERROR) << StringPrintf("buffer offset must be >= %d",
+    LOG(ERROR) << StringPrintf("%s: buffer offset must be >= %d", __func__,
                                NCI_VSC_MSG_HDR_SIZE);
     if (p_data) gki_utils->freebuf(p_data);
     return NFC_STATUS_INVALID_PARAM;
@@ -144,7 +144,7 @@ tNFC_STATUS NFC_SendVsCommand(uint8_t oid, NFC_HDR* p_data,
   /* Validate parameters */
   if ((p_data == nullptr) || (p_data->offset < NCI_VSC_MSG_HDR_SIZE) ||
       (p_data->len > NCI_MAX_VSC_SIZE)) {
-    LOG(ERROR) << StringPrintf("buffer offset must be >= %d",
+    LOG(ERROR) << StringPrintf("%s: buffer offset must be >= %d", __func__,
                                NCI_VSC_MSG_HDR_SIZE);
     if (p_data) gki_utils->freebuf(p_data);
     return NFC_STATUS_INVALID_PARAM;

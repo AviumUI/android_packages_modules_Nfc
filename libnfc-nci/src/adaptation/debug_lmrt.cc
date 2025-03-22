@@ -67,13 +67,13 @@ void lmrt_log(void) {
       tlvs_str.push_back(hexmap[byte & 0x0F]);
     }
 
-    LOG(VERBOSE) << StringPrintf("lmrt_log: Packet %d/%d, %d more packet", i + 1,
-                               (int)lmrt_payloads.more.size(),
-                               lmrt_payloads.more[i]);
-    LOG(VERBOSE) << StringPrintf("lmrt_log: %d entries in this packet",
-                               lmrt_payloads.entry_count[i]);
+    LOG(VERBOSE) << StringPrintf("%s: Packet %d/%d, %d more packet", __func__,
+                                 i + 1, (int)lmrt_payloads.more.size(),
+                                 lmrt_payloads.more[i]);
+    LOG(VERBOSE) << StringPrintf("%s: %d entries in this packet", __func__,
+                                 lmrt_payloads.entry_count[i]);
 
-    LOG(VERBOSE) << StringPrintf("lmrt_log: tlv: %s", tlvs_str.c_str());
+    LOG(VERBOSE) << StringPrintf("%s: tlv=%s", __func__, tlvs_str.c_str());
   }
 }
 

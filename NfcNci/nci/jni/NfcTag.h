@@ -200,6 +200,52 @@ class NfcTag {
 
   /*******************************************************************************
   **
+  ** Function:        setLastSelectedTag
+  **
+  ** Description:     Set the last selected tag in case of multiprotocol tag
+  **
+  ** Returns:         NFA_STATUS_FAILED if tag is not found.
+  **
+  *******************************************************************************/
+  tNFA_STATUS setLastSelectedTag(int targetHandle, int nfcType);
+
+  /*******************************************************************************
+  **
+  ** Function:        retrySelect
+  **
+  ** Description:     Retry select last tag in case of multiprotocol tag
+  **
+  ** Returns:         NFA_STATUS_FAILED if it is not a multiprotocol tag or
+  **                  retry is already done. Otherwise it returns Select status.
+  **
+  *******************************************************************************/
+  tNFA_STATUS retrySelect();
+
+  /*******************************************************************************
+  **
+  ** Function:        clearSelectRetryCount
+  **
+  ** Description:     Clear select retry count.
+  **
+  ** Returns:         None.
+  **
+  *******************************************************************************/
+  void clearSelectRetryCount();
+
+  /*******************************************************************************
+  **
+  ** Function:        selectTagAtIndex
+  **
+  ** Description:     When multiple tags are discovered, selects a tag at
+  **                  specified index
+  **
+  ** Returns:         Select result
+  **
+  *******************************************************************************/
+  tNFA_STATUS selectTagAtIndex(int index);
+
+  /*******************************************************************************
+  **
   ** Function:        getT1tMaxMessageSize
   **
   ** Description:     Get the maximum size (octet) that a T1T can store.
@@ -312,7 +358,7 @@ class NfcTag {
   ** Returns:         none
   **
   *******************************************************************************/
-  void resetAllTransceiveTimeouts();
+  void resetAllTransceiveTimeouts(bool includeType4);
 
   /*******************************************************************************
   **
@@ -402,6 +448,17 @@ class NfcTag {
 
   /*******************************************************************************
   **
+  ** Function:        getMultiProtocolTagSupport
+  **
+  ** Description:     get mIsMultiProtocolTag
+  **
+  ** Returns:         mIsMultiProtocolTag
+  **
+  *******************************************************************************/
+  bool getMultiProtocolTagSupport();
+
+  /*******************************************************************************
+  **
   ** Function:        setNumDiscNtf
   **
   ** Description:     Update mNumDiscNtf
@@ -475,6 +532,7 @@ class NfcTag {
   int mNumDiscTechList;
   int mTechListTail;  // Index of Last added entry in mTechList
   bool mIsMultiProtocolTag;
+  int mSelectRetryCount = 0;
   NfcStatsUtil* mNfcStatsUtil;
   JNIEnv* mJniEnv = NULL;
 

@@ -277,7 +277,7 @@ public class HandoverDataParser {
 
             // return BT OOB record so they can perform handover
             selectMessage = (createBluetoothHandoverSelectMessage(bluetoothActivating));
-            if (DBG) {
+            if (DBG)  {
                 Log.d(TAG, "Waiting for incoming transfer, ["
                         + toAnonymizedAddress(bluetoothData.device.getAddress())
                         + "]->[" + toAnonymizedAddress(mLocalBluetoothAddress) + "]");

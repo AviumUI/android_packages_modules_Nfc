@@ -32,13 +32,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.UserHandle;
 import android.os.UserManager;
-import android.permission.flags.Flags;
-
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 import android.sysprop.NfcProperties;
 import android.util.Log;
-import android.util.Pair;
 import android.util.proto.ProtoOutputStream;
 
 import com.android.nfc.ForegroundUtils;
@@ -176,7 +173,7 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
         List<ApduServiceInfo> serviceInfos = mServiceCache.getInstalledServices(userId);
         List<ComponentName> roleHolderPaymentServices = new ArrayList<>();
         int servicesCount = serviceInfos.size();
-        for(int i = 0; i < servicesCount; i++) {
+        for (int i = 0; i < servicesCount; i++) {
             ApduServiceInfo serviceInfo = serviceInfos.get(i);
             ComponentName componentName = serviceInfo.getComponent();
             if (componentName.getPackageName()
@@ -222,7 +219,9 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
                         mContext.createContextAsUser(uh, 0).getContentResolver(),
                         Constants.SETTINGS_SECURE_NFC_PAYMENT_DEFAULT_COMPONENT);
             } catch (IllegalStateException e) {
-                Log.d(TAG, "Fail to get default payment component for user: " + uh);
+                Log.d(TAG,
+                        "loadDefaultsFromSettings: Fail to get default payment component for user: "
+                                + uh);
                 continue;
             }
 
@@ -235,7 +234,7 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
             }
         }
         if (currentUser == null) {
-            Log.e(TAG, "NULL/ Error fetching currentUser info");
+            Log.e(TAG, "loadDefaultsFromSettings: NULL/ Error fetching currentUser info");
             return;
         }
         // no default payment setting in all profles
@@ -301,7 +300,7 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
                 mForegroundCurrent = preferredService;
                 mForegroundCurrentUid = mForegroundUid;
                 changed = true;
-            } else if (preferredService == null && mForegroundCurrent != null){
+            } else if (preferredService == null && mForegroundCurrent != null) {
                 mForegroundCurrent = preferredService;
                 mForegroundCurrentUid = mForegroundUid;
                 changed = true;
@@ -337,7 +336,7 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
             // preferences.
             if (mForegroundCurrent != null) {
                 if (!isForegroundAllowedLocked(mForegroundCurrent, mForegroundCurrentUid))  {
-                    Log.d(TAG, "Removing foreground preferred service.");
+                    Log.d(TAG, "onServicesUpdated: Removing foreground preferred service.");
                     mForegroundRequested = null;
                     mForegroundUid = -1;
                     mForegroundCurrentUid = -1;
@@ -351,7 +350,7 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
             computePreferredForegroundService();
         }
 
-        if(mWalletRoleObserver.isWalletRoleFeatureEnabled()
+        if (mWalletRoleObserver.isWalletRoleFeatureEnabled()
                 && mUserIdDefaultWalletHolder >= 0) {
             PackageAndUser roleHolder = mWalletRoleObserver
                     .getDefaultWalletRoleHolder(mUserIdDefaultWalletHolder);
@@ -369,7 +368,8 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
         ApduServiceInfo serviceInfo = mServiceCache.getService(
                 UserHandle.getUserHandleForUid(callingUid).getIdentifier(), service);
         if (serviceInfo == null) {
-            Log.d(TAG, "Requested foreground service unexpectedly removed");
+            Log.d(TAG, "isForegroundAllowedLocked: Requested foreground service "
+                    + "unexpectedly removed");
             return false;
         }
         // Do some quick checking
@@ -377,7 +377,8 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
             // Foreground apps are not allowed to override payment default
             // Check if this app registers payment AIDs, in which case we'll fail anyway
             if (serviceInfo.hasCategory(CardEmulation.CATEGORY_PAYMENT)) {
-                Log.d(TAG, "User doesn't allow payment services to be overridden.");
+                Log.d(TAG, "isForegroundAllowedLocked: User doesn't allow payment "
+                        + "services to be overridden");
                 return false;
             }
             // If no payment AIDs, get AIDs of category other, and see if there's any
@@ -395,8 +396,11 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
                     RegisteredAidCache.AidResolveInfo resolveInfo = mAidCache.resolveAid(aid);
                     if (CardEmulation.CATEGORY_PAYMENT.equals(resolveInfo.category) &&
                             paymentServiceInfo.equals(resolveInfo.defaultService)) {
-                        if (DBG) Log.d(TAG, "AID " + aid + " is handled by the default payment app,"
-                                + " and the user has not allowed payments to be overridden.");
+                        if (DBG) {
+                            Log.d(TAG, "isForegroundAllowedLocked: AID " + aid
+                                    + " is handled by the default payment app,"
+                                    + " and the user has not allowed payments to be overridden.");
+                        }
                         return false;
                     }
                 }
@@ -421,11 +425,13 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
                     mForegroundUid = callingUid;
                     success = true;
                 } else {
-                    Log.e(TAG, "Calling UID is not in the foreground, ignoring!");
+                    Log.e(TAG, "registerPreferredForegroundService: Calling UID is not in "
+                            + "the foreground, ignoring!");
                     success = false;
                 }
             } else {
-                Log.e(TAG, "Requested foreground service conflicts or was removed.");
+                Log.e(TAG, "registerPreferredForegroundService: Requested foreground service "
+                        + "conflicts or was removed");
             }
         }
         if (success) {
@@ -454,7 +460,8 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
         if (mForegroundUtils.isInForeground(callingUid)) {
             return unregisterForegroundService(callingUid);
         } else {
-            Log.e(TAG, "Calling UID is not in the foreground, ignoring!");
+            Log.e(TAG, "unregisteredPreferredForegroundService: Calling UID is not in "
+                    + "the foreground, ignoring!");
             return false;
         }
     }

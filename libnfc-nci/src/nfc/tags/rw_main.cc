@@ -142,14 +142,15 @@ void rw_main_log_stats(void) {
   elapsed_ms = GKI_TICKS_TO_MS(ticks);
 
   LOG(VERBOSE) << StringPrintf(
-      "NFC tx stats: cmds:%i, retries:%i, aborted: %i, tx_errs: %i, bytes "
-      "sent:%i",
-      rw_cb.stats.num_ops, rw_cb.stats.num_retries, rw_cb.stats.num_fail,
-      rw_cb.stats.num_trans_err, rw_cb.stats.bytes_sent);
+      "%s: tx stats: cmds=%i, retries=%i, aborted=%i, tx_errs=%i, bytes "
+      "sent=%i",
+      __func__, rw_cb.stats.num_ops, rw_cb.stats.num_retries,
+      rw_cb.stats.num_fail, rw_cb.stats.num_trans_err, rw_cb.stats.bytes_sent);
   LOG(VERBOSE) << StringPrintf(
-      "    rx stats: rx-crc errors %i, bytes received: %i", rw_cb.stats.num_crc,
-      rw_cb.stats.bytes_received);
-  LOG(VERBOSE) << StringPrintf("    time activated %i ms", elapsed_ms);
+      "%s:    rx stats: rx-crc errors %i, bytes received=%i", __func__,
+      rw_cb.stats.num_crc, rw_cb.stats.bytes_received);
+  LOG(VERBOSE) << StringPrintf("%s:    time activated %i ms", __func__,
+                               elapsed_ms);
 }
 #endif /* RW_STATS_INCLUDED */
 
@@ -181,7 +182,8 @@ tNFC_STATUS RW_SendRawFrame(uint8_t* p_raw_data, uint16_t data_len) {
       memcpy(p, p_raw_data, data_len);
       p_data->len = data_len;
 
-      LOG(VERBOSE) << StringPrintf("RW SENT raw frame (0x%x)", data_len);
+      LOG(VERBOSE) << StringPrintf("%s: RW SENT raw frame (0x%x)", __func__,
+                                   data_len);
       status = NFC_SendData(NFC_RF_CONN_ID, p_data);
     }
   }
@@ -203,13 +205,12 @@ tNFC_STATUS RW_SetActivatedTagType(tNFC_ACTIVATE_DEVT* p_activate_params,
 
   /* check for null cback here / remove checks from rw_t?t */
   LOG(VERBOSE) << StringPrintf(
-      "RW_SetActivatedTagType protocol:%d, technology:%d, SAK:%d",
+      "%s: protocol=%x, technology=%x, SAK=%x", __func__,
       p_activate_params->protocol, p_activate_params->rf_tech_param.mode,
       p_activate_params->rf_tech_param.param.pa.sel_rsp);
 
   if (p_cback == nullptr) {
-    LOG(ERROR) << StringPrintf(
-        "RW_SetActivatedTagType called with NULL callback");
+    LOG(ERROR) << StringPrintf("%s: called with NULL callback", __func__);
     return (NFC_STATUS_FAILED);
   }
 
@@ -307,7 +308,7 @@ tNFC_STATUS RW_SetActivatedTagType(tNFC_ACTIVATE_DEVT* p_activate_params,
     status = rw_ci_select();
   } else {
     rw_cb.tcb_type = RW_CB_TYPE_UNKNOWN;
-    LOG(ERROR) << StringPrintf("RW_SetActivatedTagType Invalid protocol");
+    LOG(ERROR) << StringPrintf("%s: Invalid protocol", __func__);
   }
 
   if (status != NFC_STATUS_OK) rw_cb.p_cback = nullptr;
@@ -326,7 +327,7 @@ tNFC_STATUS RW_SetActivatedTagType(tNFC_ACTIVATE_DEVT* p_activate_params,
 tNFC_STATUS RW_SetT4tNfceeInfo(tRW_CBACK* p_cback, uint8_t conn_id) {
   tNFC_STATUS status = NFC_STATUS_FAILED;
   /* Reset tag-specific area of control block */
-  LOG(ERROR) << StringPrintf("RW_SetActivatedTagType %d ", conn_id);
+  LOG(ERROR) << StringPrintf("%s: conn_id=%d ", __func__, conn_id);
 
   memset(&rw_cb.tcb, 0, sizeof(tRW_TCB));
 

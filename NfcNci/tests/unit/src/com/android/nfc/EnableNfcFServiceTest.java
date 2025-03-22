@@ -16,25 +16,29 @@
 
 package com.android.nfc;
 
-import static org.mockito.ArgumentMatchers.isA;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.pm.PackageManager;
 import android.nfc.cardemulation.NfcFServiceInfo;
 import android.os.UserHandle;
-import android.util.Log;
+import android.util.proto.ProtoOutputStream;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
-import com.android.nfc.cardemulation.AidRoutingManager;
 import com.android.nfc.cardemulation.EnabledNfcFServices;
+import com.android.nfc.cardemulation.EnabledNfcFServicesProto;
 import com.android.nfc.cardemulation.RegisteredNfcFServicesCache;
 import com.android.nfc.cardemulation.RegisteredT3tIdentifiersCache;
 import com.android.nfc.cardemulation.RoutingOptionManager;
@@ -47,6 +51,10 @@ import org.junit.runner.RunWith;
 import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+import java.lang.reflect.Field;
+
 @RunWith(AndroidJUnit4.class)
 public class EnableNfcFServiceTest {
 
@@ -56,6 +64,7 @@ public class EnableNfcFServiceTest {
     private NfcFServiceInfo mNfcFServiceInfo;
     private EnabledNfcFServices mEnabledNfcFServices;
     private ForegroundUtils mForegroundUtils;
+    private EnabledNfcFServices.Callback mCallback;
 
     @Before
     public void setUp() throws Exception {
@@ -85,13 +94,12 @@ public class EnableNfcFServiceTest {
 
         RoutingOptionManager routingOptionManager = mock(RoutingOptionManager.class);
         when(RoutingOptionManager.getInstance()).thenReturn(routingOptionManager);
+
+        mCallback = mock(EnabledNfcFServices.Callback.class);
         InstrumentationRegistry.getInstrumentation().runOnMainSync(
                 () -> mEnabledNfcFServices = new EnabledNfcFServices(mockContext,
                         registeredNfcFServicesCache, registeredT3tIdentifiersCache,
-                        (userId, service) -> {
-                            Log.d(TAG, "CallBack is Received for userid " + userId);
-
-                        }));
+                        mCallback));
         Assert.assertNotNull(mEnabledNfcFServices);
     }
 
@@ -106,14 +114,14 @@ public class EnableNfcFServiceTest {
         Assert.assertFalse(isActivated);
         mEnabledNfcFServices.onHostEmulationActivated();
         isActivated = mEnabledNfcFServices.isActivated();
-        Assert.assertTrue(isActivated);
+        assertTrue(isActivated);
     }
 
     @Test
     public void testOnHostEmulationDeactivated() {
         mEnabledNfcFServices.onHostEmulationActivated();
         boolean isActivated = mEnabledNfcFServices.isActivated();
-        Assert.assertTrue(isActivated);
+        assertTrue(isActivated);
         mEnabledNfcFServices.onHostEmulationDeactivated();
         isActivated = mEnabledNfcFServices.isActivated();
         Assert.assertFalse(isActivated);
@@ -131,7 +139,7 @@ public class EnableNfcFServiceTest {
                 true);
         boolean isRegistered = mEnabledNfcFServices.registerEnabledForegroundService(mComponentName,
                 1);
-        Assert.assertTrue(isRegistered);
+        assertTrue(isRegistered);
     }
 
 
@@ -139,14 +147,152 @@ public class EnableNfcFServiceTest {
     public void testOnNfcDisabled() {
         mEnabledNfcFServices.onNfcDisabled();
         boolean isNfcDisabled = mEnabledNfcFServices.isNfcDisabled();
-        Assert.assertTrue(isNfcDisabled);
+        assertTrue(isNfcDisabled);
     }
 
     @Test
     public void testOnUserSwitched() {
         mEnabledNfcFServices.onUserSwitched(0);
         boolean isUserSwitched = mEnabledNfcFServices.isUserSwitched();
-        Assert.assertTrue(isUserSwitched);
+        assertTrue(isUserSwitched);
 
     }
+
+    @Test
+    public void testDumpDebug() throws NoSuchFieldException, IllegalAccessException {
+        ProtoOutputStream proto = mock(ProtoOutputStream.class);
+        ComponentName mForegroundComponent = mock(ComponentName.class);
+        ComponentName mForegroundRequested = mock(ComponentName.class);
+        Field fieldForegroundComp = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundComponent");
+        fieldForegroundComp.setAccessible(true);
+        fieldForegroundComp.set(mEnabledNfcFServices, mForegroundComponent);
+        Field fieldForegroundReq = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundRequested");
+        fieldForegroundReq.setAccessible(true);
+        fieldForegroundReq.set(mEnabledNfcFServices, mForegroundRequested);
+        mEnabledNfcFServices.dump(mock(FileDescriptor.class), mock(PrintWriter.class),
+                new String[]{});
+
+        mEnabledNfcFServices.dumpDebug(proto);
+        verify(proto).write(eq(EnabledNfcFServicesProto.ACTIVATED), anyBoolean());
+    }
+
+    @Test
+    public void testUnRegisterForegroundService()
+            throws NoSuchFieldException, IllegalAccessException {
+        int mForegroundUid = 1;
+        int userId = 1;
+        ComponentName mForegroundComponent = mock(ComponentName.class);
+        ComponentName mForegroundRequested = mock(ComponentName.class);
+        UserHandle userHandle = mock(UserHandle.class);
+        Field fieldForegroundUid = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundUid");
+        fieldForegroundUid.setAccessible(true);
+        fieldForegroundUid.set(mEnabledNfcFServices, mForegroundUid);
+        Field fieldForegroundComp = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundComponent");
+        fieldForegroundComp.setAccessible(true);
+        fieldForegroundComp.set(mEnabledNfcFServices, mForegroundComponent);
+        Field fieldForegroundReq = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundRequested");
+        fieldForegroundReq.setAccessible(true);
+        fieldForegroundReq.set(mEnabledNfcFServices, mForegroundRequested);
+        when(UserHandle.getUserHandleForUid(anyInt())).thenReturn(userHandle);
+        when(userHandle.getIdentifier()).thenReturn(userId);
+
+        mEnabledNfcFServices.onUidToBackground(mForegroundUid);
+        verify(mCallback).onEnabledForegroundNfcFServiceChanged(userId, null);
+        verify(userHandle).getIdentifier();
+    }
+
+    @Test
+    public void testUnregisteredEnabledForegroundService()
+            throws NoSuchFieldException, IllegalAccessException {
+        int callingId = 1;
+        int mForegroundUid = 1;
+        int userId = 1;
+        ComponentName mForegroundComponent = mock(ComponentName.class);
+        ComponentName mForegroundRequested = mock(ComponentName.class);
+        UserHandle userHandle = mock(UserHandle.class);
+        Field fieldForegroundUid = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundUid");
+        fieldForegroundUid.setAccessible(true);
+        fieldForegroundUid.set(mEnabledNfcFServices, mForegroundUid);
+        Field fieldForegroundComp = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundComponent");
+        fieldForegroundComp.setAccessible(true);
+        fieldForegroundComp.set(mEnabledNfcFServices, mForegroundComponent);
+        Field fieldForegroundReq = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundRequested");
+        fieldForegroundReq.setAccessible(true);
+        fieldForegroundReq.set(mEnabledNfcFServices, mForegroundRequested);
+        when(UserHandle.getUserHandleForUid(anyInt())).thenReturn(userHandle);
+        when(userHandle.getIdentifier()).thenReturn(userId);
+        when(mForegroundUtils.isInForeground(callingId)).thenReturn(true);
+
+        assertTrue(mEnabledNfcFServices.unregisteredEnabledForegroundService(callingId));
+        verify(mCallback).onEnabledForegroundNfcFServiceChanged(userId, null);
+        verify(mForegroundUtils).isInForeground(callingId);
+    }
+
+    @Test
+    public void testUnregisteredEnabledForegroundServiceNonForegroundUid() {
+        int callingId = 1;
+        when(mForegroundUtils.isInForeground(callingId)).thenReturn(false);
+
+        assertFalse(mEnabledNfcFServices.unregisteredEnabledForegroundService(callingId));
+        verify(mForegroundUtils).isInForeground(callingId);
+    }
+
+    @Test
+    public void testOnServiceUpdate() throws NoSuchFieldException, IllegalAccessException {
+        int userId = 1;
+        ComponentName mForegroundComponent = mock(ComponentName.class);
+        ComponentName mForegroundRequested = mock(ComponentName.class);
+        UserHandle userHandle = mock(UserHandle.class);
+        Field fieldForegroundComp = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundComponent");
+        fieldForegroundComp.setAccessible(true);
+        fieldForegroundComp.set(mEnabledNfcFServices, mForegroundComponent);
+        Field fieldForegroundReq = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundRequested");
+        fieldForegroundReq.setAccessible(true);
+        fieldForegroundReq.set(mEnabledNfcFServices, mForegroundRequested);
+        when(UserHandle.getUserHandleForUid(anyInt())).thenReturn(userHandle);
+        when(userHandle.getIdentifier()).thenReturn(userId);
+
+        mEnabledNfcFServices.onServicesUpdated();
+        verify(mCallback).onEnabledForegroundNfcFServiceChanged(userId, null);
+        verify(userHandle).getIdentifier();
+    }
+
+    @Test
+    public void testOnHostEmulationDeactivatedWithPostponedConfiguration()
+            throws NoSuchFieldException, IllegalAccessException {
+        boolean mComputeFgRequested = true;
+        int userId = 1;
+        ComponentName mForegroundRequested = mock(ComponentName.class);
+        UserHandle userHandle = mock(UserHandle.class);
+        Field fieldForegroundUid = EnabledNfcFServices.class.getDeclaredField(
+                "mComputeFgRequested");
+        fieldForegroundUid.setAccessible(true);
+        fieldForegroundUid.set(mEnabledNfcFServices, mComputeFgRequested);
+        Field fieldForegroundComp = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundComponent");
+        fieldForegroundComp.setAccessible(true);
+        fieldForegroundComp.set(mEnabledNfcFServices, null);
+        Field fieldForegroundReq = EnabledNfcFServices.class.getDeclaredField(
+                "mForegroundRequested");
+        fieldForegroundReq.setAccessible(true);
+        fieldForegroundReq.set(mEnabledNfcFServices, mForegroundRequested);
+        when(UserHandle.getUserHandleForUid(anyInt())).thenReturn(userHandle);
+        when(userHandle.getIdentifier()).thenReturn(userId);
+
+        mEnabledNfcFServices.onHostEmulationDeactivated();
+        verify(mCallback).onEnabledForegroundNfcFServiceChanged(userId, mForegroundRequested);
+        verify(userHandle).getIdentifier();
+        verify(mForegroundRequested).equals(null);
+    }
+
 }

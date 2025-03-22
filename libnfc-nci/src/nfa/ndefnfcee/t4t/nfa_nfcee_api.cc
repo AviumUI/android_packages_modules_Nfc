@@ -94,7 +94,7 @@ tNFA_STATUS NFA_T4tNfcEeWrite(uint8_t* p_fileId, uint8_t* p_data,
                               uint32_t len) {
   tNFA_T4TNFCEE_OPERATION* p_msg;
 
-  LOG(DEBUG) << StringPrintf("%s : Enter p_data=%s, len: %i", __func__, p_data,
+  LOG(DEBUG) << StringPrintf("%s : Enter p_data=%s, len=%i", __func__, p_data,
                              len);
 
   if ((p_msg = (tNFA_T4TNFCEE_OPERATION*)GKI_getbuf(

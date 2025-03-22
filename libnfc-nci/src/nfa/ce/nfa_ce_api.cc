@@ -50,7 +50,7 @@ tNFA_STATUS nfa_ce_api_deregister_listen(tNFA_HANDLE handle,
   /* Validate handle */
   if ((listen_info != NFA_CE_LISTEN_INFO_UICC) &&
       ((handle & NFA_HANDLE_GROUP_MASK) != NFA_HANDLE_GROUP_CE)) {
-    LOG(ERROR) << StringPrintf("nfa_ce_api_reregister_listen: Invalid handle");
+    LOG(ERROR) << StringPrintf("%s: Invalid handle", __func__);
     return (NFA_STATUS_BAD_HANDLE);
   }
 
@@ -64,7 +64,7 @@ tNFA_STATUS nfa_ce_api_deregister_listen(tNFA_HANDLE handle,
 
     return (NFA_STATUS_OK);
   } else {
-    LOG(ERROR) << StringPrintf("nfa_ce_api_reregister_listen: Out of buffers");
+    LOG(ERROR) << StringPrintf("%s: Out of buffers", __func__);
     return (NFA_STATUS_FAILED);
   }
 }
@@ -128,22 +128,20 @@ tNFA_STATUS NFA_CeConfigureLocalTag(tNFA_PROTOCOL_MASK protocol_mask,
     /* If any protocols are specified, then NDEF buffer pointer must be non-NULL
      */
     if (p_ndef_data == nullptr) {
-      LOG(ERROR) << StringPrintf(
-          "NFA_CeConfigureLocalTag: NULL ndef data pointer");
+      LOG(ERROR) << StringPrintf("%s: NULL ndef data pointer", __func__);
       return (NFA_STATUS_INVALID_PARAM);
     }
 
     if ((protocol_mask & NFA_PROTOCOL_MASK_T1T) ||
         (protocol_mask & NFA_PROTOCOL_MASK_T2T)) {
-      LOG(ERROR) << StringPrintf(
-          "NFA_CeConfigureLocalTag: Cannot emulate Type 1 / Type 2 tag");
+      LOG(ERROR) << StringPrintf("%s: Cannot emulate Type 1 / Type 2 tag",
+                                 __func__);
       return (NFA_STATUS_INVALID_PARAM);
     }
 
     if (uid_len) {
-      LOG(ERROR) << StringPrintf(
-          "NFA_CeConfigureLocalTag: Cannot Set UID for Protocol_mask: 0x%x",
-          protocol_mask);
+      LOG(ERROR) << StringPrintf("%s: Cannot Set UID for Protocol_mask=0x%x",
+                                 __func__, protocol_mask);
       return (NFA_STATUS_INVALID_PARAM);
     }
   }
@@ -199,7 +197,7 @@ tNFA_STATUS NFA_CeConfigureUiccListenTech(tNFA_HANDLE ee_handle,
 #if (NFC_NFCEE_INCLUDED == TRUE)
   tNFA_CE_MSG* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("ee_handle = 0x%x", ee_handle);
+  LOG(VERBOSE) << StringPrintf("%s: ee_handle = 0x%x", __func__, ee_handle);
 
   /* If tech_mask is zero, then app is disabling listening for specified uicc */
   if (tech_mask == 0) {
@@ -222,8 +220,9 @@ tNFA_STATUS NFA_CeConfigureUiccListenTech(tNFA_HANDLE ee_handle,
   }
 #else
   LOG(ERROR) << StringPrintf(
-      "NFCEE related functions are not "
-      "enabled!");
+      "%s: NFCEE related functions are not "
+      "enabled!",
+      __func__);
 #endif
   return (NFA_STATUS_FAILED);
 }
@@ -297,7 +296,7 @@ tNFA_STATUS NFA_CeRegisterFelicaSystemCodeOnDH(uint16_t system_code,
 **
 *******************************************************************************/
 tNFA_STATUS NFA_CeDeregisterFelicaSystemCodeOnDH(tNFA_HANDLE handle) {
-  LOG(VERBOSE) << StringPrintf("handle:0x%X", handle);
+  LOG(VERBOSE) << StringPrintf("%s: handle=0x%X", __func__, handle);
   return (nfa_ce_api_deregister_listen(handle, NFA_CE_LISTEN_INFO_FELICA));
 }
 
@@ -374,7 +373,7 @@ tNFA_STATUS NFA_CeRegisterAidOnDH(uint8_t aid[NFC_MAX_AID_LEN], uint8_t aid_len,
 **
 *******************************************************************************/
 tNFA_STATUS NFA_CeDeregisterAidOnDH(tNFA_HANDLE handle) {
-  LOG(VERBOSE) << StringPrintf("handle:0x%X", handle);
+  LOG(VERBOSE) << StringPrintf("%s: handle=0x%X", __func__, handle);
   return (nfa_ce_api_deregister_listen(handle, NFA_CE_LISTEN_INFO_T4T_AID));
 }
 
@@ -409,10 +408,9 @@ tNFA_STATUS NFA_CeSetIsoDepListenTech(tNFA_TECHNOLOGY_MASK tech_mask) {
   tNFA_TECHNOLOGY_MASK use_mask =
       (NFA_TECHNOLOGY_MASK_A | NFA_TECHNOLOGY_MASK_B);
 
-  LOG(VERBOSE) << StringPrintf("0x%x", tech_mask);
+  LOG(VERBOSE) << StringPrintf("%s: tech_mask=0x%x", __func__, tech_mask);
   if (((tech_mask & use_mask) == 0) || ((tech_mask & ~use_mask) != 0)) {
-    LOG(ERROR) << StringPrintf(
-        "NFA_CeSetIsoDepListenTech: Invalid technology mask");
+    LOG(ERROR) << StringPrintf("%s: Invalid technology mask", __func__);
     return (NFA_STATUS_INVALID_PARAM);
   }
 

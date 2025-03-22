@@ -88,7 +88,7 @@ void* gki_task_entry(void* params) {
   pthread_t thread_id = pthread_self();
   gki_pthread_info_t* p_pthread_info = (gki_pthread_info_t*)params;
   LOG(DEBUG) << StringPrintf(
-      "%s; task_id=%i, thread_id=%lx/%lx, pCond/pMutex=%p/%p", __func__,
+      "%s: task_id=%i, thread_id=%lx/%lx, pCond/pMutex=%p/%p", __func__,
       p_pthread_info->task_id, gki_cb.os.thread_id[p_pthread_info->task_id],
       pthread_self(), p_pthread_info->pCond, p_pthread_info->pMutex);
 
@@ -96,7 +96,7 @@ void* gki_task_entry(void* params) {
   /* Call the actual thread entry point */
   (p_pthread_info->task_entry)(p_pthread_info->params);
 
-  LOG(WARNING) << StringPrintf("%s; task_id=%i terminating", __func__,
+  LOG(WARNING) << StringPrintf("%s: task_id=%i terminating", __func__,
                                p_pthread_info->task_id);
 #if (FALSE == GKI_PTHREAD_JOINABLE)
   gki_cb.os.thread_id[p_pthread_info->task_id] = 0;
@@ -201,11 +201,11 @@ uint8_t GKI_create_task(TASKPTR task_entry, uint8_t task_id, int8_t* taskname,
   pthread_condattr_init(&attr);
   pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
   LOG(DEBUG) << StringPrintf(
-      "%s; func=0x%p  id=%d  name=%s  stack=0x%p  stackSize=%d", __func__,
+      "%s: func=0x%p  id=%d  name=%s  stack=0x%p  stackSize=%d", __func__,
       task_entry, task_id, taskname, stack, stacksize);
 
   if (task_id >= GKI_MAX_TASKS) {
-    LOG(ERROR) << StringPrintf("%s; Error! task ID > max task allowed",
+    LOG(ERROR) << StringPrintf("%s: Error! task ID > max task allowed",
                                __func__);
     pthread_condattr_destroy(&attr);
     return (GKI_FAILURE);
@@ -227,10 +227,11 @@ uint8_t GKI_create_task(TASKPTR task_entry, uint8_t task_id, int8_t* taskname,
 #if (FALSE == GKI_PTHREAD_JOINABLE)
   pthread_attr_setdetachstate(&attr1, PTHREAD_CREATE_DETACHED);
 
-  LOG(DEBUG) << StringPrintf("%s; GKI creating task %i, pCond/pMutex=%p/%p",
+  LOG(DEBUG) << StringPrintf("%s:  GKI creating task %i, pCond/pMutex=%p/%p",
                              __func__, task_id, pCondVar, pMutex);
 #else
-  LOG(VERBOSE) << StringPrintf("GKI creating JOINABLE task %i", task_id);
+  LOG(VERBOSE) << StringPrintf("%s: GKI creating JOINABLE task %i", __func__,
+                               task_id);
 #endif
 
   /* On Android, the new tasks starts running before
@@ -250,7 +251,8 @@ uint8_t GKI_create_task(TASKPTR task_entry, uint8_t task_id, int8_t* taskname,
   pthread_attr_destroy(&attr1);
 
   if (ret != 0) {
-    LOG(VERBOSE) << StringPrintf("pthread_create failed(%d), %s!", ret, taskname);
+    LOG(VERBOSE) << StringPrintf("%s: pthread_create failed(%d), %s!", __func__,
+                                 ret, taskname);
     return GKI_FAILURE;
   }
 
@@ -258,7 +260,8 @@ uint8_t GKI_create_task(TASKPTR task_entry, uint8_t task_id, int8_t* taskname,
       0) {
 #if (PBS_SQL_TASK == TRUE)
     if (task_id == PBS_SQL_TASK) {
-      LOG(VERBOSE) << StringPrintf("PBS SQL lowest priority task");
+      LOG(VERBOSE) << StringPrintf("%s: PBS SQL lowest priority task",
+                                   __func__);
       policy = SCHED_NORMAL;
     } else
 #endif
@@ -269,9 +272,9 @@ uint8_t GKI_create_task(TASKPTR task_entry, uint8_t task_id, int8_t* taskname,
     pthread_setschedparam(gki_cb.os.thread_id[task_id], policy, &param);
   }
 
-  LOG(VERBOSE) << StringPrintf("Leaving GKI_create_task %p %d %lx %s %p %d",
-                             task_entry, task_id, gki_cb.os.thread_id[task_id],
-                             taskname, stack, stacksize);
+  LOG(VERBOSE) << StringPrintf(
+      "%s: Leaving GKI_create_task %p %d %lx %s %p %d", __func__, task_entry,
+      task_id, gki_cb.os.thread_id[task_id], taskname, stack, stacksize);
 
   return (GKI_SUCCESS);
 }
@@ -326,11 +329,12 @@ void GKI_shutdown(void) {
         /* wait for proper Arnold Schwarzenegger task state */
         result = pthread_join(gki_cb.os.thread_id[task_id - 1], NULL);
         if (result < 0) {
-          LOG(VERBOSE) << StringPrintf("FAILED: result: %d", result);
+          LOG(VERBOSE) << StringPrintf("%s: FAILED: result=%d", __func__,
+                                       result);
         }
       }
 #endif
-      LOG(DEBUG) << StringPrintf("%s; task %s dead", __func__,
+      LOG(DEBUG) << StringPrintf("%s:  task %s dead", __func__,
                                  gki_cb.com.OSTName[task_id - 1]);
       GKI_exit_task(task_id - 1);
     }
@@ -358,7 +362,7 @@ void GKI_shutdown(void) {
 #if (TRUE == GKI_PTHREAD_JOINABLE)
   result = pthread_join(gki_cb.os.thread_id[BTU_TASK], NULL);
   if (result < 0) {
-    LOG(DEBUG) << StringPrintf("FAILED: result: %d", result);
+    LOG(DEBUG) << StringPrintf("%s: FAILED: result=%d", __func__, result);
   }
 #endif
 
@@ -411,7 +415,7 @@ void gki_system_tick_start_stop_cback(bool start) {
 *******************************************************************************/
 #ifdef NO_GKI_RUN_RETURN
 void timer_thread(signed long id) {
-  LOG(VERBOSE) << StringPrintf("%s enter", __func__);
+  LOG(VERBOSE) << StringPrintf("%s: enter", __func__);
   struct timespec delay;
   int timeout = 1000; /* 10  ms per system tick  */
   int err;
@@ -428,7 +432,7 @@ void timer_thread(signed long id) {
 
     GKI_timer_update(1);
   }
-  LOG(ERROR) << StringPrintf("%s exit", __func__);
+  LOG(ERROR) << StringPrintf("%s: exit", __func__);
   return;
 }
 #endif
@@ -449,7 +453,7 @@ void timer_thread(signed long id) {
 **                  should be empty.
 *******************************************************************************/
 void GKI_run(__attribute__((unused)) void* p_task_id) {
-  LOG(DEBUG) << StringPrintf("%s; enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s:  enter", __func__);
   struct timespec delay;
   int err = 0;
   pthread_mutex_lock(&gki_init_mutex);
@@ -460,12 +464,12 @@ void GKI_run(__attribute__((unused)) void* p_task_id) {
    * timers are
    * in any GKI/BTA/BTU this should save power when BTLD is idle! */
   GKI_timer_queue_register_callback(gki_system_tick_start_stop_cback);
-  LOG(DEBUG) << StringPrintf("%s; Start/Stop GKI_timer_update_registered!",
+  LOG(DEBUG) << StringPrintf("%s:  Start/Stop GKI_timer_update_registered!",
                              __func__);
 #endif
 
 #ifdef NO_GKI_RUN_RETURN
-  LOG(VERBOSE) << StringPrintf("GKI_run == NO_GKI_RUN_RETURN");
+  LOG(VERBOSE) << StringPrintf("%s: == NO_GKI_RUN_RETURN", __func__);
   pthread_attr_t timer_attr;
 
   shutdown_timer = 0;
@@ -474,12 +478,12 @@ void GKI_run(__attribute__((unused)) void* p_task_id) {
   pthread_attr_setdetachstate(&timer_attr, PTHREAD_CREATE_DETACHED);
   if (pthread_create(&timer_thread_id, &timer_attr, timer_thread, NULL) != 0) {
     LOG(VERBOSE) << StringPrintf(
-        "GKI_run: pthread_create failed to create timer_thread!");
+        "%s: pthread_create failed to create timer_thread!", __func__);
     pthread_mutex_unlock(&gki_init_mutex);
     return GKI_FAILURE;
   }
 #else
-  LOG(DEBUG) << StringPrintf("%s; run_cond(%p)=%d ", __func__, p_run_cond,
+  LOG(DEBUG) << StringPrintf("%s:  run_cond(%p)=%d ", __func__, p_run_cond,
                              *p_run_cond);
   for (; GKI_TIMER_TICK_EXIT_COND != *p_run_cond;) {
     do {
@@ -507,7 +511,7 @@ void GKI_run(__attribute__((unused)) void* p_task_id) {
  * GKI_TIMER_TICK_STOP_COND
  * block timer main thread till re-armed by  */
 #ifdef GKI_TICK_TIMER_DEBUG
-    LOG(VERBOSE) << StringPrintf(">>> SUSPENDED");
+    LOG(VERBOSE) << StringPrintf("%s: >>> SUSPENDED", __func__);
 #endif
     if (GKI_TIMER_TICK_EXIT_COND != *p_run_cond) {
       pthread_mutex_lock(&gki_cb.os.gki_timer_mutex);
@@ -517,7 +521,8 @@ void GKI_run(__attribute__((unused)) void* p_task_id) {
     /* potentially we need to adjust os gki_cb.com.OSTicks */
 
 #ifdef GKI_TICK_TIMER_DEBUG
-    LOG(VERBOSE) << StringPrintf(">>> RESTARTED run_cond: %d", *p_run_cond);
+    LOG(VERBOSE) << StringPrintf("%s: >>> RESTARTED run_cond=%d", __func__,
+                                 *p_run_cond);
 #endif
   } /* for */
   pthread_mutex_unlock(&gki_init_mutex);
@@ -529,7 +534,7 @@ void GKI_run(__attribute__((unused)) void* p_task_id) {
   pthread_mutex_unlock(&gki_cb.os.gki_end_mutex);
 
   gki_cb.com.OSWaitEvt[BTU_TASK] = 0;
-  LOG(VERBOSE) << StringPrintf("%s exit", __func__);
+  LOG(VERBOSE) << StringPrintf("%s: exit", __func__);
 }
 
 /*******************************************************************************
@@ -584,28 +589,28 @@ uint16_t GKI_wait(uint16_t flag, uint32_t timeout) {
 
   rtask = GKI_get_taskid();
   if (rtask >= GKI_MAX_TASKS) {
-    LOG(ERROR) << StringPrintf("%s() Exiting thread; rtask %d >= %d", __func__,
+    LOG(ERROR) << StringPrintf("%s: Exiting thread; rtask %d >= %d", __func__,
                                rtask, GKI_MAX_TASKS);
     return EVENT_MASK(GKI_SHUTDOWN_EVT);
   }
 
   gki_pthread_info_t* p_pthread_info = &gki_pthread_info[rtask];
   if (p_pthread_info->pCond != nullptr && p_pthread_info->pMutex != nullptr) {
-    LOG(DEBUG) << StringPrintf("%s; task=%i, pCond/pMutex = %p/%p", __func__,
+    LOG(DEBUG) << StringPrintf("%s:  task=%i, pCond/pMutex = %p/%p", __func__,
                                rtask, p_pthread_info->pCond,
                                p_pthread_info->pMutex);
     if (pthread_mutex_lock(p_pthread_info->pMutex) != 0) {
-      LOG(ERROR) << StringPrintf("%s; Could not lock mutex", __func__);
+      LOG(ERROR) << StringPrintf("%s:  Could not lock mutex", __func__);
       return EVENT_MASK(GKI_SHUTDOWN_EVT);
     }
     if (pthread_cond_signal(p_pthread_info->pCond) != 0) {
-      LOG(ERROR) << StringPrintf("%s; Error calling pthread_cond_signal()",
+      LOG(ERROR) << StringPrintf("%s:  Error calling pthread_cond_signal()",
                                  __func__);
       (void)pthread_mutex_unlock(p_pthread_info->pMutex);
       return EVENT_MASK(GKI_SHUTDOWN_EVT);
     }
     if (pthread_mutex_unlock(p_pthread_info->pMutex) != 0) {
-      LOG(ERROR) << StringPrintf("%s; Error unlocking mutex", __func__);
+      LOG(ERROR) << StringPrintf("%s:  Error unlocking mutex", __func__);
       return EVENT_MASK(GKI_SHUTDOWN_EVT);
     }
     p_pthread_info->pMutex = nullptr;
@@ -683,8 +688,8 @@ uint16_t GKI_wait(uint16_t flag, uint32_t timeout) {
       /* unlock thread_evt_mutex as pthread_cond_wait() does auto lock when cond
        * is met */
       pthread_mutex_unlock(&gki_cb.os.thread_evt_mutex[rtask]);
-      LOG(WARNING) << StringPrintf("GKI TASK_DEAD received. exit thread %d...",
-                                   rtask);
+      LOG(WARNING) << StringPrintf(
+          "%s: GKI TASK_DEAD received. exit thread %d...", __func__, rtask);
 
 #if (FALSE == GKI_PTHREAD_JOINABLE)
       gki_cb.os.thread_id[rtask] = 0;
@@ -727,7 +732,8 @@ void GKI_delay(uint32_t timeout) {
   struct timespec delay;
   int err;
 
-  LOG(VERBOSE) << StringPrintf("GKI_delay %d %d", rtask, timeout);
+  LOG(VERBOSE) << StringPrintf("%s: rtask=%d timeout=%d", __func__, rtask,
+                               timeout);
 
   delay.tv_sec = timeout / 1000;
   delay.tv_nsec = 1000 * 1000 * (timeout % 1000);
@@ -746,7 +752,8 @@ void GKI_delay(uint32_t timeout) {
   if (rtask && gki_cb.com.OSRdyTbl[rtask] == TASK_DEAD) {
   }
 
-  LOG(VERBOSE) << StringPrintf("GKI_delay %d %d done", rtask, timeout);
+  LOG(VERBOSE) << StringPrintf("%s: rtask=%d timeout=%d done", __func__, rtask,
+                               timeout);
   return;
 }
 
@@ -804,8 +811,8 @@ uint8_t GKI_send_event(uint8_t task_id, uint16_t event) {
 **
 *******************************************************************************/
 uint8_t GKI_isend_event(uint8_t task_id, uint16_t event) {
-  LOG(VERBOSE) << StringPrintf("GKI_isend_event %d %x", task_id, event);
-  LOG(VERBOSE) << StringPrintf("GKI_isend_event %d %x done", task_id, event);
+  LOG(VERBOSE) << StringPrintf("%s: task_id=%d event%x", __func__, task_id,
+                               event);
   return GKI_send_event(task_id, event);
 }
 
@@ -852,11 +859,9 @@ uint8_t GKI_get_taskid(void) {
 **
 *******************************************************************************/
 int8_t* GKI_map_taskname(uint8_t task_id) {
-  LOG(VERBOSE) << StringPrintf("GKI_map_taskname %d", task_id);
-
   if (task_id < GKI_MAX_TASKS) {
-    LOG(VERBOSE) << StringPrintf("GKI_map_taskname %d %s done", task_id,
-                               gki_cb.com.OSTName[task_id]);
+    LOG(VERBOSE) << StringPrintf("%s: task_id=%d %s done", __func__, task_id,
+                                 gki_cb.com.OSTName[task_id]);
     return (gki_cb.com.OSTName[task_id]);
   } else if (task_id == GKI_MAX_TASKS) {
     return (gki_cb.com.OSTName[GKI_get_taskid()]);
@@ -922,22 +927,22 @@ void GKI_disable(void) {
 void GKI_exception(uint16_t code, std::string msg) {
   uint8_t task_id;
 
-  LOG(ERROR) << StringPrintf("Task State Table");
+  LOG(ERROR) << StringPrintf("%s: Task State Table", __func__);
 
   for (task_id = 0; task_id < GKI_MAX_TASKS; task_id++) {
-    LOG(ERROR) << StringPrintf("TASK ID [%d] task name [%s] state [%d]",
-                               task_id, gki_cb.com.OSTName[task_id],
+    LOG(ERROR) << StringPrintf("%s: TASK ID [%d] task name [%s] state [%d]",
+                               __func__, task_id, gki_cb.com.OSTName[task_id],
                                gki_cb.com.OSRdyTbl[task_id]);
   }
 
-  LOG(ERROR) << StringPrintf("%d %s", code, msg.c_str());
+  LOG(ERROR) << StringPrintf("%s: code=%d %s", __func__, code, msg.c_str());
   LOG(ERROR) << StringPrintf(
       "********************************************************************");
-  LOG(ERROR) << StringPrintf("* %d %s", code, msg.c_str());
+  LOG(ERROR) << StringPrintf("%s: * code=%d %s", __func__, code, msg.c_str());
   LOG(ERROR) << StringPrintf(
       "********************************************************************");
 
-  LOG(ERROR) << StringPrintf("%d %s done", code, msg.c_str());
+  LOG(ERROR) << StringPrintf("%s: code%d %s done", __func__, code, msg.c_str());
 
   return;
 }
@@ -1064,9 +1069,8 @@ void GKI_os_free(void* p_mem) {
 **
 *******************************************************************************/
 uint8_t GKI_suspend_task(uint8_t task_id) {
-  LOG(VERBOSE) << StringPrintf("GKI_suspend_task %d - NOT implemented", task_id);
-
-  LOG(VERBOSE) << StringPrintf("GKI_suspend_task %d done", task_id);
+  LOG(VERBOSE) << StringPrintf("%s: task_id=%d - NOT implemented", __func__,
+                               task_id);
 
   return (GKI_SUCCESS);
 }
@@ -1087,9 +1091,8 @@ uint8_t GKI_suspend_task(uint8_t task_id) {
 **
 *******************************************************************************/
 uint8_t GKI_resume_task(uint8_t task_id) {
-  LOG(VERBOSE) << StringPrintf("GKI_resume_task %d - NOT implemented", task_id);
-
-  LOG(VERBOSE) << StringPrintf("GKI_resume_task %d done", task_id);
+  LOG(VERBOSE) << StringPrintf("%s: task_id=%d - NOT implemented", __func__,
+                               task_id);
 
   return (GKI_SUCCESS);
 }
@@ -1132,7 +1135,7 @@ void GKI_exit_task(uint8_t task_id) {
 
   // GKI_send_event(task_id, EVENT_MASK(GKI_SHUTDOWN_EVT));
 
-  LOG(DEBUG) << StringPrintf("%s; %d done", __func__, task_id);
+  LOG(DEBUG) << StringPrintf("%s:  %d done", __func__, task_id);
   return;
 }
 
@@ -1151,7 +1154,7 @@ void GKI_exit_task(uint8_t task_id) {
 **
 *******************************************************************************/
 void GKI_sched_lock(void) {
-  LOG(VERBOSE) << StringPrintf("GKI_sched_lock");
+  LOG(VERBOSE) << StringPrintf("%s", __func__);
   GKI_disable();
   return;
 }
@@ -1171,7 +1174,7 @@ void GKI_sched_lock(void) {
 **
 *******************************************************************************/
 void GKI_sched_unlock(void) {
-  LOG(VERBOSE) << StringPrintf("GKI_sched_unlock");
+  LOG(VERBOSE) << StringPrintf("%s", __func__);
   GKI_enable();
 }
 

@@ -69,7 +69,7 @@ public class TapAgainDialog extends AlertActivity implements DialogInterface.OnC
         Intent intent = getIntent();
         ApduServiceInfo serviceInfo = intent.getParcelableExtra(EXTRA_APDU_SERVICE);
         if (serviceInfo == null) {
-            Log.e(TAG, "serviceInfo is null");
+            Log.e(TAG, "onCreate: serviceInfo is null");
             finish();
             return;
         }
@@ -125,7 +125,7 @@ public class TapAgainDialog extends AlertActivity implements DialogInterface.OnC
     protected void onDestroy() {
         super.onDestroy();
         if (mReceiver.get() != null) {
-            Log.e(TAG, "TapAgainDialog destroy without being closed");
+            Log.e(TAG, "onDestroy: Failed to unregister receiver");
             close();
         }
     }

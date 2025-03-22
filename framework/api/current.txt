@@ -77,6 +77,7 @@ package android.nfc {
     method public boolean isEnabled();
     method public boolean isObserveModeEnabled();
     method public boolean isObserveModeSupported();
+    method @FlaggedApi("com.android.nfc.module.flags.reader_mode_annotations") public boolean isReaderModeAnnotationSupported();
     method @FlaggedApi("android.nfc.enable_nfc_reader_option") public boolean isReaderOptionEnabled();
     method @FlaggedApi("android.nfc.enable_nfc_reader_option") public boolean isReaderOptionSupported();
     method public boolean isSecureNfcEnabled();

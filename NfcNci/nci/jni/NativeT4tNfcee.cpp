@@ -87,6 +87,8 @@ void NativeT4tNfcee::initialize(void) {
 **
 *******************************************************************************/
 void NativeT4tNfcee::onNfccShutdown() {
+  static const char fn[] = "NativeT4tNfcee:onNfccShutdown";
+  LOG(DEBUG) << StringPrintf("%s", fn);
   sIsNfcOffTriggered = true;
   if (mBusy) {
     /* Unblock JNI APIs */
@@ -114,8 +116,8 @@ void NativeT4tNfcee::onNfccShutdown() {
 **
 *******************************************************************************/
 jboolean NativeT4tNfcee::t4tClearData(JNIEnv* e, jobject o) {
-  LOG(DEBUG) << StringPrintf("%s:Enter: ", __func__);
-
+  static const char fn[] = "NativeT4tNfcee:t4tClearData";
+  LOG(DEBUG) << StringPrintf("%s", fn);
   /*Local variable Initialization*/
   uint8_t pFileId[] = {0xE1, 0x04};
   jbyteArray fileIdArray = e->NewByteArray(sizeof(pFileId));
@@ -132,11 +134,11 @@ jboolean NativeT4tNfcee::t4tClearData(JNIEnv* e, jobject o) {
       clear_status = performT4tClearData(pFileId);
       break;
     default:
-      LOG(ERROR) << StringPrintf("%s:Exit: Returnig status : %d", __func__,
+      LOG(ERROR) << StringPrintf("%s: Exit, Returning status=%d", fn,
                                  clear_status);
       break;
   }
-  LOG(DEBUG) << StringPrintf("%s:Exit: ", __func__);
+
   return clear_status;
 }
 /*******************************************************************************
@@ -150,6 +152,7 @@ jboolean NativeT4tNfcee::t4tClearData(JNIEnv* e, jobject o) {
 **
 *******************************************************************************/
 jboolean NativeT4tNfcee::performT4tClearData(uint8_t* fileId) {
+  static const char fn[] = "NativeT4tNfcee:performT4tClearData";
   bool t4tClearReturn = false;
   tNFA_STATUS status = NFA_STATUS_FAILED;
 
@@ -171,6 +174,7 @@ jboolean NativeT4tNfcee::performT4tClearData(uint8_t* fileId) {
 
   /*Close connection and start discovery*/
   cleanup();
+  LOG(DEBUG) << StringPrintf("%s: t4tClearReturn=%d", fn, t4tClearReturn);
   return t4tClearReturn;
 }
 /*******************************************************************************
@@ -185,13 +189,12 @@ jboolean NativeT4tNfcee::performT4tClearData(uint8_t* fileId) {
 **
 *******************************************************************************/
 jboolean NativeT4tNfcee::getT4tStatus(JNIEnv* e, jobject o) {
-  LOG(DEBUG) << StringPrintf("%s:Enter: ", __func__);
+  static const char fn[] = "NativeT4tNfcee:getT4tStatus";
 
   bool t4tStatus = false;
   t4tStatus = NFA_T4tNfcEeIsProcessing();
 
-  LOG(DEBUG) << StringPrintf("%s:Exit: Returnig status : %d", __func__,
-                             t4tStatus);
+  LOG(DEBUG) << StringPrintf("%s: status=%d", fn, t4tStatus);
   return t4tStatus;
 }
 /*******************************************************************************
@@ -208,12 +211,10 @@ jboolean NativeT4tNfcee::getT4tStatus(JNIEnv* e, jobject o) {
 *******************************************************************************/
 jboolean NativeT4tNfcee::isT4tNdefNfceeEmulationSupported(JNIEnv* e,
                                                           jobject o) {
-  LOG(DEBUG) << StringPrintf("%s:Enter: ", __func__);
-
+  static const char fn[] = "NativeT4tNfcee:isT4tNdefNfceeEmulationSupported";
   bool t4tStatus = false;
   t4tStatus = NFA_T4tNfcEeIsEmulationSupported();
-
-  LOG(DEBUG) << StringPrintf("%s:Exit: ", __func__);
+  LOG(DEBUG) << StringPrintf("%s: status=%d", fn, t4tStatus);
   return t4tStatus;
 }
 
@@ -229,21 +230,23 @@ jboolean NativeT4tNfcee::isT4tNdefNfceeEmulationSupported(JNIEnv* e,
 *******************************************************************************/
 jint NativeT4tNfcee::t4tWriteData(JNIEnv* e, jobject object, jbyteArray fileId,
                                   jbyteArray data) {
+  static const char fn[] = "NativeT4tNfcee:t4tWriteData";
   tNFA_STATUS status = NFA_STATUS_FAILED;
 
+  LOG(DEBUG) << StringPrintf("%s", fn);
   T4TNFCEE_STATUS_t t4tNfceeStatus =
       validatePreCondition(OP_WRITE, fileId, data);
   if (t4tNfceeStatus != STATUS_SUCCESS) return t4tNfceeStatus;
 
   ScopedByteArrayRO bytes(e, fileId);
   if (bytes.size() < FILE_ID_LEN) {
-    LOG(ERROR) << StringPrintf("%s:Wrong File Id", __func__);
+    LOG(ERROR) << StringPrintf("%s: Wrong File Id", fn);
     return ERROR_INVALID_FILE_ID;
   }
 
   ScopedByteArrayRO bytesData(e, data);
   if (bytesData.size() == 0x00) {
-    LOG(ERROR) << StringPrintf("%s:Empty Data", __func__);
+    LOG(ERROR) << StringPrintf("%s: Empty Data", fn);
     return ERROR_EMPTY_PAYLOAD;
   }
 
@@ -281,7 +284,7 @@ jint NativeT4tNfcee::t4tWriteData(JNIEnv* e, jobject object, jbyteArray fileId,
 
   /*Close connection and start discovery*/
   cleanup();
-  LOG(ERROR) << StringPrintf("%s:Exit: Returnig status : %d", __func__,
+  LOG(ERROR) << StringPrintf("%s: Exit: Returnig status =%d", fn,
                              t4tWriteReturn);
   return t4tWriteReturn;
 }
@@ -301,15 +304,17 @@ jint NativeT4tNfcee::t4tWriteData(JNIEnv* e, jobject object, jbyteArray fileId,
 *******************************************************************************/
 jbyteArray NativeT4tNfcee::t4tReadData(JNIEnv* e, jobject object,
                                        jbyteArray fileId) {
+  static const char fn[] = "NativeT4tNfcee:t4tReadData";
   tNFA_STATUS status = NFA_STATUS_FAILED;
 
+  LOG(DEBUG) << StringPrintf("%s", fn);
   T4TNFCEE_STATUS_t t4tNfceeStatus = validatePreCondition(OP_READ, fileId);
   if (t4tNfceeStatus != STATUS_SUCCESS) return NULL;
 
   ScopedByteArrayRO bytes(e, fileId);
   ScopedLocalRef<jbyteArray> result(e, NULL);
   if (bytes.size() < FILE_ID_LEN) {
-    LOG(ERROR) << StringPrintf("%s:Wrong File Id", __func__);
+    LOG(ERROR) << StringPrintf("%s: Wrong File Id", fn);
     return NULL;
   }
 
@@ -324,8 +329,7 @@ jbyteArray NativeT4tNfcee::t4tReadData(JNIEnv* e, jobject object,
     status = NFA_T4tNfcEeRead(pFileId);
     if ((status != NFA_STATUS_OK) ||
         (mT4tNfcEeRWCEvent.wait(T4TNFCEE_TIMEOUT) == false)) {
-      LOG(ERROR) << StringPrintf("%s:Read Failed, status = 0x%X", __func__,
-                                 status);
+      LOG(ERROR) << StringPrintf("%s: Read Failed, status = 0x%X", fn, status);
       cleanup();
       return NULL;
     }
@@ -339,8 +343,7 @@ jbyteArray NativeT4tNfcee::t4tReadData(JNIEnv* e, jobject object,
     } else {
       result.reset(e->NewByteArray(0x00));
       e->SetByteArrayRegion(result.get(), 0, 0x00, (jbyte*){});
-      LOG(ERROR) << StringPrintf("%s: Failed to allocate java byte array",
-                                 __func__);
+      LOG(ERROR) << StringPrintf("%s: Failed to allocate java byte array", fn);
     }
     sRxDataBuffer.clear();
   } else if (mT4tOpStatus == NFA_T4T_STATUS_INVALID_FILE_ID) {
@@ -362,17 +365,19 @@ jbyteArray NativeT4tNfcee::t4tReadData(JNIEnv* e, jobject object,
 **
 *******************************************************************************/
 tNFA_STATUS NativeT4tNfcee::openConnection() {
+  static const char fn[] = "NativeT4tNfcee:openConnection";
   tNFA_STATUS status = NFA_STATUS_FAILED;
-  LOG(DEBUG) << StringPrintf("%s: Enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s", fn);
   SyncEventGuard g(mT4tNfcEeEvent);
   status = NFA_T4tNfcEeOpenConnection();
   if (status == NFA_STATUS_OK) {
-    if (mT4tNfcEeEvent.wait(T4TNFCEE_TIMEOUT) == false)
+    if (mT4tNfcEeEvent.wait(T4TNFCEE_TIMEOUT) == false) {
       status = NFA_STATUS_FAILED;
-    else
+      LOG(ERROR) << StringPrintf(
+          "%s: NFA_T4tNfcEeOpenConnection Failed, status = 0x%X", fn, status);
+    } else
       status = mT4tNfcEeEventStat;
   }
-  LOG(DEBUG) << StringPrintf("%s: Exit status = 0x%02x", __func__, status);
   return status;
 }
 
@@ -386,20 +391,22 @@ tNFA_STATUS NativeT4tNfcee::openConnection() {
 **
 *******************************************************************************/
 tNFA_STATUS NativeT4tNfcee::closeConnection() {
+  static const char fn[] = "NativeT4tNfcee:closeConnection";
   tNFA_STATUS status = NFA_STATUS_FAILED;
-  LOG(DEBUG) << StringPrintf("%s: Enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s", fn);
   {
     SyncEventGuard g(mT4tNfcEeEvent);
     status = NFA_T4tNfcEeCloseConnection();
     if (status == NFA_STATUS_OK) {
-      if (mT4tNfcEeEvent.wait(T4TNFCEE_TIMEOUT) == false)
+      if (mT4tNfcEeEvent.wait(T4TNFCEE_TIMEOUT) == false) {
         status = NFA_STATUS_FAILED;
-      else
+        LOG(ERROR) << StringPrintf(
+            "%s: NFA_T4tNfcEeCloseConnection Failed, status = 0x%X", fn,
+            status);
+      } else
         status = mT4tNfcEeEventStat;
     }
   }
-
-  LOG(DEBUG) << StringPrintf("%s: Exit status = 0x%02x", __func__, status);
   return status;
 }
 
@@ -413,6 +420,8 @@ tNFA_STATUS NativeT4tNfcee::closeConnection() {
 **
 *******************************************************************************/
 tNFA_STATUS NativeT4tNfcee::setup(void) {
+  static const char fn[] = "NativeT4tNfcee:setup";
+  LOG(DEBUG) << StringPrintf("%s", fn);
   tNFA_STATUS status = NFA_STATUS_FAILED;
   setBusy();
   if (android::isDiscoveryStarted()) {
@@ -421,8 +430,8 @@ tNFA_STATUS NativeT4tNfcee::setup(void) {
 
   status = openConnection();
   if (status != NFA_STATUS_OK) {
-    LOG(ERROR) << StringPrintf("%s: openConnection Failed, status = 0x%X",
-                               __func__, status);
+    LOG(ERROR) << StringPrintf("%s: openConnection Failed, status = 0x%X", fn,
+                               status);
     if (!android::isDiscoveryStarted()) android::startRfDiscovery(true);
     resetBusy();
   }
@@ -438,14 +447,16 @@ tNFA_STATUS NativeT4tNfcee::setup(void) {
 **
 *******************************************************************************/
 void NativeT4tNfcee::cleanup(void) {
+  static const char fn[] = "NativeT4tNfcee:cleanup";
+  LOG(DEBUG) << StringPrintf("%s", fn);
   if (sIsNfcOffTriggered) {
     SyncEventGuard g(mT4tNfcOffEvent);
     mT4tNfcOffEvent.notifyOne();
-    LOG(ERROR) << StringPrintf("%s: Nfc Off triggered", __func__);
+    LOG(ERROR) << StringPrintf("%s: Nfc Off triggered", fn);
     return;
   }
   if (closeConnection() != NFA_STATUS_OK) {
-    LOG(ERROR) << StringPrintf("%s: closeConnection Failed", __func__);
+    LOG(ERROR) << StringPrintf("%s: closeConnection Failed", fn);
   }
   if (!android::isDiscoveryStarted()) {
     android::startRfDiscovery(true);
@@ -465,6 +476,7 @@ void NativeT4tNfcee::cleanup(void) {
 T4TNFCEE_STATUS_t NativeT4tNfcee::validatePreCondition(T4TNFCEE_OPERATIONS_t op,
                                                        jbyteArray fileId,
                                                        jbyteArray data) {
+  static const char fn[] = "NativeT4tNfcee:validatePreCondition";
   T4TNFCEE_STATUS_t t4tNfceeStatus = STATUS_SUCCESS;
   if (!android::nfcManager_isNfcActive()) {
     t4tNfceeStatus = ERROR_NFC_NOT_ON;
@@ -473,7 +485,7 @@ T4TNFCEE_STATUS_t NativeT4tNfcee::validatePreCondition(T4TNFCEE_OPERATIONS_t op,
   } else if (gActivated) {
     t4tNfceeStatus = ERROR_RF_ACTIVATED;
   } else if (fileId == NULL) {
-    LOG(ERROR) << StringPrintf("%s:Invalid File Id", __func__);
+    LOG(ERROR) << StringPrintf("%s: Invalid File Id", fn);
     t4tNfceeStatus = ERROR_INVALID_FILE_ID;
   }
 
@@ -482,7 +494,7 @@ T4TNFCEE_STATUS_t NativeT4tNfcee::validatePreCondition(T4TNFCEE_OPERATIONS_t op,
       break;
     case OP_WRITE:
       if (data == NULL) {
-        LOG(ERROR) << StringPrintf("%s:Empty data", __func__);
+        LOG(ERROR) << StringPrintf("%s: Empty data", fn);
         t4tNfceeStatus = ERROR_EMPTY_PAYLOAD;
       }
       break;
@@ -504,13 +516,14 @@ T4TNFCEE_STATUS_t NativeT4tNfcee::validatePreCondition(T4TNFCEE_OPERATIONS_t op,
 **
 *******************************************************************************/
 void NativeT4tNfcee::t4tReadComplete(tNFA_STATUS status, tNFA_RX_DATA data) {
+  static const char fn[] = "NativeT4tNfcee:t4tReadComplete";
+  LOG(DEBUG) << StringPrintf("%s", fn);
   mT4tOpStatus = status;
   if (status == NFA_STATUS_OK) {
     if (data.len > 0) {
       sRxDataBuffer.insert(sRxDataBuffer.end(), data.p_data,
                            data.p_data + data.len);
-      LOG(DEBUG) << StringPrintf("%s: Read Data len new: %d ", __func__,
-                                 data.len);
+      LOG(DEBUG) << StringPrintf("%s: Read Data len new=%d ", fn, data.len);
     }
   }
   SyncEventGuard g(mT4tNfcEeRWCEvent);
@@ -527,8 +540,9 @@ void NativeT4tNfcee::t4tReadComplete(tNFA_STATUS status, tNFA_RX_DATA data) {
  **
  *******************************************************************************/
 void NativeT4tNfcee::t4tWriteComplete(tNFA_STATUS status, tNFA_RX_DATA data) {
+  static const char fn[] = "NativeT4tNfcee:t4tWriteComplete";
   mReadData.len = 0x00;
-  LOG(DEBUG) << StringPrintf("%s: Enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s", fn);
   if (status == NFA_STATUS_OK) mReadData.len = data.len;
   mT4tOpStatus = status;
   SyncEventGuard g(mT4tNfcEeRWCEvent);
@@ -544,7 +558,8 @@ void NativeT4tNfcee::t4tWriteComplete(tNFA_STATUS status, tNFA_RX_DATA data) {
  **
  *******************************************************************************/
 void NativeT4tNfcee::t4tClearComplete(tNFA_STATUS status) {
-  LOG(DEBUG) << StringPrintf("%s: Enter", __func__);
+  static const char fn[] = "NativeT4tNfcee:t4tClearComplete";
+  LOG(DEBUG) << StringPrintf("%s", fn);
   mT4tOpStatus = status;
   SyncEventGuard g(mT4tNfcEeRWCEvent);
   mT4tNfcEeRWCEvent.notifyOne();
@@ -560,9 +575,10 @@ void NativeT4tNfcee::t4tClearComplete(tNFA_STATUS status) {
 *******************************************************************************/
 void NativeT4tNfcee::eventHandler(uint8_t event,
                                   tNFA_CONN_EVT_DATA* eventData) {
+  static const char fn[] = "NativeT4tNfcee:eventHandler";
   switch (event) {
     case NFA_T4TNFCEE_EVT:
-      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_EVT", __func__);
+      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_EVT", fn);
       {
         SyncEventGuard guard(mT4tNfcEeEvent);
         mT4tNfcEeEventStat = eventData->status;
@@ -571,28 +587,27 @@ void NativeT4tNfcee::eventHandler(uint8_t event,
       break;
 
     case NFA_T4TNFCEE_READ_CPLT_EVT:
-      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_READ_CPLT_EVT", __func__);
+      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_READ_CPLT_EVT", fn);
       t4tReadComplete(eventData->status, eventData->data);
       break;
 
     case NFA_T4TNFCEE_WRITE_CPLT_EVT:
-      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_WRITE_CPLT_EVT", __func__);
+      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_WRITE_CPLT_EVT", fn);
       t4tWriteComplete(eventData->status, eventData->data);
       break;
 
     case NFA_T4TNFCEE_CLEAR_CPLT_EVT:
-      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_CLEAR_CPLT_EVT", __func__);
+      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_CLEAR_CPLT_EVT", fn);
       t4tClearComplete(eventData->status);
       break;
 
     case NFA_T4TNFCEE_READ_CC_DATA_CPLT_EVT:
-      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_READ_CC_DATA_CPLT_EVT",
-                                 __func__);
+      LOG(DEBUG) << StringPrintf("%s: NFA_T4TNFCEE_READ_CC_DATA_CPLT_EVT", fn);
       t4tReadComplete(eventData->status, eventData->data);
       break;
 
     default:
-      LOG(DEBUG) << StringPrintf("%s: unknown Event", __func__);
+      LOG(DEBUG) << StringPrintf("%s: unknown Event", fn);
       break;
   }
 }
@@ -639,15 +654,11 @@ void NativeT4tNfcee::resetBusy() { mBusy = false; }
 **
 *******************************************************************************/
 vector<uint8_t> NativeT4tNfcee::getT4TNfceeAid() {
-  LOG(DEBUG) << StringPrintf("%s:enter", __func__);
-
+  static const char fn[] = "NativeT4tNfcee:getT4TNfceeAid";
   std::vector<uint8_t> t4tNfceeAidBuf;
-
   if (NfcConfig::hasKey(NAME_T4T_NDEF_NFCEE_AID)) {
     t4tNfceeAidBuf = NfcConfig::getBytes(NAME_T4T_NDEF_NFCEE_AID);
   }
-
-  LOG(DEBUG) << StringPrintf("%s:Exit", __func__);
 
   return t4tNfceeAidBuf;
 }

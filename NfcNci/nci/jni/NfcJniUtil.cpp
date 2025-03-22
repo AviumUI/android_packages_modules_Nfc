@@ -43,7 +43,7 @@ jint JNI_OnLoad(JavaVM* jvm, void*) {
   LOG(DEBUG) << StringPrintf("%s: enter", __func__);
   JNIEnv* e = NULL;
 
-  LOG(INFO) << StringPrintf("NFC Service: loading nci JNI");
+  LOG(INFO) << StringPrintf("%s: NFC Service: loading nci JNI", __func__);
 
   // Check JNI version
   if (jvm->GetEnv((void**)&e, JNI_VERSION_1_6)) return JNI_ERR;

@@ -21,6 +21,7 @@ import static android.Manifest.permission.MANAGE_DEFAULT_APPLICATIONS;
 import static android.Manifest.permission.MANAGE_ROLE_HOLDERS;
 import static android.Manifest.permission.OBSERVE_ROLE_HOLDERS;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
 import android.app.role.OnRoleHoldersChangedListener;
@@ -146,7 +147,7 @@ public final class WalletRoleTestUtils {
 
     static void runWithRole(Context context, String roleHolder, Runnable runnable) {
         final UserManager userManager = context.getSystemService(UserManager.class);
-        assumeFalse(userManager.isHeadlessSystemUserMode());
+        assumeFalse("Device must not be headless", userManager.isHeadlessSystemUserMode());
         try {
             runWithRoleNone(context, () -> {}); //Remove the role holder first to trigger callbacks
             RoleManager roleManager = context.getSystemService(RoleManager.class);
@@ -171,7 +172,7 @@ public final class WalletRoleTestUtils {
                     .getUiAutomation()
                     .adoptShellPermissionIdentity(
                             MANAGE_DEFAULT_APPLICATIONS, INTERACT_ACROSS_USERS_FULL);
-            Assert.assertTrue(setDefaultWalletRoleHolder(context, roleHolder));
+            assertTrue(setDefaultWalletRoleHolder(context, roleHolder));
             countDownLatch.await(4000, TimeUnit.MILLISECONDS);
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                     .getUiAutomation().adoptShellPermissionIdentity(OBSERVE_ROLE_HOLDERS);
@@ -229,7 +230,7 @@ public final class WalletRoleTestUtils {
                     .getUiAutomation().adoptShellPermissionIdentity(MANAGE_ROLE_HOLDERS);
             if (currentHolder != null) {
                 roleManager.setRoleFallbackEnabled(RoleManager.ROLE_WALLET, false);
-                Assert.assertTrue(removeRoleHolder(context, currentHolder));
+                assertTrue(removeRoleHolder(context, currentHolder));
                 countDownLatch.await(4000, TimeUnit.MILLISECONDS);
                 roleManager.setRoleFallbackEnabled(RoleManager.ROLE_WALLET, true);
             }

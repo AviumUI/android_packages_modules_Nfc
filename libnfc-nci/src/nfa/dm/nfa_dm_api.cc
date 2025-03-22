@@ -78,7 +78,7 @@ extern void NFA_SetNfccMode(uint8_t mode) {
 **
 *******************************************************************************/
 extern void NFA_Partial_Init(tHAL_NFC_ENTRY* p_hal_entry_tbl, uint8_t mode) {
-  LOG(DEBUG) << StringPrintf("%s:enter ", __func__);
+  LOG(DEBUG) << StringPrintf("%s: enter ", __func__);
   if (mode == ENABLE_MODE_TRANSPARENT) {
     nfa_sys_init();
     nfa_dm_init();
@@ -87,13 +87,13 @@ extern void NFA_Partial_Init(tHAL_NFC_ENTRY* p_hal_entry_tbl, uint8_t mode) {
     nfa_dm_init();
     nfa_ee_init();
   } else {
-    LOG(ERROR) << StringPrintf("Unknown Mode!");
+    LOG(ERROR) << StringPrintf("%s: Unknown Mode!", __func__);
     return;
   }
   /* Initialize NFC module */
   NFC_Init(p_hal_entry_tbl);
   NFA_SetNfccMode(mode);
-  LOG(DEBUG) << StringPrintf("%s:exit ", __func__);
+  LOG(DEBUG) << StringPrintf("%s: exit ", __func__);
 }
 
 /*******************************************************************************
@@ -157,7 +157,7 @@ tNFA_STATUS NFA_Enable(tNFA_DM_CBACK* p_dm_cback,
 
   /* Validate parameters */
   if ((!p_dm_cback) || (!p_conn_cback)) {
-    LOG(ERROR) << StringPrintf("error null callback");
+    LOG(ERROR) << StringPrintf("%s: error null callback", __func__);
     return (NFA_STATUS_FAILED);
   }
 
@@ -198,7 +198,7 @@ tNFA_STATUS NFA_Enable(tNFA_DM_CBACK* p_dm_cback,
 tNFA_STATUS NFA_Disable(bool graceful) {
   tNFA_DM_API_DISABLE* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("NFA_Disable (graceful=%i)", graceful);
+  LOG(VERBOSE) << StringPrintf("%s: (graceful=%i)", __func__, graceful);
 
   p_msg = (tNFA_DM_API_DISABLE*)GKI_getbuf(sizeof(tNFA_DM_API_DISABLE));
   if (p_msg != nullptr) {
@@ -237,7 +237,7 @@ uint8_t NFA_GetNCIVersion() { return NFC_GetNCIVersion(); }
 **
 *******************************************************************************/
 tNFA_STATUS NFA_SetPowerSubStateForScreenState(uint8_t screenState) {
-  LOG(VERBOSE) << StringPrintf("%s: state:0x%X", __func__, screenState);
+  LOG(VERBOSE) << StringPrintf("%s: state=0x%X", __func__, screenState);
 
   uint8_t nci_scren_state = 0xFF;
   uint16_t buf_size = sizeof(tNFA_DM_API_SET_POWER_SUB_STATE);
@@ -261,7 +261,7 @@ tNFA_STATUS NFA_SetPowerSubStateForScreenState(uint8_t screenState) {
         break;
 
       default:
-        LOG(VERBOSE) << StringPrintf("%s, unknown screen state", __func__);
+        LOG(VERBOSE) << StringPrintf("%s: unknown screen state", __func__);
         break;
     }
 
@@ -293,7 +293,7 @@ tNFA_STATUS NFA_SetPowerSubStateForScreenState(uint8_t screenState) {
 tNFA_STATUS NFA_SetConfig(tNFA_PMID param_id, uint8_t length, uint8_t* p_data) {
   tNFA_DM_API_SET_CONFIG* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("param_id:0x%X", param_id);
+  LOG(VERBOSE) << StringPrintf("%s: param_id=0x%X", __func__, param_id);
 
   p_msg = (tNFA_DM_API_SET_CONFIG*)GKI_getbuf(
       (uint16_t)(sizeof(tNFA_DM_API_SET_CONFIG) + length));
@@ -330,7 +330,7 @@ tNFA_STATUS NFA_SetConfig(tNFA_PMID param_id, uint8_t length, uint8_t* p_data) {
 tNFA_STATUS NFA_GetConfig(uint8_t num_ids, tNFA_PMID* p_param_ids) {
   tNFA_DM_API_GET_CONFIG* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("num_ids: %i", num_ids);
+  LOG(VERBOSE) << StringPrintf("%s: num_ids=%i", __func__, num_ids);
 
   p_msg = (tNFA_DM_API_GET_CONFIG*)GKI_getbuf(
       (uint16_t)(sizeof(tNFA_DM_API_GET_CONFIG) + num_ids));
@@ -388,10 +388,10 @@ tNFA_STATUS NFA_RequestExclusiveRfControl(tNFA_TECHNOLOGY_MASK poll_mask,
                                           tNFA_NDEF_CBACK* p_ndef_cback) {
   tNFA_DM_API_REQ_EXCL_RF_CTRL* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("poll_mask=0x%x", poll_mask);
+  LOG(VERBOSE) << StringPrintf("%s: poll_mask=0x%x", __func__, poll_mask);
 
   if (!p_conn_cback) {
-    LOG(ERROR) << StringPrintf("error null callback");
+    LOG(ERROR) << StringPrintf("%s: error null callback", __func__);
     return (NFA_STATUS_FAILED);
   }
 
@@ -434,8 +434,9 @@ tNFA_STATUS NFA_ReleaseExclusiveRfControl(void) {
 
   if (!nfa_dm_cb.p_excl_conn_cback) {
     LOG(ERROR) << StringPrintf(
-        "Exclusive rf control is not in "
-        "progress");
+        "%s: Exclusive rf control is not in "
+        "progress",
+        __func__);
     return (NFA_STATUS_FAILED);
   }
 
@@ -485,7 +486,7 @@ tNFA_STATUS NFA_ReleaseExclusiveRfControl(void) {
 tNFA_STATUS NFA_EnablePolling(tNFA_TECHNOLOGY_MASK poll_mask) {
   tNFA_DM_API_ENABLE_POLL* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("0x%X", poll_mask);
+  LOG(VERBOSE) << StringPrintf("%s: poll_mask=0x%X", __func__, poll_mask);
 
   p_msg = (tNFA_DM_API_ENABLE_POLL*)GKI_getbuf(sizeof(tNFA_DM_API_ENABLE_POLL));
   if (p_msg != nullptr) {
@@ -735,12 +736,12 @@ tNFA_STATUS NFA_Select(uint8_t rf_disc_id, tNFA_NFC_PROTOCOL protocol,
   tNFA_DM_API_SELECT* p_msg;
 
   LOG(VERBOSE) << StringPrintf(
-      "rf_disc_id:0x%X, protocol:0x%X, rf_interface:0x%X", rf_disc_id, protocol,
-      rf_interface);
+      "%s: rf_disc_id=0x%X, protocol=0x%X, rf_interface=0x%X", __func__,
+      rf_disc_id, protocol, rf_interface);
 
   if ((rf_interface == NFA_INTERFACE_ISO_DEP) &&
       (protocol != NFA_PROTOCOL_ISO_DEP)) {
-    LOG(ERROR) << StringPrintf("%s; RF interface is not matched protocol",
+    LOG(ERROR) << StringPrintf("%s:  RF interface is not matched protocol",
                                __func__);
     return (NFA_STATUS_INVALID_PARAM);
   }
@@ -812,7 +813,7 @@ tNFA_STATUS NFA_UpdateRFCommParams(tNFA_RF_COMM_PARAMS* p_params) {
 tNFA_STATUS NFA_StartRemovalDetection(uint8_t waiting_time_int) {
   tNFA_DM_API_START_REMOVAL_DETECT* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("%s; waiting_time_int:0x%X", __func__,
+  LOG(VERBOSE) << StringPrintf("%s:  waiting_time_int=0x%X", __func__,
                                waiting_time_int);
 
   p_msg = (tNFA_DM_API_START_REMOVAL_DETECT*)GKI_getbuf(
@@ -862,7 +863,7 @@ tNFA_STATUS NFA_StartRemovalDetection(uint8_t waiting_time_int) {
 extern tNFA_STATUS NFA_Deactivate(bool sleep_mode) {
   tNFA_DM_API_DEACTIVATE* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("sleep_mode:%i", sleep_mode);
+  LOG(VERBOSE) << StringPrintf("%s: sleep_mode=%i", __func__, sleep_mode);
 
   p_msg = (tNFA_DM_API_DEACTIVATE*)GKI_getbuf(
       (uint16_t)(sizeof(tNFA_DM_API_DEACTIVATE)));
@@ -903,7 +904,7 @@ tNFA_STATUS NFA_SendRawFrame(uint8_t* p_raw_data, uint16_t data_len,
   uint16_t size;
   uint8_t* p;
 
-  LOG(VERBOSE) << StringPrintf("data_len:%d", data_len);
+  LOG(VERBOSE) << StringPrintf("%s: data_len=%d", __func__, data_len);
 
   size = NFC_HDR_SIZE + NCI_MSG_OFFSET_SIZE + NCI_DATA_HDR_SIZE + data_len;
   /* Check for integer overflow */
@@ -966,13 +967,13 @@ tNFA_STATUS NFA_RegisterNDefTypeHandler(bool handle_whole_message, tNFA_TNF tnf,
   tNFA_DM_API_REG_NDEF_HDLR* p_msg;
 
   LOG(VERBOSE) << StringPrintf(
-      "handle whole ndef message: %i, "
+      "%s: handle whole ndef message=%i, "
       "tnf=0x%02x",
-      handle_whole_message, tnf);
+      __func__, handle_whole_message, tnf);
 
   /* Check for NULL callback */
   if (!p_ndef_cback) {
-    LOG(ERROR) << StringPrintf("error - null callback");
+    LOG(ERROR) << StringPrintf("%s: error - null callback", __func__);
     return (NFA_STATUS_INVALID_PARAM);
   }
 
@@ -1026,13 +1027,13 @@ extern tNFA_STATUS NFA_RegisterNDefUriHandler(bool handle_whole_message,
   tNFA_DM_API_REG_NDEF_HDLR* p_msg;
 
   LOG(VERBOSE) << StringPrintf(
-      "handle whole ndef message: %i, "
+      "%s: handle whole ndef message=%i, "
       "uri_id=0x%02x",
-      handle_whole_message, uri_id);
+      __func__, handle_whole_message, uri_id);
 
   /* Check for NULL callback */
   if (!p_ndef_cback) {
-    LOG(ERROR) << StringPrintf("error - null callback");
+    LOG(ERROR) << StringPrintf("%s: error - null callback", __func__);
     return (NFA_STATUS_INVALID_PARAM);
   }
 
@@ -1079,7 +1080,7 @@ extern tNFA_STATUS NFA_RegisterNDefUriHandler(bool handle_whole_message,
 extern tNFA_STATUS NFA_DeregisterNDefTypeHandler(tNFA_HANDLE ndef_type_handle) {
   tNFA_DM_API_DEREG_NDEF_HDLR* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("handle 0x%08x", ndef_type_handle);
+  LOG(VERBOSE) << StringPrintf("%s: handle 0x%08x", __func__, ndef_type_handle);
 
   p_msg = (tNFA_DM_API_DEREG_NDEF_HDLR*)GKI_getbuf(
       (uint16_t)(sizeof(tNFA_DM_API_DEREG_NDEF_HDLR)));
@@ -1113,10 +1114,11 @@ extern tNFA_STATUS NFA_DeregisterNDefTypeHandler(tNFA_HANDLE ndef_type_handle) {
 tNFA_STATUS NFA_PowerOffSleepMode(bool start_stop) {
   NFC_HDR* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("start_stop=%d", start_stop);
+  LOG(VERBOSE) << StringPrintf("%s: start_stop=%d", __func__, start_stop);
 
   if (nfa_dm_cb.flags & NFA_DM_FLAGS_SETTING_PWR_MODE) {
-    LOG(ERROR) << StringPrintf("NFA DM is busy to update power mode");
+    LOG(ERROR) << StringPrintf("%s: NFA DM is busy to update power mode",
+                               __func__);
     return (NFA_STATUS_FAILED);
   } else {
     nfa_dm_cb.flags |= NFA_DM_FLAGS_SETTING_PWR_MODE;
@@ -1150,10 +1152,11 @@ tNFA_STATUS NFA_PowerOffSleepMode(bool start_stop) {
 tNFC_STATUS NFA_RegVSCback(bool is_register, tNFA_VSC_CBACK* p_cback) {
   tNFA_DM_API_REG_VSC* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("is_register=%d", is_register);
+  LOG(VERBOSE) << StringPrintf("%s: is_register=%d", __func__, is_register);
 
   if (p_cback == nullptr) {
-    LOG(ERROR) << StringPrintf("requires a valid callback function");
+    LOG(ERROR) << StringPrintf("%s: requires a valid callback function",
+                               __func__);
     return (NFA_STATUS_FAILED);
   }
 
@@ -1193,7 +1196,7 @@ tNFA_STATUS NFA_SendVsCommand(uint8_t oid, uint8_t cmd_params_len,
   tNFA_DM_API_SEND_VSC* p_msg;
   uint16_t size = sizeof(tNFA_DM_API_SEND_VSC) + cmd_params_len;
 
-  LOG(VERBOSE) << StringPrintf("oid=0x%x", oid);
+  LOG(VERBOSE) << StringPrintf("%s: oid=0x%x", __func__, oid);
 
   p_msg = (tNFA_DM_API_SEND_VSC*)GKI_getbuf(size);
   if (p_msg != nullptr) {
@@ -1266,7 +1269,7 @@ tNFA_STATUS NFA_SendRawVsCommand(uint8_t cmd_params_len, uint8_t* p_cmd_params,
 **
 *******************************************************************************/
 void NFA_EnableDtamode(tNFA_eDtaModes eDtaMode) {
-  LOG(VERBOSE) << StringPrintf("%s: 0x%x ", __func__, eDtaMode);
+  LOG(VERBOSE) << StringPrintf("%s: eDtaMode=0x%x ", __func__, eDtaMode);
   appl_dta_mode_flag = 0x01;
   nfa_dm_cb.eDtaMode = eDtaMode;
 }
@@ -1296,7 +1299,7 @@ void NFA_DisableDtamode(void) {
 **
 *******************************************************************************/
 void NFA_SetNfcSecure(bool status) {
-  LOG(DEBUG) << StringPrintf("%s; status: %d", __func__, status);
+  LOG(DEBUG) << StringPrintf("%s:  status=%d", __func__, status);
   nfa_dm_cb.is_nfc_secure = status;
 }
 
@@ -1338,7 +1341,8 @@ tNFA_STATUS NFA_ChangeDiscoveryTech(tNFA_TECHNOLOGY_MASK pollTech,
                                     bool is_revert_poll, bool is_revert_listen,
                                     bool change_default_tech) {
   tNFA_DM_API_CHANGE_DISCOVERY_TECH* p_msg;
-  LOG(VERBOSE) << StringPrintf("%s: 0x%X 0x%X", __func__, pollTech, listenTech);
+  LOG(VERBOSE) << StringPrintf("%s: pollTech=0x%X listenTech=0x%X", __func__,
+                               pollTech, listenTech);
 
   if ((p_msg = (tNFA_DM_API_CHANGE_DISCOVERY_TECH*)GKI_getbuf(
            sizeof(tNFA_DM_API_CHANGE_DISCOVERY_TECH))) != nullptr) {

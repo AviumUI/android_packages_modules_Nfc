@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">Nfc Service</string>
-    <string name="nfcUserLabel">Nfc</string>
+    <string name="app_name">NFC Service</string>
+    <string name="nfcUserLabel">NFC</string>
 
     <!-- Content description of the NFC enabled notification icon for accessibility (not shown on the screen). [CHAR LIMIT=NONE] -->
     <string name="accessibility_nfc_enabled">NFC enabled.</string>

@@ -48,10 +48,22 @@ class MainActivity : AppCompatActivity() {
     viewModel.uiState.observe(this, observer)
     EmulatorHostApduService.viewModel = viewModel
 
+    findViewById<MaterialButton>(R.id.service_button).setOnClickListener {
+      startHostApduService()
+      findViewById<MaterialButton>(R.id.service_button).isEnabled = false
+    }
+
     val snoopData = intent.getStringExtra(SNOOP_DATA_FLAG)
-    if (snoopData != null) {
+    if (snoopData != null && snoopData.length > 0) {
       val apdus = parseJsonString(snoopData)
       updateService(apdus)
+    }
+
+    val snoopFile = intent.getStringExtra(SNOOP_FILE_FLAG)
+    if (snoopFile != null && snoopFile.length > 0) {
+      val apdus = openAndParseFile(PARSED_FILES_DIR + snoopFile)
+      updateService(apdus)
+      viewModel.setSnoopFile(snoopFile)
     }
     startHostApduService()
   }
@@ -62,6 +74,30 @@ class MainActivity : AppCompatActivity() {
       PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
       PackageManager.DONT_KILL_APP,
     )
+  }
+
+  /* Opens the snoop file and extracts all APDU commands and responses. */
+  private fun openAndParseFile(file: String): List<ApduPair> {
+    val apduPairs = mutableListOf<ApduPair>()
+    val text = BufferedReader(InputStreamReader(getAssets().open(file))).use { it.readText() }
+    val lines = text.split("\n").toTypedArray()
+    for (line in lines) {
+      val arr = line.split(";").toTypedArray()
+      if (arr.size != 2) { // Should contain commands, followed by responses
+        continue
+      }
+      val commands = arr[0].split(",").toTypedArray()
+      val responses = arr[1].split(",").toTypedArray()
+      if (commands.size != responses.size) {
+        continue
+      }
+      for (i in commands.indices) {
+        val command = standardize(commands[i])
+        val response = standardize(responses[i])
+        apduPairs.add(ApduPair(command, response))
+      }
+    }
+    return apduPairs
   }
 
   /** Extracts all APDU commands and responses from JSON string. */
@@ -106,6 +142,7 @@ class MainActivity : AppCompatActivity() {
   companion object {
     private const val TAG = "EmulatorHostApduServiceLog"
     const val SNOOP_DATA_FLAG = "snoop_data"
+    const val SNOOP_FILE_FLAG = "snoop_file"
     private const val PARSED_FILES_DIR = "src/com/android/nfc/emulatorapp/parsed_files/"
   }
 }

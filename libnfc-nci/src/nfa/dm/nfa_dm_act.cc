@@ -29,6 +29,7 @@
 #include "nci_hmsgs.h"
 #include "nfa_api.h"
 #include "nfa_ce_int.h"
+#include "nfa_hci_int.h"
 #include "nfa_rw_api.h"
 #include "nfa_rw_int.h"
 #include "nfa_wlc_int.h"
@@ -95,7 +96,8 @@ static void nfa_dm_module_init_cback(void) {
 static void nfa_dm_nfcc_power_mode_proc_complete_cback(void) {
   tNFA_DM_PWR_MODE_CHANGE power_mode_change;
 
-  LOG(VERBOSE) << StringPrintf("nfcc_pwr_mode = 0x%x", nfa_dm_cb.nfcc_pwr_mode);
+  LOG(VERBOSE) << StringPrintf("%s: nfcc_pwr_mode=0x%x", __func__,
+                               nfa_dm_cb.nfcc_pwr_mode);
 
   /* if NFCC power state is change to full power */
   if (nfa_dm_cb.nfcc_pwr_mode != NFA_DM_PWR_MODE_OFF_SLEEP) {
@@ -210,13 +212,14 @@ static void nfa_dm_set_init_nci_params(void) {
 **
 *******************************************************************************/
 void nfa_dm_proc_nfcc_power_mode(uint8_t nfcc_power_mode) {
-  LOG(VERBOSE) << StringPrintf("nfcc_power_mode=%d", nfcc_power_mode);
+  LOG(VERBOSE) << StringPrintf("%s: nfcc_power_mode=%d", __func__,
+                               nfcc_power_mode);
 
   /* if NFCC power mode is change to full power */
   if (nfcc_power_mode == NFA_DM_PWR_MODE_FULL) {
     memset(&nfa_dm_cb.params, 0x00, sizeof(tNFA_DM_PARAMS));
     LOG(VERBOSE) << StringPrintf(
-        "setcfg_pending_mask=0x%x, setcfg_pending_num=%d",
+        "%s: setcfg_pending_mask=0x%x, setcfg_pending_num=%d", __func__,
         nfa_dm_cb.setcfg_pending_mask, nfa_dm_cb.setcfg_pending_num);
     nfa_dm_cb.setcfg_pending_mask = 0;
     nfa_dm_cb.setcfg_pending_num = 0;
@@ -265,8 +268,8 @@ static void nfa_dm_nfc_response_cback(tNFC_RESPONSE_EVT event,
   tNFA_CONN_EVT_DATA conn_evt;
   uint8_t dm_cback_evt;
 
-  LOG(VERBOSE) << StringPrintf("%s(0x%x)", nfa_dm_nfc_revt_2_str(event).c_str(),
-                             event);
+  LOG(VERBOSE) << StringPrintf("%s: event=%s(0x%x)", __func__,
+                               nfa_dm_nfc_revt_2_str(event).c_str(), event);
 
   switch (event) {
     case NFC_ENABLE_REVT: /* 0  Enable event */
@@ -306,8 +309,8 @@ static void nfa_dm_nfc_response_cback(tNFC_RESPONSE_EVT event,
       } else {
         /* This should not occur (means we got a SET_CONFIG_NTF that's
          * unaccounted for */
-        LOG(ERROR) << StringPrintf(
-            "NFA received unexpected NFC_SET_CONFIG_REVT");
+        LOG(ERROR) << StringPrintf("%s: unexpected NFC_SET_CONFIG_REVT",
+                                   __func__);
       }
       break;
 
@@ -381,7 +384,8 @@ static void nfa_dm_nfc_response_cback(tNFC_RESPONSE_EVT event,
 
     case NFC_NFCC_TIMEOUT_REVT:
     case NFC_NFCC_TRANSPORT_ERR_REVT:
-      LOG(VERBOSE) << StringPrintf("flags:0x%08x", nfa_dm_cb.flags);
+      LOG(VERBOSE) << StringPrintf("%s: flags=0x%08x", __func__,
+                                   nfa_dm_cb.flags);
       dm_cback_evt = (event == NFC_NFCC_TIMEOUT_REVT)
                          ? NFA_DM_NFCC_TIMEOUT_EVT
                          : NFA_DM_NFCC_TRANSPORT_ERR_EVT;
@@ -435,7 +439,7 @@ bool nfa_dm_enable(tNFA_DM_MSG* p_data) {
     /* Enable NFC stack */
     NFC_Enable(nfa_dm_nfc_response_cback);
   } else {
-    LOG(ERROR) << StringPrintf("nfa_dm_enable: ERROR ALREADY ENABLED.");
+    LOG(ERROR) << StringPrintf("%s: ERROR ALREADY ENABLED.", __func__);
     dm_cback_data.status = NFA_STATUS_ALREADY_STARTED;
     (*(p_data->enable.p_dm_cback))(NFA_DM_ENABLE_EVT, &dm_cback_data);
   }
@@ -453,7 +457,8 @@ bool nfa_dm_enable(tNFA_DM_MSG* p_data) {
 **
 *******************************************************************************/
 bool nfa_dm_disable(tNFA_DM_MSG* p_data) {
-  LOG(VERBOSE) << StringPrintf("graceful:%d", p_data->disable.graceful);
+  LOG(VERBOSE) << StringPrintf("%s: graceful=%d", __func__,
+                               p_data->disable.graceful);
 
   if (p_data->disable.graceful) {
     /* if RF discovery is enabled */
@@ -506,7 +511,8 @@ void nfa_dm_disable_complete(void) {
   LOG(VERBOSE) << __func__;
 
   if ((nfa_dm_cb.flags & NFA_DM_FLAGS_DM_DISABLING_NFC) == 0) {
-    LOG(VERBOSE) << StringPrintf("proceeding with nfc core shutdown.");
+    LOG(VERBOSE) << StringPrintf("%s: proceeding with nfc core shutdown",
+                                 __func__);
 
     nfa_dm_cb.flags |= NFA_DM_FLAGS_DM_DISABLING_NFC;
 
@@ -586,7 +592,7 @@ bool nfa_dm_set_power_sub_state(tNFA_DM_MSG* p_data) {
 
   nfa_dm_cb.power_state = p_data->set_power_state.screen_state;
   if (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_LISTEN_ACTIVE) {
-    LOG(VERBOSE) << StringPrintf("NFA_DM_RFST_LISTEN_ACTIVE");
+    LOG(VERBOSE) << StringPrintf("%s: NFA_DM_RFST_LISTEN_ACTIVE", __func__);
     /* NFCC will give semantic error for power sub state command in Rf listen
      * active state */
     nfa_dm_cb.pending_power_state = nfa_dm_cb.power_state;
@@ -684,7 +690,8 @@ bool nfa_dm_act_request_excl_rf_ctrl(tNFA_DM_MSG* p_data) {
                                 &p_data->req_excl_rf_ctrl.listen_cfg,
                                 nfa_dm_excl_disc_cback);
   } else {
-    LOG(ERROR) << StringPrintf("Exclusive rf control already requested");
+    LOG(ERROR) << StringPrintf("%s: Exclusive rf control already requested",
+                               __func__);
 
     conn_evt.status = NFA_STATUS_FAILED;
     (*p_data->req_excl_rf_ctrl.p_conn_cback)(
@@ -778,7 +785,7 @@ bool nfa_dm_act_deactivate(tNFA_DM_MSG* p_data) {
     }
   }
 
-  LOG(ERROR) << StringPrintf("invalid protocol, mode or state");
+  LOG(ERROR) << StringPrintf("%s: invalid protocol, mode or state", __func__);
 
   /* Notify error to application */
   conn_evt.status = NFA_STATUS_FAILED;
@@ -816,7 +823,7 @@ bool nfa_dm_act_power_off_sleep(tNFA_DM_MSG* p_data) {
 bool nfa_dm_act_reg_vsc(tNFA_DM_MSG* p_data) {
   if (NFC_RegVSCback(p_data->reg_vsc.is_register, p_data->reg_vsc.p_cback) !=
       NFC_STATUS_OK) {
-    LOG(ERROR) << StringPrintf("NFC_RegVSCback failed");
+    LOG(ERROR) << StringPrintf("%s: failed", __func__);
   }
   return true;
 }
@@ -954,7 +961,7 @@ bool nfa_dm_act_enable_polling(tNFA_DM_MSG* p_data) {
       return true;
     }
   } else {
-    LOG(ERROR) << StringPrintf("already started");
+    LOG(ERROR) << StringPrintf("%s: already started", __func__);
   }
 
   /* send NFA_POLL_ENABLED_EVT with NFA_STATUS_FAILED */
@@ -1129,7 +1136,8 @@ bool nfa_dm_act_start_rf_discovery(__attribute__((unused))
 
   LOG(VERBOSE) << __func__;
 
-  if (nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_ENABLED) {
+  if ((nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_ENABLED) ||
+      (nfa_hci_cb.hci_state == NFA_HCI_STATE_EE_RECOVERY)) {
     evt_data.status = NFA_STATUS_OK;
     nfa_dm_conn_cback_event_notify(NFA_RF_DISCOVERY_STARTED_EVT, &evt_data);
   } else if (nfa_dm_cb.disc_cb.disc_state != NFA_DM_RFST_IDLE) {
@@ -1270,7 +1278,7 @@ bool nfa_dm_act_start_removal_detection(tNFA_DM_MSG* p_data) {
   /* Reject request if NFCC does not support Removal Detection in Poll Mode */
   if (!(nfc_cb.nci_features & NCI_POLL_REMOVAL_DETECTION)) {
     LOG(ERROR) << StringPrintf(
-        "%s; NFCC Feature Removal Detection "
+        "%s:  NFCC Feature Removal Detection "
         "in Poll Mode not supported",
         __func__);
 
@@ -1286,7 +1294,7 @@ bool nfa_dm_act_start_removal_detection(tNFA_DM_MSG* p_data) {
           p_data->detect_removal_params.waiting_time_int);
     } else {
       LOG(ERROR) << StringPrintf(
-          "%s; Unexpected command in WLC Semi-autonomous or "
+          "%s:  Unexpected command in WLC Semi-autonomous or "
           "Autonomous mode",
           __func__);
       conn_evt.status = NFA_STATUS_FAILED;
@@ -1323,7 +1331,7 @@ bool nfa_dm_act_disable_timeout(__attribute__((unused)) tNFA_DM_MSG* p_data) {
 **
 *******************************************************************************/
 void nfa_dm_act_conn_cback_notify(uint8_t event, tNFA_CONN_EVT_DATA* p_data) {
-  LOG(VERBOSE) << StringPrintf("event:0x%X", event);
+  LOG(VERBOSE) << StringPrintf("%s: event=0x%X", __func__, event);
 
   /* Notify event using appropriate CONN_CBACK */
   nfa_dm_conn_cback_event_notify(event, p_data);
@@ -1362,7 +1370,7 @@ static void nfa_dm_act_data_cback(__attribute__((unused)) uint8_t conn_id,
   NFC_HDR* p_msg;
   tNFA_CONN_EVT_DATA evt_data;
 
-  LOG(VERBOSE) << StringPrintf("event = 0x%X", event);
+  LOG(VERBOSE) << StringPrintf("%s: event = 0x%X", __func__, event);
 
   if (event == NFC_DATA_CEVT) {
     p_msg = (NFC_HDR*)p_data->data.p_data;
@@ -1377,8 +1385,9 @@ static void nfa_dm_act_data_cback(__attribute__((unused)) uint8_t conn_id,
       GKI_freebuf(p_msg);
     } else {
       LOG(ERROR) << StringPrintf(
-          "received NFC_DATA_CEVT with NULL data "
-          "pointer");
+          "%s: received NFC_DATA_CEVT with NULL data "
+          "pointer",
+          __func__);
     }
   } else if (event == NFC_DEACTIVATE_CEVT) {
     NFC_SetStaticRfCback(nullptr);
@@ -1391,8 +1400,9 @@ static void nfa_dm_act_data_cback(__attribute__((unused)) uint8_t conn_id,
       nfa_dm_conn_cback_event_notify(NFA_RW_INTF_ERROR_EVT, &evt_data);
     } else {
       LOG(ERROR) << StringPrintf(
-          "received NFC_ERROR_CEVT with NULL data "
-          "pointer");
+          "%s: received NFC_ERROR_CEVT with NULL data "
+          "pointer",
+          __func__);
     }
   }
 }
@@ -1410,7 +1420,7 @@ static void nfa_dm_excl_disc_cback(tNFA_DM_RF_DISC_EVT event,
                                    tNFC_DISCOVER* p_data) {
   tNFA_CONN_EVT_DATA evt_data;
 
-  LOG(VERBOSE) << StringPrintf("event:0x%02X", event);
+  LOG(VERBOSE) << StringPrintf("%s: event=0x%02X", __func__, event);
 
   switch (event) {
     case NFA_DM_RF_DISC_START_EVT:
@@ -1501,7 +1511,7 @@ static void nfa_dm_excl_disc_cback(tNFA_DM_RF_DISC_EVT event,
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("Unexpected event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected event", __func__);
       break;
   }
 }
@@ -1519,7 +1529,7 @@ static void nfa_dm_poll_disc_cback(tNFA_DM_RF_DISC_EVT event,
                                    tNFC_DISCOVER* p_data) {
   tNFA_CONN_EVT_DATA evt_data;
 
-  LOG(VERBOSE) << StringPrintf("event:0x%02X", event);
+  LOG(VERBOSE) << StringPrintf("%s: event=0x%02X", __func__, event);
 
   switch (event) {
     case NFA_DM_RF_DISC_START_EVT:
@@ -1667,7 +1677,7 @@ void nfa_dm_notify_activation_status(tNFA_STATUS status,
   tNFC_RF_TECH_PARAMS* p_tech_params;
   uint8_t *p_nfcid = nullptr, nfcid_len;
 
-  LOG(VERBOSE) << StringPrintf("status:0x%X", status);
+  LOG(VERBOSE) << StringPrintf("%s: status=0x%X", __func__, status);
 
   if (!nfa_dm_cb.p_activate_ntf) {
     /* this is for NFA P2P listen */
@@ -1775,7 +1785,7 @@ void nfa_dm_notify_activation_status(tNFA_STATUS status,
 bool nfa_dm_act_change_discovery_tech(tNFA_DM_MSG* p_data) {
   tNFA_CONN_EVT_DATA evt_data;
 
-  LOG(VERBOSE) << StringPrintf("nfa_dm_act_change_discovery_tech ()");
+  LOG(VERBOSE) << StringPrintf("%s", __func__);
 
   if (p_data->change_discovery_tech.change_default_tech)
     nfa_dm_cb.flags |= NFA_DM_FLAGS_DEFAULT_TECH_CHANGED;
@@ -1802,7 +1812,7 @@ bool nfa_dm_act_change_discovery_tech(tNFA_DM_MSG* p_data) {
     } else if (nfa_dm_cb.change_listen_mask == 0xff) {
       dm_disc_listen_mask_dfl = 0;
     }
-    LOG(DEBUG) << StringPrintf("%s; dm_disc_listen_mask_dfl: 0x%x", __func__,
+    LOG(DEBUG) << StringPrintf("%s:  dm_disc_listen_mask_dfl=0x%x", __func__,
                                dm_disc_listen_mask_dfl);
     if (nfa_dm_cb.flags & NFA_DM_FLAGS_POLL_TECH_CHANGED) {
       dm_disc_poll_mask_dfl = nfa_dm_cb.change_poll_mask;

@@ -109,12 +109,10 @@ RouteDataSet::~RouteDataSet() { deleteDatabase(); }
 **
 *******************************************************************************/
 bool RouteDataSet::initialize() {
-  LOG(DEBUG) << StringPrintf("%s: enter", "RouteDataSet::initialize");
+  LOG(DEBUG) << __func__;
   // check that the libxml2 version in use is compatible
   // with the version the software has been compiled with
   LIBXML_TEST_VERSION
-  LOG(DEBUG) << StringPrintf("%s: exit; return=true",
-                             "RouteDataSet::initialize");
   return true;
 }
 

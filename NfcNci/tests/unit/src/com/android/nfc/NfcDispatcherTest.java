@@ -116,6 +116,8 @@ public final class NfcDispatcherTest {
     ForegroundUtils mForegroundUtils;
     @Mock
     AtomicBoolean mAtomicBoolean;
+    @Mock
+    DeviceConfigFacade mDeviceConfigFacade;
 
     @Before
     public void setUp() throws PackageManager.NameNotFoundException {
@@ -152,7 +154,7 @@ public final class NfcDispatcherTest {
         when(mNfcInjector.createAtomicBoolean()).thenReturn(mAtomicBoolean);
 
         mNfcDispatcher = new NfcDispatcher(mockContext,
-                new HandoverDataParser(), mNfcInjector, true);
+                new HandoverDataParser(), mNfcInjector, true, mDeviceConfigFacade);
         mLooper.dispatchAll();
     }
 

@@ -10,7 +10,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ * See the License for the specific language governing permIssions and
  * limitations under the License.
  */
 
@@ -27,11 +27,13 @@ public class NfcProprietaryCaps {
     private static final int POWER_SAVING_MODE = 2;
     private static final int AUTOTRANSACT_POLLING_LOOP_FILTER = 3;
     private static final int NUMBER_OF_EXIT_FRAMES_SUPPORTED = 4;
+    private static final int READER_MODE_ANNOTATIONS_SUPPORTED = 5;
     private final PassiveObserveMode mPassiveObserveMode;
     private final boolean mIsPollingFrameNotificationSupported;
     private final boolean mIsPowerSavingModeSupported;
     private final boolean mIsAutotransactPollingLoopFilterSupported;
     private final int mNumberOfExitFramesSupported;
+    private final boolean mIsReaderModeAnnotationSupported;
 
     public enum PassiveObserveMode {
         NOT_SUPPORTED,
@@ -59,23 +61,30 @@ public class NfcProprietaryCaps {
         return mNumberOfExitFramesSupported;
     }
 
+    public boolean isReaderModeAnnotationSupported() {
+        return mIsReaderModeAnnotationSupported;
+    }
+
     public NfcProprietaryCaps(PassiveObserveMode passiveObserveMode,
             boolean isPollingFrameNotificationSupported, boolean isPowerSavingModeSupported,
-            boolean isAutotransactPollingLoopFilterSupported, int numberOfExitFramesSupported) {
+            boolean isAutotransactPollingLoopFilterSupported, int numberOfExitFramesSupported,
+            boolean isReaderModeAnnotationSupported) {
         mPassiveObserveMode = passiveObserveMode;
         mIsPollingFrameNotificationSupported = isPollingFrameNotificationSupported;
         mIsPowerSavingModeSupported = isPowerSavingModeSupported;
         mIsAutotransactPollingLoopFilterSupported = isAutotransactPollingLoopFilterSupported;
         mNumberOfExitFramesSupported = numberOfExitFramesSupported;
+        mIsReaderModeAnnotationSupported = isReaderModeAnnotationSupported;
     }
 
     public static NfcProprietaryCaps createFromByteArray(byte[] caps) {
-        Log.i(TAG, "parsing proprietary caps: " + Arrays.toString(caps));
+        Log.i(TAG, "createFromByteArray: parsing proprietary caps: " + Arrays.toString(caps));
         PassiveObserveMode passiveObserveMode = PassiveObserveMode.NOT_SUPPORTED;
         boolean isPollingFrameNotificationSupported = false;
         boolean isPowerSavingModeSupported = false;
         boolean isAutotransactPollingLoopFilterSupported  = false;
         int numberOfExitFramesSupported = 0;
+        boolean isReaderModeAnnotationSupported = false;
         int offset = 0;
         while ((offset + 2) < caps.length) {
             int id = caps[offset++];
@@ -109,12 +118,15 @@ public class NfcProprietaryCaps {
                     break;
                 case NUMBER_OF_EXIT_FRAMES_SUPPORTED:
                     numberOfExitFramesSupported = caps[value_offset];
+                case READER_MODE_ANNOTATIONS_SUPPORTED:
+                    isReaderModeAnnotationSupported = caps[value_offset] == 0x1;
+                    break;
 
             }
         }
         return new NfcProprietaryCaps(passiveObserveMode, isPollingFrameNotificationSupported,
                 isPowerSavingModeSupported, isAutotransactPollingLoopFilterSupported,
-                numberOfExitFramesSupported);
+                numberOfExitFramesSupported, isReaderModeAnnotationSupported);
     }
 
     @Override
@@ -128,6 +140,8 @@ public class NfcProprietaryCaps {
                 + mIsPowerSavingModeSupported
                 + ", isAutotransactPollingLoopFilterSupported="
                 + mIsAutotransactPollingLoopFilterSupported
+                + ", mIsReaderModeAnnotationSupported="
+                + mIsReaderModeAnnotationSupported
                 + '}';
     }
 }

@@ -56,6 +56,47 @@ When the transaction is replayed, you should be able to see a list of APDU
 commands and responses received and sent by the Host APDU service displayed on
 the emulator app.
 
+To use the emulator app outside of a generated test, perform the following steps:
+
+1\. To prepare a snoop log to be replayed with the app:
+
+```
+python3 nfcreplay.py -f $SNOOP_FILE --parse_only
+```
+
+The script will produce the name of the parsed log, which will be located within
+the folder emulatorapp/parsed_files. Save the name for Step 3.
+
+2\. Build and install the emulator app. The following commands are specific to
+the Pixel 6 Pro (Raven). Non-Raven devices should substitute "raven" for the
+appropriate value.
+
+```
+mma NfcEmulatorApduAppNonTest
+adb install -r -g ~/aosp-main-with-phones/out/target/product/raven/system/app/emulatorapp/NfcEmulatorApduAppNonTest.apk
+
+```
+
+3\. Start the activity. Make sure that $PARSED_SNOOP_FILE is the name of the
+file, rather than its path. It is assumed that this file is located within
+emulatorapp/parsed_files, where it was originally created.
+
+```
+adb shell am start -n com.android.nfc.emulatorapp/.MainActivity --es "snoop_file" "$PARSED_SNOOP_FILE"
+```
+
+When you are ready to start the transaction, press the "Start Host APDU Service"
+button.
+
+4\. To replay the transaction with the PN532 module, follow the steps above to
+generate and replay a test case, though you should make sure to append the flag
+`--replay_with_app` to the end of each command.
+
+When the transaction is replayed, you should be able to see a list of APDU
+commands and responses received and sent by the Host APDU service displayed on
+the emulator app. Additionally, the replay script will output similar
+information.
+
 ### Creating a Snoop Log
 
 To create a snoop log from your Android device, you should first go to Developer

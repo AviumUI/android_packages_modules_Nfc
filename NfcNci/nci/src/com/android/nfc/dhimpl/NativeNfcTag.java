@@ -160,7 +160,7 @@ public class NativeNfcTag implements TagEndpoint {
 
     private synchronized boolean isRemovalDetectionModeRequested() {
         if (mIsRemovalDetectionModeReq) {
-            Log.d(TAG, "Poll Removal Detection Mode Requested");
+            Log.d(TAG, "isRemovalDetectionModeRequested: true");
             mIsRemovalDetectionModeReq = false;
             return true;
         } else {
@@ -205,7 +205,7 @@ public class NativeNfcTag implements TagEndpoint {
      * performing reconnect().
      */
     public synchronized int connectWithIdx(int idx) {
-        if (DBG) Log.d(TAG, "connectWithIdx() - idx: " + idx);
+        if (DBG) Log.d(TAG, "connectWithIdx: idx: " + idx);
         if (mWatchdog != null) {
             mWatchdog.pause();
         }
@@ -325,7 +325,7 @@ public class NativeNfcTag implements TagEndpoint {
 
     @Override
     public synchronized boolean reconnect() {
-        if (DBG) Log.d(TAG, "reconnect() ");
+        if (DBG) Log.d(TAG, "reconnect");
         if (mWatchdog != null) {
             mWatchdog.pause();
         }
@@ -834,7 +834,7 @@ public class NativeNfcTag implements TagEndpoint {
                     && (((mTechPollBytes[i][0] & (short) 0xFF) == 0x44)
                             || (((mTechPollBytes[i][0] & (short) 0xFF) == 0x04)))
                     && ((mTechPollBytes[i][1] & (short) 0xFF) == 0x03)) {
-                if (DBG) Log.d(TAG, "isMifareDesfireTag() - true, need reconnect()");
+                if (DBG) Log.d(TAG, "isMifareDesfireTag: true, need reconnect()");
                 return true;
             }
         }
@@ -859,7 +859,7 @@ public class NativeNfcTag implements TagEndpoint {
             currentTargetTech = technologies[techIndex];
             status = connectWithIdx(techIndex);
             if (status != 0) {
-                Log.d(TAG, "Connect Failed - status = " + status);
+                Log.d(TAG, "findAndReadNdef: Connect Failed, status = " + status);
                 if (status == STATUS_CODE_TARGET_LOST) {
                     break;
                 }
@@ -884,7 +884,7 @@ public class NativeNfcTag implements TagEndpoint {
             int[] ndefinfo = new int[2];
             status = checkNdefWithStatus(ndefinfo);
             if (status != 0) {
-                Log.d(TAG, "Check NDEF Failed - status = " + status);
+                Log.d(TAG, "findAndReadNdef: Check NDEF Failed, status = " + status);
                 if (status == STATUS_CODE_TARGET_LOST) {
                     break;
                 }
@@ -951,7 +951,7 @@ public class NativeNfcTag implements TagEndpoint {
                 currHandle = handles[techIndex];
                 int status = connectWithStatus(technologies[techIndex]);
                 if (status != 0) {
-                    Log.d(TAG, "Connect Failed - status = " + status);
+                    Log.d(TAG, "findNdef: Connect Failed, status = " + status);
                     if (status == STATUS_CODE_TARGET_LOST) {
                         break;
                     }
@@ -961,7 +961,7 @@ public class NativeNfcTag implements TagEndpoint {
                 int[] ndefinfo = new int[2];
                 status = checkNdefWithStatus(ndefinfo);
                 if (status != 0) {
-                    Log.d(TAG, "findNdef: Check NDEF Failed - status = " + status);
+                    Log.d(TAG, "findNdef: Check NDEF Failed, status = " + status);
                     if (status == STATUS_CODE_TARGET_LOST) {
                         break;
                     }
@@ -992,7 +992,7 @@ public class NativeNfcTag implements TagEndpoint {
         NdefMessage ndefMsg = null;
         status = checkNdefWithStatus(ndefinfo);
         if (status != 0) {
-            Log.d(TAG, "Check NDEF Failed - status = " + status);
+            Log.d(TAG, "getNdef: Check NDEF Failed, status = " + status);
             return ndefMsg;
         }
 

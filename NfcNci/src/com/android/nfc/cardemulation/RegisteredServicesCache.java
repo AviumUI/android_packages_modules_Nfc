@@ -22,8 +22,6 @@ import static android.nfc.cardemulation.CardEmulation.SET_SERVICE_ENABLED_STATUS
 import static android.nfc.cardemulation.CardEmulation.SET_SERVICE_ENABLED_STATUS_FAILURE_UNKNOWN_ERROR;
 import static android.nfc.cardemulation.CardEmulation.SET_SERVICE_ENABLED_STATUS_OK;
 
-import android.annotation.TargetApi;
-import android.annotation.FlaggedApi;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -57,8 +55,8 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.util.FastXmlSerializer;
-import com.android.nfc.NfcService;
 import com.android.nfc.NfcInjector;
+import com.android.nfc.NfcService;
 import com.android.nfc.R;
 import com.android.nfc.Utils;
 import com.android.nfc.cardemulation.util.NfcFileUtils;
@@ -76,16 +74,11 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
 /**
  * This class is inspired by android.content.pm.RegisteredServicesCache
@@ -276,23 +269,30 @@ public class RegisteredServicesCache {
             public void onReceive(Context context, Intent intent) {
                 final int uid = intent.getIntExtra(Intent.EXTRA_UID, -1);
                 String action = intent.getAction();
-                if (VDBG) Log.d(TAG, "Intent action: " + action);
+                if (VDBG) Log.d(TAG, "onReceive: Intent action: " + action);
 
                 if (mRoutingOptionManager.isRoutingTableOverrided()) {
-                    if (DEBUG) Log.d(TAG, "Routing table overrided. Skip invalidateCache()");
+                    if (DEBUG) {
+                        Log.d(TAG, "onReceive: Routing table overrided. Skip invalidateCache()");
+                    }
                 }
                 if (uid == -1) return;
                 int userId = UserHandle.getUserHandleForUid(uid).getIdentifier();
                 int currentUser = ActivityManager.getCurrentUser();
                 if (currentUser != getProfileParentId(context, userId)) {
                     // Cache will automatically be updated on user switch
-                    if (VDBG) Log.d(TAG, "Ignoring package change intent from non-current user");
+                    if (VDBG) {
+                        Log.d(TAG,
+                                "onReceive: Ignoring package change intent from non-current user");
+                    }
                     return;
                 }
                 // If app not removed, check if the app has any valid CE services.
                 if (!Intent.ACTION_PACKAGE_REMOVED.equals(action) &&
                         !Utils.hasCeServicesWithValidPermissions(mContext, intent, userId)) {
-                    if (VDBG) Log.d(TAG, "Ignoring package change intent from non-CE app");
+                    if (VDBG) {
+                        Log.d(TAG, "onReceive: Ignoring package change intent from non-CE app");
+                    }
                     return;
                 }
                 boolean replaced = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
@@ -307,7 +307,11 @@ public class RegisteredServicesCache {
                                 getUserHandleForUid(uid).getIdentifier(), false);
                     }
                 } else {
-                    if (DEBUG) Log.d(TAG, "Ignoring package intent due to package being replaced.");
+                    if (DEBUG) {
+                        Log.d(TAG,
+                                "onReceive: Ignoring package intent due to package "
+                                        + "being replaced");
+                    }
                 }
             }
         };
@@ -359,14 +363,15 @@ public class RegisteredServicesCache {
         File ceFilesDir = ceContext.getFilesDir();
         File deFilesDir = mContext.getFilesDir();
         if (NfcFileUtils.isEmptyDir(ceFilesDir)) {
-            Log.d(TAG, "Nothing to migrate from CE data");
+            Log.d(TAG, "migrateFromCe: Nothing to migrate from CE data");
             return;
         }
         if (NfcFileUtils.moveFiles(ceFilesDir, deFilesDir) < 0) {
-            Log.e(TAG, "Failed to move directory from " + ceFilesDir + " to " + deFilesDir);
+            Log.e(TAG, "migrateFromCe: Failed to move directory from " + ceFilesDir + " to "
+                    + deFilesDir);
             return;
         }
-        Log.i(TAG, "Moved directory from " + ceFilesDir + " to " + deFilesDir
+        Log.i(TAG, "migrateFromCe: Moved directory from " + ceFilesDir + " to " + deFilesDir
             + ". Reinitializing cache.");
         mDynamicSettingsFile = new SettingsFile(mContext, AID_XML_PATH);
         mOthersFile = new SettingsFile(mContext, OTHER_STATUS_PATH);
@@ -455,7 +460,7 @@ public class RegisteredServicesCache {
             pm = mContext.createPackageContextAsUser("android", 0,
                     UserHandle.of(userId)).getPackageManager();
         } catch (NameNotFoundException e) {
-            Log.e(TAG, "Could not create user package context");
+            Log.e(TAG, "getInstalledServices: Could not create user package context");
             return null;
         }
 
@@ -476,23 +481,25 @@ public class RegisteredServicesCache {
                 ComponentName componentName = new ComponentName(si.packageName, si.name);
                 // Check if the package exported the service in manifest
                 if (!si.exported) {
-                    Log.e(TAG, "Skipping application component " + componentName +
-                            ": it must configured as exported");
+                    Log.e(TAG, "getInstalledServices: Skipping application component "
+                            + componentName + ": it must configured as exported");
                     continue;
                 }
                 // Check if the package holds the NFC permission
                 if (pm.checkPermission(android.Manifest.permission.NFC, si.packageName) !=
                         PackageManager.PERMISSION_GRANTED) {
-                    Log.e(TAG, "Skipping application component " + componentName +
-                            ": it must request the permission " +
-                            android.Manifest.permission.NFC);
+                    Log.e(TAG,
+                            "getInstalledServices: Skipping application component " + componentName
+                                    + ": it must request the permission "
+                                    + android.Manifest.permission.NFC);
                     continue;
                 }
                 if (!android.Manifest.permission.BIND_NFC_SERVICE.equals(
                         si.permission)) {
-                    Log.e(TAG, "Skipping APDU service " + componentName +
-                            ": it does not require the permission " +
-                            android.Manifest.permission.BIND_NFC_SERVICE);
+                    Log.e(TAG,
+                            "getInstalledServices: Skipping APDU service " + componentName
+                                    + ": it does not require the permission "
+                                    + android.Manifest.permission.BIND_NFC_SERVICE);
                     continue;
                 }
                 ApduServiceInfo service = mServiceParser.parseApduService(pm, resolvedService,
@@ -501,9 +508,11 @@ public class RegisteredServicesCache {
                     validServices.add(service);
                 }
             } catch (XmlPullParserException e) {
-                Log.w(TAG, "Unable to load component info " + resolvedService.toString(), e);
+                Log.w(TAG, "getInstalledServices: Unable to load component info "
+                        + resolvedService.toString(), e);
             } catch (IOException e) {
-                Log.w(TAG, "Unable to load component info " + resolvedService.toString(), e);
+                Log.w(TAG, "getInstalledServices: Unable to load component info "
+                        + resolvedService.toString(), e);
             }
         }
 
@@ -606,7 +615,7 @@ public class RegisteredServicesCache {
             }
             if (toBeRemoved.size() > 0) {
                 for (ComponentName component : toBeRemovedComponent) {
-                    Log.d(TAG, "Removing dynamic AIDs registered by " + component);
+                    Log.d(TAG, "invalidateCache: Removing dynamic AIDs registered by " + component);
                     userServices.dynamicSettings.remove(component);
                 }
                 // Persist to filesystem
@@ -621,19 +630,19 @@ public class RegisteredServicesCache {
         mCallback.onServicesUpdated(userId, Collections.unmodifiableList(validServices),
                 validateInstalled);
         if (VDBG) {
-            Log.i(TAG, "Services => ");
+            Log.i(TAG, "invalidateCache: Services => ");
             dump(validServices);
         } else {
             // dump only new services added or removed
-            Log.i(TAG, "New Services => ");
+            Log.i(TAG, "invalidateCache: New Services => ");
             dump(toBeAdded);
-            Log.i(TAG, "Removed Services => ");
+            Log.i(TAG, "invalidateCache: Removed Services => ");
             dump(toBeRemoved);
         }
     }
 
     private void invalidateOther(int userId, List<ApduServiceInfo> validOtherServices) {
-        Log.d(TAG, "invalidate : " + userId);
+        Log.d(TAG, "invalidateOther : " + userId);
         ArrayList<ComponentName> toBeAdded = new ArrayList<>();
         ArrayList<ComponentName> toBeRemoved = new ArrayList<>();
         // remove services
@@ -657,19 +666,19 @@ public class RegisteredServicesCache {
                             UserHandle.of(ActivityManager.getCurrentUser()), /*flags=*/0)
                     .getSystemService(UserManager.class);
             boolean isManagedProfile = um.isManagedProfile(userId);
-            Log.i(TAG, "current user: " + ActivityManager.getCurrentUser() +
-                    ", is managed profile : " + isManagedProfile );
+            Log.i(TAG, "invalidateOther: current user: " + ActivityManager.getCurrentUser()
+                    + ", is managed profile : " + isManagedProfile);
             boolean isChecked = !(isManagedProfile);
             // TODO: b/313040065 temperatory set isChecked always true due to there's no UI in AOSP
             isChecked = true;
 
             for (ApduServiceInfo service : validOtherServices) {
                 if (VDBG) {
-                    Log.d(TAG, "update valid otherService: " + service.getComponent()
-                            + " AIDs: " + service.getAids());
+                    Log.d(TAG, "invalidateOther: update valid otherService: "
+                            + service.getComponent() + " AIDs: " + service.getAids());
                 }
                 if (!service.hasCategory(CardEmulation.CATEGORY_OTHER)) {
-                    Log.e(TAG, "service does not have other category");
+                    Log.e(TAG, "invalidateOther: service does not have other category");
                     continue;
                 }
 
@@ -690,13 +699,13 @@ public class RegisteredServicesCache {
             }
         }
         if (VDBG) {
-            Log.i(TAG, "Other Services => ");
+            Log.i(TAG, "invalidateOther: Services => ");
             dump(validOtherServices);
         } else {
             // dump only new services added or removed
-            Log.i(TAG, "New Other Services => ");
+            Log.i(TAG, "invalidateOther: New Services => ");
             dump(toBeAdded);
-            Log.i(TAG, "Removed Other Services => ");
+            Log.i(TAG, "invalidateOther: Removed Services => ");
             dump(toBeRemoved);
         }
     }
@@ -719,13 +728,13 @@ public class RegisteredServicesCache {
     @VisibleForTesting
     static Map<Integer, List<Pair<ComponentName, DynamicSettings>>>
     readDynamicSettingsFromFile(SettingsFile settingsFile) {
-        Log.d(TAG, "Reading dynamic AIDs.");
+        Log.d(TAG, "readDynamicSettingsFromFile");
         Map<Integer, List<Pair<ComponentName, DynamicSettings>>> readSettingsMap =
                 new HashMap<>();
         InputStream fis = null;
         try {
             if (!settingsFile.exists()) {
-                Log.d(TAG, "Dynamic AIDs file does not exist.");
+                Log.d(TAG, "readDynamicSettingsFromFile: Dynamic AIDs file does not exist");
                 return new HashMap<>();
             }
             fis = settingsFile.openRead();
@@ -757,7 +766,8 @@ public class RegisteredServicesCache {
                             shouldDefaultToObserveModeStr =
                                     parser.getAttributeValue(null, "shouldDefaultToObserveMode");
                             if (compString == null || uidString == null) {
-                                Log.e(TAG, "Invalid service attributes");
+                                Log.e(TAG,
+                                        "readDynamicSettingsFromFile: Invalid service attributes");
                             } else {
                                 try {
                                     currentUid = Integer.parseInt(uidString);
@@ -766,7 +776,9 @@ public class RegisteredServicesCache {
                                     currentOffHostSE = offHostString;
                                     inService = true;
                                 } catch (NumberFormatException e) {
-                                    Log.e(TAG, "Could not parse service uid");
+                                    Log.e(TAG,
+                                            "readDynamicSettingsFromFile: "
+                                                    + "Could not parse service uid");
                                 }
                             }
                         }
@@ -775,7 +787,8 @@ public class RegisteredServicesCache {
                             if (group != null) {
                                 currentGroups.add(group);
                             } else {
-                                Log.e(TAG, "Could not parse AID group.");
+                                Log.e(TAG,
+                                        "readDynamicSettingsFromFile: Could not parse AID group");
                             }
                         }
                         if ("pl_filter".equals(tagName) && parser.getDepth() == 4 && inService) {
@@ -798,7 +811,7 @@ public class RegisteredServicesCache {
                                     (currentGroups.size() > 0 || currentOffHostSE != null)) {
                                 final int userId = UserHandle.
                                         getUserHandleForUid(currentUid).getIdentifier();
-                                Log.d(TAG, " ## user id - " + userId);
+                                Log.d(TAG, "readDynamicSettingsFromFile: ## user id - " + userId);
                                 DynamicSettings dynSettings = new DynamicSettings(currentUid);
                                 for (AidGroup group : currentGroups) {
                                     dynSettings.aidGroups.put(group.getCategory(), group);
@@ -827,7 +840,8 @@ public class RegisteredServicesCache {
                 };
             }
         } catch (Exception e) {
-            Log.e(TAG, "Could not parse dynamic AIDs file, trashing.", e);
+            Log.e(TAG, "readDynamicSettingsFromFile: Could not parse dynamic AIDs file, trashing",
+                    e);
             settingsFile.delete();
         } finally {
             if (fis != null) {
@@ -843,12 +857,12 @@ public class RegisteredServicesCache {
     private void readDynamicSettingsLocked() {
         Map<Integer, List<Pair<ComponentName, DynamicSettings>>> readSettingsMap
                 = readDynamicSettingsFromFile(mDynamicSettingsFile);
-        for(Integer userId: readSettingsMap.keySet()) {
+        for (Integer userId: readSettingsMap.keySet()) {
             UserServices services = findOrCreateUserLocked(userId);
             List<Pair<ComponentName, DynamicSettings>> componentNameDynamicServiceStatusPairs
                     = readSettingsMap.get(userId);
             int pairsSize = componentNameDynamicServiceStatusPairs.size();
-            for(int i = 0; i < pairsSize; i++) {
+            for (int i = 0; i < pairsSize; i++) {
                 Pair<ComponentName, DynamicSettings> pair
                         = componentNameDynamicServiceStatusPairs.get(i);
                 services.dynamicSettings.put(pair.first, pair.second);
@@ -861,12 +875,12 @@ public class RegisteredServicesCache {
     readOtherFromFile(SettingsFile settingsFile) {
         Map<Integer, List<Pair<ComponentName, OtherServiceStatus>>> readSettingsMap =
                 new HashMap<>();
-        Log.d(TAG, "read others locked");
+        Log.d(TAG, "readOtherFromFile");
 
         InputStream fis = null;
         try {
             if (!settingsFile.exists()) {
-                Log.d(TAG, "Other settings file does not exist.");
+                Log.d(TAG, "readOtherFromFile: Other settings file does not exist.");
                 return new HashMap<>();
             }
             fis = settingsFile.openRead();
@@ -891,7 +905,7 @@ public class RegisteredServicesCache {
                             String uidString = parser.getAttributeValue(null, "uid");
                             String checkedString = parser.getAttributeValue(null, "checked");
                             if (compString == null || uidString == null || checkedString == null) {
-                                Log.e(TAG, "Invalid service attributes");
+                                Log.e(TAG, "readOtherFromFile: Invalid service attributes");
                             } else {
                                 try {
                                     currentUid = Integer.parseInt(uidString);
@@ -899,7 +913,7 @@ public class RegisteredServicesCache {
                                             ComponentName.unflattenFromString(compString);
                                     checked = checkedString.equals("true") ? true : false;
                                 } catch (NumberFormatException e) {
-                                    Log.e(TAG, "Could not parse service uid");
+                                    Log.e(TAG, "readOtherFromFile: Could not parse service uid");
                                 }
                             }
                         }
@@ -907,12 +921,12 @@ public class RegisteredServicesCache {
                         if ("service".equals(tagName)) {
                             // See if we have a valid service
                             if (currentComponent != null && currentUid >= 0) {
-                                Log.d(TAG, " end of service tag");
+                                Log.d(TAG, "readOtherFromFile: end of service tag");
                                 final int userId =
                                         UserHandle.getUserHandleForUid(currentUid).getIdentifier();
                                 OtherServiceStatus status =
                                         new OtherServiceStatus(currentUid, checked);
-                                Log.d(TAG, " ## user id - " + userId);
+                                Log.d(TAG, "readOtherFromFile: ## user id - " + userId);
                                 if (!readSettingsMap.containsKey(userId)) {
                                     readSettingsMap.put(userId, new ArrayList<>());
                                 }
@@ -928,7 +942,7 @@ public class RegisteredServicesCache {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Could not parse others AIDs file, trashing.", e);
+            Log.e(TAG, "readOtherFromFile: Could not parse others AIDs file, trashing", e);
             settingsFile.delete();
         } finally {
             if (fis != null) {
@@ -945,12 +959,12 @@ public class RegisteredServicesCache {
     private void readOthersLocked() {
         Map<Integer, List<Pair<ComponentName, OtherServiceStatus>>> readSettingsMap
                 = readOtherFromFile(mOthersFile);
-        for(Integer userId: readSettingsMap.keySet()) {
+        for (Integer userId: readSettingsMap.keySet()) {
             UserServices services = findOrCreateUserLocked(userId);
             List<Pair<ComponentName, OtherServiceStatus>> componentNameOtherServiceStatusPairs
                     = readSettingsMap.get(userId);
             int pairsSize = componentNameOtherServiceStatusPairs.size();
-            for(int i = 0; i < pairsSize; i++) {
+            for (int i = 0; i < pairsSize; i++) {
                 Pair<ComponentName, OtherServiceStatus> pair
                         = componentNameOtherServiceStatusPairs.get(i);
                 services.others.put(pair.first,
@@ -975,7 +989,7 @@ public class RegisteredServicesCache {
                     out.startTag(null, "service");
                     out.attribute(null, "component", service.getKey().flattenToString());
                     out.attribute(null, "uid", Integer.toString(service.getValue().uid));
-                    if(service.getValue().offHostSE != null) {
+                    if (service.getValue().offHostSE != null) {
                         out.attribute(null, "offHostSE", service.getValue().offHostSE);
                     }
                     if (service.getValue().shouldDefaultToObserveModeStr != null) {
@@ -1013,7 +1027,7 @@ public class RegisteredServicesCache {
             mDynamicSettingsFile.finishWrite(fos);
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Error writing dynamic AIDs", e);
+            Log.e(TAG, "writeDynamicSettingsLocked: Error writing dynamic AIDs", e);
             if (fos != null) {
                 mDynamicSettingsFile.failWrite(fos);
             }
@@ -1022,7 +1036,7 @@ public class RegisteredServicesCache {
     }
 
     private boolean writeOthersLocked() {
-        Log.d(TAG, "write Others Locked()");
+        Log.d(TAG, "writeOthersLocked");
 
         FileOutputStream fos = null;
         try {
@@ -1033,18 +1047,18 @@ public class RegisteredServicesCache {
             out.setFeature(XML_INDENT_OUTPUT_FEATURE, true);
             out.startTag(null, "services");
 
-            Log.d(TAG, "userServices.size: " + mUserServices.size());
+            Log.d(TAG, "writeOthersLocked: userServices.size: " + mUserServices.size());
             for (int i = 0; i < mUserServices.size(); i++) {
                 final UserServices user = mUserServices.valueAt(i);
                 int userId = mUserServices.keyAt(i);
                 // Checking for 1 times
-                Log.d(TAG, "userId: " + userId);
-                Log.d(TAG, "others size: " + user.others.size());
+                Log.d(TAG, "writeOthersLocked: userId: " + userId);
+                Log.d(TAG, "writeOthersLocked: others size: " + user.others.size());
                 ArrayList<ComponentName> currentService = new ArrayList<ComponentName>();
-                for (Map.Entry<ComponentName, OtherServiceStatus> service :
-                        user.others.entrySet()) {
-                    Log.d(TAG, "component: " + service.getKey().flattenToString() +
-                            ", checked: " + service.getValue().checked);
+                for (Map.Entry<ComponentName, OtherServiceStatus> service : user.others
+                        .entrySet()) {
+                    Log.d(TAG, "writeOthersLocked: component: " + service.getKey().flattenToString()
+                            + ", checked: " + service.getValue().checked);
 
                     boolean hasDupe = false;
                     for (ComponentName cn : currentService) {
@@ -1056,7 +1070,7 @@ public class RegisteredServicesCache {
                     if (hasDupe) {
                         continue;
                     } else {
-                        Log.d(TAG, "Already written.");
+                        Log.d(TAG, "writeOthersLocked: Already written");
                         currentService.add(service.getKey());
                     }
 
@@ -1072,7 +1086,7 @@ public class RegisteredServicesCache {
             mOthersFile.finishWrite(fos);
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Error writing other status", e);
+            Log.e(TAG, "writeOthersLocked: Error writing other status", e);
             if (fos != null) {
                 mOthersFile.failWrite(fos);
             }
@@ -1088,7 +1102,7 @@ public class RegisteredServicesCache {
             // Check if we can find this service
             ApduServiceInfo serviceInfo = getService(userId, componentName);
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG, "setOffHostSecureElement: Service " + componentName + " does not exist");
                 return false;
             }
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1096,11 +1110,11 @@ public class RegisteredServicesCache {
                 // Either newer service installed with different uid (but then
                 // we should have known about it), or somebody calling us from
                 // a different uid.
-                Log.e(TAG, "UID mismatch.");
+                Log.e(TAG, "setOffHostSecureElement: UID mismatch");
                 return false;
             }
             if (offHostSE == null || serviceInfo.isOnHost()) {
-                Log.e(TAG, "OffHostSE mismatch with Service type");
+                Log.e(TAG, "setOffHostSecureElement: OffHostSE mismatch with Service type");
                 return false;
             }
 
@@ -1111,7 +1125,7 @@ public class RegisteredServicesCache {
             dynSettings.offHostSE = offHostSE;
             boolean success = writeDynamicSettingsLocked();
             if (!success) {
-                Log.e(TAG, "Failed to persist AID group.");
+                Log.e(TAG, "setOffHostSecureElement: Failed to persist AID group");
                 dynSettings.offHostSE = null;
                 return false;
             }
@@ -1131,7 +1145,8 @@ public class RegisteredServicesCache {
             // Check if we can find this service
             ApduServiceInfo serviceInfo = getService(userId, componentName);
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG,
+                        "resetOffHostSecureElement: Service " + componentName + " does not exist");
                 return false;
             }
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1139,11 +1154,11 @@ public class RegisteredServicesCache {
                 // Either newer service installed with different uid (but then
                 // we should have known about it), or somebody calling us from
                 // a different uid.
-                Log.e(TAG, "UID mismatch.");
+                Log.e(TAG, "resetOffHostSecureElement: UID mismatch");
                 return false;
             }
             if (serviceInfo.isOnHost() || serviceInfo.getOffHostSecureElement() == null) {
-                Log.e(TAG, "OffHostSE is not set");
+                Log.e(TAG, "resetOffHostSecureElement: OffHostSE is not set");
                 return false;
             }
 
@@ -1152,7 +1167,7 @@ public class RegisteredServicesCache {
             dynSettings.offHostSE = null;
             boolean success = writeDynamicSettingsLocked();
             if (!success) {
-                Log.e(TAG, "Failed to persist AID group.");
+                Log.e(TAG, "resetOffHostSecureElement: Failed to persist AID group");
                 dynSettings.offHostSE = offHostSE;
                 return false;
             }
@@ -1172,7 +1187,8 @@ public class RegisteredServicesCache {
             // Check if we can find this service
             ApduServiceInfo serviceInfo = getService(userId, componentName);
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG, "setShouldDefaultToObserveModeForService: Service " + componentName
+                        + " does not exist");
                 return false;
             }
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1180,7 +1196,7 @@ public class RegisteredServicesCache {
                 // Either newer service installed with different uid (but then
                 // we should have known about it), or somebody calling us from
                 // a different uid.
-                Log.e(TAG, "UID mismatch.");
+                Log.e(TAG, "setShouldDefaultToObserveModeForService UID mismatch");
                 return false;
             }
             serviceInfo.setShouldDefaultToObserveMode(enable);
@@ -1204,7 +1220,8 @@ public class RegisteredServicesCache {
             // Check if we can find this service
             ApduServiceInfo serviceInfo = getService(userId, componentName);
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG, "registerPollingLoopFilterForService: Service " + componentName
+                        + " does not exist");
                 return false;
             }
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1212,7 +1229,7 @@ public class RegisteredServicesCache {
                 // Either newer service installed with different uid (but then
                 // we should have known about it), or somebody calling us from
                 // a different uid.
-                Log.e(TAG, "UID mismatch.");
+                Log.e(TAG, "registerPollingLoopFilterForService: UID mismatch");
                 return false;
             }
             if (!serviceInfo.isOnHost() && !autoTransact) {
@@ -1237,7 +1254,8 @@ public class RegisteredServicesCache {
             // Check if we can find this service
             ApduServiceInfo serviceInfo = getService(userId, componentName);
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG, "removePollingLoopFilterForService: Service " + componentName
+                        + " does not exist");
                 return false;
             }
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1245,9 +1263,12 @@ public class RegisteredServicesCache {
                 // Either newer service installed with different uid (but then
                 // we should have known about it), or somebody calling us from
                 // a different uid.
-                Log.e(TAG, "UID mismatch.");
+                Log.e(TAG, "removePollingLoopFilterForService: UID mismatch");
                 return false;
             }
+            DynamicSettings dynamicSettings =
+                    getOrCreateSettings(services, componentName, serviceInfo.getUid());
+            dynamicSettings.pollingLoopFilters.remove(pollingLoopFilter);
             serviceInfo.removePollingLoopFilter(pollingLoopFilter);
             newServices = new ArrayList<ApduServiceInfo>(services.services.values());
         }
@@ -1264,7 +1285,8 @@ public class RegisteredServicesCache {
             // Check if we can find this service
             ApduServiceInfo serviceInfo = getService(userId, componentName);
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG, "removePollingLoopFilterForService: Service " + componentName
+                        + " does not exist");
                 return false;
             }
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1272,7 +1294,7 @@ public class RegisteredServicesCache {
                 // Either newer service installed with different uid (but then
                 // we should have known about it), or somebody calling us from
                 // a different uid.
-                Log.e(TAG, "UID mismatch.");
+                Log.e(TAG, "removePollingLoopFilterForService: UID mismatch");
                 return false;
             }
             if (!serviceInfo.isOnHost() && !autoTransact) {
@@ -1297,7 +1319,8 @@ public class RegisteredServicesCache {
             // Check if we can find this service
             ApduServiceInfo serviceInfo = getService(userId, componentName);
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG, "removePollingLoopPatternFilterForService: Service " + componentName
+                        + " does not exist");
                 return false;
             }
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1305,9 +1328,12 @@ public class RegisteredServicesCache {
                 // Either newer service installed with different uid (but then
                 // we should have known about it), or somebody calling us from
                 // a different uid.
-                Log.e(TAG, "UID mismatch.");
+                Log.e(TAG, "removePollingLoopPatternFilterForService: UID mismatch");
                 return false;
             }
+            DynamicSettings dynamicSettings =
+                    getOrCreateSettings(services, componentName, serviceInfo.getUid());
+            dynamicSettings.pollingLoopPatternFilters.remove(pollingLoopPatternFilter);
             serviceInfo.removePollingLoopPatternFilter(pollingLoopPatternFilter);
             newServices = new ArrayList<ApduServiceInfo>(services.services.values());
         }
@@ -1326,7 +1352,8 @@ public class RegisteredServicesCache {
             // Check if we can find this service
             ApduServiceInfo serviceInfo = getService(userId, componentName);
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG,
+                        "registerAidGroupForService: Service " + componentName + " does not exist");
                 return false;
             }
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1334,7 +1361,7 @@ public class RegisteredServicesCache {
                 // Either newer service installed with different uid (but then
                 // we should have known about it), or somebody calling us from
                 // a different uid.
-                Log.e(TAG, "UID mismatch.");
+                Log.e(TAG, "registerAidGroupForService: UID mismatch");
                 return false;
             }
             // Do another AID validation, since a caller could have thrown in a
@@ -1342,7 +1369,7 @@ public class RegisteredServicesCache {
             List<String> aids = aidGroup.getAids();
             for (String aid : aids) {
                 if (!CardEmulation.isValidAid(aid)) {
-                    Log.e(TAG, "AID " + aid + " is not a valid AID");
+                    Log.e(TAG, "registerAidGroupForService: AID " + aid + " is not a valid AID");
                     return false;
                 }
             }
@@ -1359,7 +1386,7 @@ public class RegisteredServicesCache {
                 newServices =
                     new ArrayList<ApduServiceInfo>(services.services.values());
             } else {
-                Log.e(TAG, "Failed to persist AID group.");
+                Log.e(TAG, "registerAidGroupForService: Failed to persist AID group");
                 // Undo registration
                 dynSettings.aidGroups.remove(aidGroup.getCategory());
             }
@@ -1376,18 +1403,20 @@ public class RegisteredServicesCache {
 
     public int registerOtherForService(int userId,
             ComponentName componentName, boolean checked) {
-        if (DEBUG) Log.d(TAG, "[register other] checked:" + checked + ", "  + componentName);
+        if (DEBUG) {
+            Log.d(TAG, "registerOtherForService: checked:" + checked + ", " + componentName);
+        }
 
         ArrayList<ApduServiceInfo> newServices = null;
         int success = SET_SERVICE_ENABLED_STATUS_FAILURE_UNKNOWN_ERROR;
 
         synchronized (mLock) {
 
-            Log.d(TAG, "registerOtherForService / ComponentName" + componentName);
+            Log.d(TAG, "registerOtherForService: / ComponentName" + componentName);
             ApduServiceInfo serviceInfo = getService(userId, componentName);
 
             if (serviceInfo == null) {
-                Log.e(TAG, "Service " + componentName + "does not exist");
+                Log.e(TAG, "registerOtherForService: Service " + componentName + "does not exist");
                 return SET_SERVICE_ENABLED_STATUS_FAILURE_INVALID_SERVICE;
             }
 
@@ -1399,12 +1428,15 @@ public class RegisteredServicesCache {
                 UserServices userService = findOrCreateUserLocked(userId);
                 newServices = new ArrayList<ApduServiceInfo>(userService.services.values());
             } else {
-                Log.e(TAG, "Fail to other checked");
+                Log.e(TAG, "registerOtherForService: Fail to other checked");
             }
         }
 
         if (success == SET_SERVICE_ENABLED_STATUS_OK) {
-            if (DEBUG) Log.d(TAG, "other list update due to User Select " + componentName);
+            if (DEBUG) {
+                Log.d(TAG, "registerOtherForService: other list update due to User Select "
+                        + componentName);
+            }
             mCallback.onServicesUpdated(userId, Collections.unmodifiableList(newServices),false);
         }
 
@@ -1416,12 +1448,12 @@ public class RegisteredServicesCache {
         ApduServiceInfo serviceInfo = getService(userId, componentName);
         if (serviceInfo != null) {
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
-                Log.e(TAG, "UID mismatch");
+                Log.e(TAG, "getAidGroupForService: UID mismatch");
                 return null;
             }
             return serviceInfo.getDynamicAidGroupForCategory(category);
         } else {
-            Log.e(TAG, "Could not find service " + componentName);
+            Log.e(TAG, "getAidGroupForService: Could not find service " + componentName);
             return null;
         }
     }
@@ -1436,11 +1468,12 @@ public class RegisteredServicesCache {
             if (serviceInfo != null) {
                 if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
                     // Calling from different uid
-                    Log.e(TAG, "UID mismatch");
+                    Log.e(TAG, "removeAidGroupForService: UID mismatch");
                     return false;
                 }
                 if (!serviceInfo.removeDynamicAidGroupForCategory(category)) {
-                    Log.e(TAG," Could not find dynamic AIDs for category " + category);
+                    Log.e(TAG, "removeAidGroupForService: Could not find dynamic AIDs for category "
+                            + category);
                     return false;
                 }
                 // Remove from local cache
@@ -1451,15 +1484,17 @@ public class RegisteredServicesCache {
                     if (success) {
                         newServices = new ArrayList<ApduServiceInfo>(services.services.values());
                     } else {
-                        Log.e(TAG, "Could not persist deleted AID group.");
+                        Log.e(TAG, "removeAidGroupForService: Could not persist deleted AID group");
                         dynSettings.aidGroups.put(category, deletedGroup);
                         return false;
                     }
                 } else {
-                    Log.e(TAG, "Could not find aid group in local cache.");
+                    Log.e(TAG, "removeAidGroupForService: Could not find aid group in "
+                            + "local cache");
                 }
             } else {
-                Log.e(TAG, "Service " + componentName + " does not exist.");
+                Log.e(TAG,
+                        "removeAidGroupForService: Service " + componentName + " does not exist");
             }
         }
         if (success) {
@@ -1475,7 +1510,7 @@ public class RegisteredServicesCache {
         UserServices services = findOrCreateUserLocked(userId);
         ApduServiceInfo serviceInfo = services.services.get(service);
         if (serviceInfo == null) {
-            Log.d(TAG, "serviceInfo is null");
+            Log.d(TAG, "removeAidGroupForService: serviceInfo is null");
             return false;
         }
         return serviceInfo.shouldDefaultToObserveMode();
@@ -1487,12 +1522,12 @@ public class RegisteredServicesCache {
         OtherServiceStatus status = userServices.others.get(service.getComponent());
         // This is Error handling code if otherServiceStatus is null
         if (status == null) {
-            Log.d(TAG, service.getComponent() + " status is null");
+            Log.d(TAG, "updateOtherServiceStatus: " + service.getComponent() + " status is null");
             return false;
         }
 
         if (service.isCategoryOtherServiceEnabled() == checked) {
-            Log.d(TAG, "already same status: " + checked);
+            Log.d(TAG, "updateOtherServiceStatus: already same status: " + checked);
             return false;
         }
 

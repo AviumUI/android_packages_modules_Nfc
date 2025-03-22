@@ -137,7 +137,7 @@ tNFC_STATUS RW_MfcFormatNDef(void) {
 
   if (p_mfc->state != RW_MFC_STATE_IDLE) {
     LOG(ERROR) << StringPrintf(
-        "%s Mifare Classic tag not activated or Busy - State:%d", __func__,
+        "%s: Mifare Classic tag not activated or Busy - State=%d", __func__,
         p_mfc->state);
     return NFC_STATUS_BUSY;
   }
@@ -363,7 +363,7 @@ tNFC_STATUS RW_MfcWriteNDef(uint16_t buf_len, uint8_t* p_buffer) {
           (4 * MFC_LAST_4BLOCK_SECTOR) + (i - MFC_LAST_4BLOCK_SECTOR) * 16;
     }
     LOG(DEBUG) << __func__
-               << "; first ndef block : " << p_mfc->next_block.block;
+               << ": first ndef block : " << p_mfc->next_block.block;
   } else {
     p_mfc->last_block_accessed.block = 4;
     p_mfc->next_block.block = 4;
@@ -661,12 +661,12 @@ static bool rw_mfc_send_to_lower(NFC_HDR* p_data) {
  **
  *******************************************************************************/
 void rw_mfc_process_timeout(TIMER_LIST_ENT* p_tle) {
-  LOG(VERBOSE) << __func__ << " event=" << p_tle->event;
+  LOG(VERBOSE) << __func__ << ": event=" << p_tle->event;
 
   if (p_tle->event == NFC_TTYPE_RW_MFC_RESPONSE) {
     rw_mfc_process_error();
   } else {
-    LOG(ERROR) << __func__ << " unknown event=" << p_tle->event;
+    LOG(ERROR) << __func__ << ": unknown event=" << p_tle->event;
   }
 }
 
@@ -687,15 +687,15 @@ static void rw_mfc_conn_cback(uint8_t conn_id, tNFC_CONN_EVT event,
   tRW_DATA rw_data;
 
   if (!p_data) {
-    LOG(ERROR) << __func__ << "Invalid p_data";
+    LOG(ERROR) << __func__ << ": Invalid p_data";
     return;
   }
 
-  LOG(VERBOSE) << StringPrintf("%s conn_id=%i, evt=0x%x", __func__, conn_id,
-                             event);
+  LOG(VERBOSE) << StringPrintf("%s: conn_id=%i, evt=0x%x", __func__, conn_id,
+                               event);
   /* Only handle static conn_id */
   if (conn_id != NFC_RF_CONN_ID) {
-    LOG(ERROR) << StringPrintf("%s Not static connection id =%d", __func__,
+    LOG(ERROR) << StringPrintf("%s: Not static connection id =%d", __func__,
                                conn_id);
     return;
   }
@@ -747,7 +747,7 @@ static void rw_mfc_conn_cback(uint8_t conn_id, tNFC_CONN_EVT event,
 
   if ((p_mfc->state != RW_MFC_STATE_IDLE) && (mfc_data == NULL)) {
     if (p_mfc->state != RW_MFC_STATE_NOT_ACTIVATED) {
-      LOG(ERROR) << StringPrintf("%s NULL pointer", __func__);
+      LOG(ERROR) << StringPrintf("%s: NULL pointer", __func__);
     }
     return;
   }
@@ -779,7 +779,7 @@ static void rw_mfc_conn_cback(uint8_t conn_id, tNFC_CONN_EVT event,
       GKI_freebuf(mfc_data);
       break;
     case RW_MFC_STATE_NOT_ACTIVATED:
-      LOG(VERBOSE) << __func__ << " RW_MFC_STATE_NOT_ACTIVATED";
+      LOG(VERBOSE) << __func__ << ": RW_MFC_STATE_NOT_ACTIVATED";
       /* p_r_apdu may send upper layer */
       break;
     case RW_MFC_STATE_NDEF_FORMAT:
@@ -791,7 +791,7 @@ static void rw_mfc_conn_cback(uint8_t conn_id, tNFC_CONN_EVT event,
       GKI_freebuf(mfc_data);
       break;
     default:
-      LOG(ERROR) << StringPrintf("%s : invalid state=%d", __func__,
+      LOG(ERROR) << StringPrintf("%s: invalid state=%d", __func__,
                                  p_mfc->state);
       break;
   }
@@ -817,7 +817,7 @@ static tNFC_STATUS rw_MfcCheckMad() {
 
   if (p_mfc->state != RW_MFC_STATE_IDLE) {
     LOG(ERROR) << __func__
-               << "; Mifare Classic tag not activated or Busy - State:"
+               << ": Mifare Classic tag not activated or Busy - State:"
                << p_mfc->state;
     return NFC_STATUS_BUSY;
   }
@@ -829,10 +829,10 @@ static tNFC_STATUS rw_MfcCheckMad() {
   if (success == NFC_STATUS_OK) {
     p_mfc->state = RW_MFC_STATE_DETECT_MAD;
     LOG(DEBUG) << __func__
-               << "; RW_MFC_STATE_DETECT_TLV state=" << p_mfc->state;
+               << ": RW_MFC_STATE_DETECT_TLV state=" << p_mfc->state;
   } else {
     p_mfc->substate = RW_MFC_SUBSTATE_NONE;
-    LOG(DEBUG) << __func__ << "; rw_MfcLocateTlv state=" << p_mfc->state;
+    LOG(DEBUG) << __func__ << ": rw_MfcLocateTlv state=" << p_mfc->state;
   }
 
   return NFC_STATUS_OK;
@@ -858,7 +858,7 @@ static tNFC_STATUS rw_MfcLocateTlv(uint8_t tlv_type) {
   if (mfc_read_mad()) {
     if (p_mfc->state != RW_MFC_STATE_DETECT_MAD) {
       LOG(ERROR) << StringPrintf(
-          "%s Mifare Classic tag not activated or Busy - State:%d", __func__,
+          "%s: Mifare Classic tag not activated or Busy - State=%d", __func__,
           p_mfc->state);
 
       return NFC_STATUS_BUSY;
@@ -866,7 +866,7 @@ static tNFC_STATUS rw_MfcLocateTlv(uint8_t tlv_type) {
   } else {
     if (p_mfc->state != RW_MFC_STATE_IDLE) {
       LOG(ERROR) << StringPrintf(
-          "%s Mifare Classic tag not activated or Busy - State:%d", __func__,
+          "%s: Mifare Classic tag not activated or Busy - State=%d", __func__,
           p_mfc->state);
 
       return NFC_STATUS_BUSY;
@@ -875,8 +875,8 @@ static tNFC_STATUS rw_MfcLocateTlv(uint8_t tlv_type) {
 
   if ((tlv_type != TAG_LOCK_CTRL_TLV) && (tlv_type != TAG_MEM_CTRL_TLV) &&
       (tlv_type != TAG_NDEF_TLV) && (tlv_type != TAG_PROPRIETARY_TLV)) {
-    LOG(VERBOSE) << StringPrintf("%s - Cannot search TLV: 0x%02x", __func__,
-                               tlv_type);
+    LOG(VERBOSE) << StringPrintf("%s: Cannot search TLV=0x%02x", __func__,
+                                 tlv_type);
     return NFC_STATUS_FAILED;
   }
   if (tlv_type == TAG_NDEF_TLV) {
@@ -900,12 +900,12 @@ static tNFC_STATUS rw_MfcLocateTlv(uint8_t tlv_type) {
   success = rw_mfc_readBlock(p_mfc->next_block.block);
   if (success == NFC_STATUS_OK) {
     p_mfc->state = RW_MFC_STATE_DETECT_TLV;
-    LOG(VERBOSE) << StringPrintf("%s RW_MFC_STATE_DETECT_TLV state=%d", __func__,
-                               p_mfc->state);
+    LOG(VERBOSE) << StringPrintf("%s: RW_MFC_STATE_DETECT_TLV state=%d",
+                                 __func__, p_mfc->state);
   } else {
     p_mfc->substate = RW_MFC_SUBSTATE_NONE;
-    LOG(VERBOSE) << StringPrintf("%s rw_MfcLocateTlv state=%d", __func__,
-                               p_mfc->state);
+    LOG(VERBOSE) << StringPrintf("%s: rw_MfcLocateTlv state=%d", __func__,
+                                 p_mfc->state);
   }
 
   return NFC_STATUS_OK;
@@ -1065,7 +1065,7 @@ static void rw_mfc_handle_mad_detect_rsp(uint8_t* p_data) {
       } else {
         p_mfc->next_block.auth = false;
         p_mfc->last_block_accessed.auth = false;
-        LOG(DEBUG) << __func__ << "; status=" << p[0];
+        LOG(DEBUG) << __func__ << ": status=" << p[0];
         nfc_stop_quick_timer(&p_mfc->timer);
         rw_mfc_process_error();
       }
@@ -1079,7 +1079,7 @@ static void rw_mfc_handle_mad_detect_rsp(uint8_t* p_data) {
         p_mfc->next_block.auth = false;
         rw_mfc_handle_read_op((uint8_t*)mfc_data);
       } else if (mfc_read_mad()) {
-        LOG(DEBUG) << __func__ << "; inval len status=" << p[0];
+        LOG(DEBUG) << __func__ << ": inval len status=" << p[0];
         nfc_stop_quick_timer(&p_mfc->timer);
         rw_mfc_process_error();
       }
@@ -1118,7 +1118,7 @@ static void rw_mfc_handle_tlv_detect_rsp(uint8_t* p_data) {
       } else {
         p_mfc->next_block.auth = false;
         p_mfc->last_block_accessed.auth = false;
-        LOG(VERBOSE) << StringPrintf("%s : status=%d", __func__, p[0]);
+        LOG(VERBOSE) << StringPrintf("%s: : status=%d", __func__, p[0]);
         nfc_stop_quick_timer(&p_mfc->timer);
         rw_mfc_process_error();
       }
@@ -1132,7 +1132,7 @@ static void rw_mfc_handle_tlv_detect_rsp(uint8_t* p_data) {
         p_mfc->next_block.auth = false;
         rw_mfc_handle_read_op((uint8_t*)mfc_data);
       } else if (mfc_read_mad()) {
-        LOG(DEBUG) << __func__ << "; inval len status=" << p[0];
+        LOG(DEBUG) << __func__ << ": inval len status=" << p[0];
         nfc_stop_quick_timer(&p_mfc->timer);
         rw_mfc_process_error();
       }
@@ -1155,27 +1155,27 @@ static void rw_mfc_resume_op() {
   switch (p_mfc->state) {
     case RW_MFC_STATE_DETECT_MAD:
       if (rw_mfc_readBlock(p_mfc->next_block.block) != NFC_STATUS_OK) {
-        LOG(ERROR) << __func__ << "; Error calling rw_mfc_readBlock()";
+        LOG(ERROR) << __func__ << ": Error calling rw_mfc_readBlock()";
       }
       break;
     case RW_MFC_STATE_DETECT_TLV:
       if (rw_mfc_readBlock(p_mfc->next_block.block) != NFC_STATUS_OK) {
-        LOG(ERROR) << __func__ << "; Error calling rw_mfc_readBlock()";
+        LOG(ERROR) << __func__ << ": Error calling rw_mfc_readBlock()";
       }
       break;
     case RW_MFC_STATE_READ_NDEF:
       if (rw_mfc_readBlock(p_mfc->next_block.block) != NFC_STATUS_OK) {
-        LOG(ERROR) << __func__ << "; Error calling rw_mfc_readBlock()";
+        LOG(ERROR) << __func__ << ": Error calling rw_mfc_readBlock()";
       }
       break;
     case RW_MFC_STATE_NDEF_FORMAT:
       if (rw_mfc_formatBlock(p_mfc->next_block.block) != NFC_STATUS_OK) {
-        LOG(ERROR) << __func__ << "; Error calling rw_mfc_formatBlock()";
+        LOG(ERROR) << __func__ << ": Error calling rw_mfc_formatBlock()";
       }
       break;
     case RW_MFC_STATE_UPDATE_NDEF:
       if (rw_mfc_writeBlock(p_mfc->next_block.block) != NFC_STATUS_OK) {
-        LOG(ERROR) << __func__ << "; Error calling rw_mfc_writeBlock()";
+        LOG(ERROR) << __func__ << ": Error calling rw_mfc_writeBlock()";
       }
       break;
   }
@@ -1213,13 +1213,13 @@ static void rw_mfc_handle_read_op(uint8_t* data) {
               65) {  // need to read next block (2 or 65 or 66)
         if (rw_mfc_readBlock(p_mfc->next_block.block) != NFC_STATUS_OK) {
           failed = true;
-          LOG(DEBUG) << __func__ << "; FAILED reading next";
+          LOG(DEBUG) << __func__ << ": FAILED reading next";
         }
       } else if (p_mfc->current_block == 2 &&  // 2 is last block of MAD1
                  !(p_mfc->selres & RW_MFC_4K_Support)) {
-        LOG(DEBUG) << __func__ << "; Finished reading the MAD1 sector";
+        LOG(DEBUG) << __func__ << ": Finished reading the MAD1 sector";
         for (int k = 0; k < 16; k++) {
-          LOG(DEBUG) << __func__ << "; k= " << k
+          LOG(DEBUG) << __func__ << ": k= " << k
                      << " value = " << p_mfc->mifare_ndefsector[k];
         }
         rw_MfcLocateTlv(TAG_NDEF_TLV);
@@ -1229,12 +1229,12 @@ static void rw_mfc_handle_read_op(uint8_t* data) {
         p_mfc->next_block.block = 64;
         if (rw_mfc_readBlock(p_mfc->next_block.block) != NFC_STATUS_OK) {
           failed = true;
-          LOG(DEBUG) << __func__ << "; FAILED reading next";
+          LOG(DEBUG) << __func__ << ": FAILED reading next";
         }
       } else if (p_mfc->current_block == 66) {  // 66 is last block of MAD2
-        LOG(DEBUG) << __func__ << "; Finished reading the MAD1 & MAD2 sectors";
+        LOG(DEBUG) << __func__ << ": Finished reading the MAD1 & MAD2 sectors";
         for (int k = 0; k < 40; k++) {
-          LOG(DEBUG) << __func__ << "; k= " << k
+          LOG(DEBUG) << __func__ << ": k= " << k
                      << " value = " << p_mfc->mifare_ndefsector[k];
         }
         rw_MfcLocateTlv(TAG_NDEF_TLV);
@@ -1254,7 +1254,7 @@ static void rw_mfc_handle_read_op(uint8_t* data) {
         ndef_data.flags = RW_NDEF_FL_UNKNOWN;
         ndef_data.max_size = 0;
         ndef_data.cur_size = 0;
-        LOG(DEBUG) << __func__ << "; status=NFC_STATUS_FAILED";
+        LOG(DEBUG) << __func__ << ": status=NFC_STATUS_FAILED";
         /* If not Halt move to idle state */
         rw_mfc_handle_op_complete();
 
@@ -1398,12 +1398,12 @@ static bool rw_nfc_decodeTlv(uint8_t* data) {
     if (p[i + 1] != 0xFF) {
       p_mfc->ndef_length = p[i + 1];
       p_mfc->ndef_start_pos = i + RW_MFC_SHORT_TLV_SIZE;
-      LOG(VERBOSE) << __func__ << " short NDEF SIZE=" << p_mfc->ndef_length;
+      LOG(VERBOSE) << __func__ << ": short NDEF SIZE=" << p_mfc->ndef_length;
       return true;
     } else if ((i + 3) < mfc_data->len) {
       p_mfc->ndef_length = (((uint16_t)p[i + 2]) << 8) | ((uint16_t)(p[i + 3]));
       p_mfc->ndef_start_pos = i + RW_MFC_LONG_TLV_SIZE;
-      LOG(VERBOSE) << __func__ << " long NDEF SIZE=" << p_mfc->ndef_length;
+      LOG(VERBOSE) << __func__ << ": long NDEF SIZE=" << p_mfc->ndef_length;
       return true;
     } else {
       LOG(ERROR) << __func__ << ": Can't decode ndef length";
@@ -1480,7 +1480,7 @@ tNFC_STATUS RW_MfcReadNDef(uint8_t* p_buffer, uint16_t buf_len) {
 
   if (p_mfc->state != RW_MFC_STATE_IDLE) {
     LOG(ERROR) << StringPrintf(
-        "%s Mifare Classic tag not activated or Busy - State=%d", __func__,
+        "%s: Mifare Classic tag not activated or Busy - State=%d", __func__,
         p_mfc->state);
     return NFC_STATUS_FAILED;
   }
@@ -1574,13 +1574,13 @@ static void rw_mfc_handle_ndef_read_rsp(uint8_t* p_data) {
 
         rw_mfc_resume_op();
         LOG(VERBOSE) << StringPrintf(
-            "rw_mfc_handle_ndef_read_rsp () sector authentified: %d",
+            "rw_mfc_handle_ndef_read_rsp () sector authentified=%d",
             p_mfc->sector_authentified);
       } else {
         p_mfc->next_block.auth = false;
         p_mfc->last_block_accessed.auth = false;
         if (mfc_read_mad()) {
-          LOG(DEBUG) << __func__ << "; status=" << p[0];
+          LOG(DEBUG) << __func__ << ": status=" << p[0];
           nfc_stop_quick_timer(&p_mfc->timer);
           rw_mfc_process_error();
         }
@@ -1616,7 +1616,7 @@ static void rw_mfc_handle_ndef_read_rsp(uint8_t* p_data) {
         p_mfc->next_block.auth = false;
         rw_mfc_handle_read_op((uint8_t*)mfc_data);
       } else if (mfc_read_mad()) {
-        LOG(DEBUG) << __func__ << "; inval len status=" << p[0];
+        LOG(DEBUG) << __func__ << ": inval len status=" << p[0];
         nfc_stop_quick_timer(&p_mfc->timer);
         rw_mfc_process_error();
       }
@@ -1642,7 +1642,7 @@ static void rw_mfc_process_error() {
   tRW_MFC_CB* p_mfc = &rw_cb.tcb.mfc;
   tRW_DETECT_NDEF_DATA ndef_data;
 
-  LOG(VERBOSE) << StringPrintf("%s State=%d", __func__, p_mfc->state);
+  LOG(VERBOSE) << StringPrintf("%s: State=%d", __func__, p_mfc->state);
 
   evt_data.status = NFC_STATUS_FAILED;
 
@@ -1696,7 +1696,7 @@ static void rw_mfc_process_error() {
     ndef_data.flags = RW_NDEF_FL_UNKNOWN;
     ndef_data.max_size = 0;
     ndef_data.cur_size = 0;
-    LOG(VERBOSE) << StringPrintf("%s status=%d", __func__, evt_data.status);
+    LOG(VERBOSE) << StringPrintf("%s: status=%d", __func__, evt_data.status);
     /* If not Halt move to idle state */
     rw_mfc_handle_op_complete();
 
@@ -1708,7 +1708,7 @@ static void rw_mfc_process_error() {
       rw_mfc_handle_op_complete();
     }
 
-    LOG(VERBOSE) << StringPrintf("%s status=%d", __func__, evt_data.status);
+    LOG(VERBOSE) << StringPrintf("%s: status=%d", __func__, evt_data.status);
     p_mfc->substate = RW_MFC_SUBSTATE_NONE;
     (*rw_cb.p_cback)(rw_event, (tRW_DATA*)&evt_data);
   }

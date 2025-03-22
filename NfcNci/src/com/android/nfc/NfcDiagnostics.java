@@ -65,7 +65,7 @@ public class NfcDiagnostics {
      */
     public void takeBugReport(String bugTitle, String description) {
         if (!mSystemBuildProperties.isUserdebugBuild()) {
-            Log.d(TAG, "Skip bugreport because it can be triggered only in userDebug build");
+            Log.d(TAG, "takeBugReport: Skip because it can be triggered only in userDebug build");
             return;
         }
         long currentTimeMs = getElapsedSinceBootMillis();
@@ -73,7 +73,7 @@ public class NfcDiagnostics {
 
         if (timeSinceLastUploadMs < DEFAULT_BUG_REPORT_MIN_INTERVAL_MS
                 && mLastBugReportTimeMs > 0) {
-            Log.d(TAG, "Bugreport was filed recently, Skip " + bugTitle);
+            Log.d(TAG, "takeBugReport: Bugreport was filed recently, Skip " + bugTitle);
             return;
         }
 
@@ -92,7 +92,7 @@ public class NfcDiagnostics {
                 .getPackageManager().queryIntentActivities(launchBetterBugIntent, 0)
                 .isEmpty();
         if (isIntentUnSafe) {
-            Log.d(TAG, "intent is unsafe and skip bugreport from betterBug: " + bugTitle);
+            Log.d(TAG, "takeBugreportThroughBetterBug: intent is unsafe " + bugTitle);
             return false;
         }
 
@@ -100,11 +100,11 @@ public class NfcDiagnostics {
         try {
             launchBetterBugIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
             mContext.startActivity(launchBetterBugIntent);
-            Log.d(TAG, "Taking the bugreport through betterBug: " + bugTitle);
+            Log.d(TAG, "takeBugreportThroughBetterBug: " + bugTitle);
             mLastBugReportTimeMs = getElapsedSinceBootMillis();
             return true;
         } catch (RuntimeException e) {
-            Log.e(TAG, "Error taking bugreport: " + e);
+            Log.e(TAG, "takeBugreportThroughBetterBug: e= " + e);
             return false;
         } finally {
             Binder.restoreCallingIdentity(identity);
@@ -120,11 +120,11 @@ public class NfcDiagnostics {
         BugreportParams params = new BugreportParams(BugreportParams.BUGREPORT_MODE_FULL);
         try {
             bugreportManager.requestBugreport(params, bugTitle, description);
-            Log.d(TAG, "Taking the bugreport through bugreportManager: " + bugTitle);
+            Log.d(TAG, "takeBugreportThroughBugreportManager: " + bugTitle);
             mLastBugReportTimeMs = getElapsedSinceBootMillis();
             return true;
         } catch (RuntimeException e) {
-            Log.e(TAG, "Error taking bugreport: ", e);
+            Log.e(TAG, "takeBugreportThroughBugreportManager: e= ", e);
             return false;
         }
     }

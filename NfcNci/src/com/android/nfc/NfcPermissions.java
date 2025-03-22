@@ -116,7 +116,7 @@ public class NfcPermissions {
         if (devicePolicyManager == null
                 && context.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_DEVICE_ADMIN)) {
-            Log.w(TAG, "Error retrieving DPM service");
+            Log.w(TAG, "retrieveDevicePolicyManagerFromContext: Error");
         }
         return devicePolicyManager;
     }
@@ -144,11 +144,11 @@ public class NfcPermissions {
             userContext = mContext.createPackageContextAsUser(mContext.getPackageName(), 0,
                     UserHandle.getUserHandleForUid(uid));
         } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Unknown package name");
+            Log.e(TAG, "createPackageContextAsUser: Unknown package name");
             return null;
         }
         if (userContext == null) {
-            Log.e(TAG, "Unable to retrieve user context for " + uid);
+            Log.e(TAG, "createPackageContextAsUser: Unable to retrieve user context for " + uid);
             return null;
         }
         return userContext;

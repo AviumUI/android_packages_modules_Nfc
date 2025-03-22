@@ -1042,18 +1042,18 @@ static tNFC_STATUS rw_t1t_handle_tlv_detect_rsp(uint8_t* p_data) {
                       p_t1t->num_lockbytes++;
                     } else
                       LOG(ERROR) << StringPrintf(
-                          "T1T Buffer overflow error. Max supported lock "
+                          "%s: T1T Buffer overflow error. Max supported lock "
                           "bytes=0x%02X",
-                          RW_T1T_MAX_LOCK_BYTES);
+                          __func__, RW_T1T_MAX_LOCK_BYTES);
                     xx++;
                   }
                   p_t1t->num_lock_tlvs++;
                   rw_t1t_update_attributes();
                 } else
                   LOG(ERROR) << StringPrintf(
-                      "T1T Buffer overflow error. Max supported lock "
+                      "%s: T1T Buffer overflow error. Max supported lock "
                       "tlvs=0x%02X",
-                      RW_T1T_MAX_LOCK_TLVS);
+                      __func__, RW_T1T_MAX_LOCK_TLVS);
 
                 tlv_detect_state = RW_T1T_SUBSTATE_WAIT_TLV_DETECT;
               }
@@ -1072,8 +1072,9 @@ static tNFC_STATUS rw_t1t_handle_tlv_detect_rsp(uint8_t* p_data) {
               if (bytes_count == 0) {
                 if (p_t1t->num_mem_tlvs >= RW_T1T_MAX_MEM_TLVS) {
                   LOG(ERROR) << StringPrintf(
-                      "rw_t1t_handle_tlv_detect_rsp - Maximum buffer allocated "
-                      "for Memory tlv has reached");
+                      "%s: Maximum buffer allocated "
+                      "for Memory tlv has reached",
+                      __func__);
                   failed = true;
                 } else {
                   /* Extract dynamic reserved bytes */
@@ -1189,9 +1190,8 @@ static tNFC_STATUS rw_t1t_handle_ndef_rall_rsp(void) {
         }
       }
     } else {
-      LOG(ERROR) << StringPrintf(
-          "RW_T1tReadNDef - Invalid NDEF len: %u or NDEF corrupted",
-          p_t1t->ndef_msg_len);
+      LOG(ERROR) << StringPrintf("%s: Invalid NDEF len=%u or NDEF corrupted",
+                                 __func__, p_t1t->ndef_msg_len);
       status = NFC_STATUS_FAILED;
     }
   } else {
@@ -2146,24 +2146,22 @@ tNFC_STATUS RW_T1tFormatNDef(void) {
   uint8_t* p;
 
   if (p_t1t->state != RW_T1T_STATE_IDLE) {
-    LOG(WARNING) << StringPrintf(
-        "RW_T1tFormatNDef - Tag not initialized/ Busy! State: %u",
-        p_t1t->state);
+    LOG(WARNING) << StringPrintf("%s: Tag not initialized/ Busy! State=%u",
+                                 __func__, p_t1t->state);
     return (NFC_STATUS_FAILED);
   }
 
   if ((p_t1t->hr[0] & 0xF0) != T1T_NDEF_SUPPORTED) {
     LOG(WARNING) << StringPrintf(
-        "RW_T1tFormatNDef - Cannot format tag as NDEF not supported. HR0: %u",
+        "%s: Cannot format tag as NDEF not supported. HR0=%u", __func__,
         p_t1t->hr[0]);
     return (NFC_STATUS_REJECTED);
   }
 
   p_ret = t1t_tag_init_data(p_t1t->hr[0]);
   if (p_ret == nullptr) {
-    LOG(WARNING) << StringPrintf(
-        "RW_T1tFormatNDef - Invalid HR - HR0: %u, HR1: %u", p_t1t->hr[0],
-        p_t1t->hr[1]);
+    LOG(WARNING) << StringPrintf("%s: Invalid HR - HR0=%u, HR1=%u", __func__,
+                                 p_t1t->hr[0], p_t1t->hr[1]);
     return (NFC_STATUS_REJECTED);
   }
 
@@ -2243,16 +2241,15 @@ tNFC_STATUS RW_T1tLocateTlv(uint8_t tlv_type) {
   uint8_t adds;
 
   if (p_t1t->state != RW_T1T_STATE_IDLE) {
-    LOG(WARNING) << StringPrintf("RW_T1tLocateTlv - Busy - State: %u",
-                                 p_t1t->state);
+    LOG(WARNING) << StringPrintf("%s: Busy - State=%u", __func__, p_t1t->state);
     return (NFC_STATUS_FAILED);
   }
   p_t1t->tlv_detect = tlv_type;
 
   if ((p_t1t->tlv_detect == TAG_NDEF_TLV) &&
       (((p_t1t->hr[0]) & 0xF0) != T1T_NDEF_SUPPORTED)) {
-    LOG(ERROR) << StringPrintf(
-        "RW_T1tLocateTlv - Error: NDEF not supported by the tag");
+    LOG(ERROR) << StringPrintf("%s: Error: NDEF not supported by the tag",
+                               __func__);
     return (NFC_STATUS_REFUSED);
   }
 
@@ -2330,21 +2327,20 @@ tNFC_STATUS RW_T1tReadNDef(uint8_t* p_buffer, uint16_t buf_len) {
       t1t_cmd_to_rsp_info(T1T_CMD_RSEG);
 
   if (p_t1t->state != RW_T1T_STATE_IDLE) {
-    LOG(WARNING) << StringPrintf("RW_T1tReadNDef - Busy - State: %u",
-                                 p_t1t->state);
+    LOG(WARNING) << StringPrintf("%s: Busy - State=%u", __func__, p_t1t->state);
     return (NFC_STATUS_FAILED);
   }
 
   /* Check HR0 if NDEF supported by the tag */
   if (((p_t1t->hr[0]) & 0xF0) != T1T_NDEF_SUPPORTED) {
-    LOG(ERROR) << StringPrintf(
-        "RW_T1tReadNDef - Error: NDEF not supported by the tag");
+    LOG(ERROR) << StringPrintf("%s: Error: NDEF not supported by the tag",
+                               __func__);
     return (NFC_STATUS_REFUSED);
   }
 
   if (p_t1t->tag_attribute == RW_T1_TAG_ATTRB_INITIALIZED_NDEF) {
     LOG(WARNING) << StringPrintf(
-        "RW_T1tReadNDef - NDEF Message length is zero, NDEF Length : %u ",
+        "%s: NDEF Message length is zero, NDEF Length=%u ", __func__,
         p_t1t->ndef_msg_len);
     return (NFC_STATUS_NOT_INITIALIZED);
   }
@@ -2352,15 +2348,16 @@ tNFC_STATUS RW_T1tReadNDef(uint8_t* p_buffer, uint16_t buf_len) {
   if ((p_t1t->tag_attribute != RW_T1_TAG_ATTRB_READ_WRITE) &&
       (p_t1t->tag_attribute != RW_T1_TAG_ATTRB_READ_ONLY)) {
     LOG(ERROR) << StringPrintf(
-        "RW_T1tReadNDef - Error: NDEF detection not performed yet/ Tag is in "
-        "Initialized state");
+        "%s: Error: NDEF detection not performed yet/ Tag is in "
+        "Initialized state",
+        __func__);
     return (NFC_STATUS_FAILED);
   }
 
   if (buf_len < p_t1t->ndef_msg_len) {
     LOG(WARNING) << StringPrintf(
-        "RW_T1tReadNDef - buffer size: %u  less than NDEF msg sise: %u",
-        buf_len, p_t1t->ndef_msg_len);
+        "%s: buffer size=%u  less than NDEF msg sise=%u", __func__, buf_len,
+        p_t1t->ndef_msg_len);
     return (NFC_STATUS_FAILED);
   }
   p_t1t->p_ndef_buffer = p_buffer;
@@ -2421,27 +2418,26 @@ tNFC_STATUS RW_T1tWriteNDef(uint16_t msg_len, uint8_t* p_msg) {
   uint16_t init_ndef_msg_offset;
 
   if (p_t1t->state != RW_T1T_STATE_IDLE) {
-    LOG(WARNING) << StringPrintf("RW_T1tWriteNDef - Busy - State: %u",
-                                 p_t1t->state);
+    LOG(WARNING) << StringPrintf("%s: Busy - State=%u", __func__, p_t1t->state);
     return (NFC_STATUS_FAILED);
   }
 
   /* Check HR0 if NDEF supported by the tag */
   if (((p_t1t->hr[0]) & 0xF0) != T1T_NDEF_SUPPORTED) {
-    LOG(ERROR) << StringPrintf(
-        "RW_T1tWriteNDef - Error: NDEF not supported by the tag");
+    LOG(ERROR) << StringPrintf("%s: Error: NDEF not supported by the tag",
+                               __func__);
     return (NFC_STATUS_REFUSED);
   }
 
   if ((p_t1t->tag_attribute != RW_T1_TAG_ATTRB_READ_WRITE) &&
       (p_t1t->tag_attribute != RW_T1_TAG_ATTRB_INITIALIZED_NDEF)) {
-    LOG(ERROR) << StringPrintf("RW_T1tWriteNDef - Tag cannot update NDEF");
+    LOG(ERROR) << StringPrintf("%s: Tag cannot update NDEF", __func__);
     return (NFC_STATUS_REFUSED);
   }
 
   if (msg_len > p_t1t->max_ndef_msg_len) {
     LOG(ERROR) << StringPrintf(
-        "RW_T1tWriteNDef - Cannot write NDEF of size greater than %u bytes",
+        "%s: Cannot write NDEF of size greater than %u bytes", __func__,
         p_t1t->max_ndef_msg_len);
     return (NFC_STATUS_REFUSED);
   }
@@ -2528,8 +2524,7 @@ tNFC_STATUS RW_T1tSetTagReadOnly(bool b_hard_lock) {
   uint8_t num_locks;
 
   if (p_t1t->state != RW_T1T_STATE_IDLE) {
-    LOG(WARNING) << StringPrintf("RW_T1tSetTagReadOnly - Busy - State: %u",
-                                 p_t1t->state);
+    LOG(WARNING) << StringPrintf("%s: Busy - State=%u", __func__, p_t1t->state);
     return (NFC_STATUS_BUSY);
   }
 

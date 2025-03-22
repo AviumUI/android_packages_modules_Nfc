@@ -232,16 +232,16 @@ tNFA_STATUS nfa_rw_send_raw_frame(NFC_HDR* p_data) {
 bool nfa_rw_handle_event(NFC_HDR* p_msg) {
   uint16_t act_idx;
 
-  LOG(VERBOSE) << StringPrintf(
-      "nfa_rw_handle_event event: %s (0x%02x), flags: %08x",
-      nfa_rw_evt_2_str(p_msg->event).c_str(), p_msg->event, nfa_rw_cb.flags);
+  LOG(VERBOSE) << StringPrintf("%s: event=%s (0x%02x), flags=%08x", __func__,
+                               nfa_rw_evt_2_str(p_msg->event).c_str(),
+                               p_msg->event, nfa_rw_cb.flags);
 
   /* Get NFA_RW sub-event */
   act_idx = (p_msg->event & 0x00FF);
   if (act_idx < (NFA_RW_MAX_EVT & 0xFF)) {
     return (*nfa_rw_action_tbl[act_idx])((tNFA_RW_MSG*)p_msg);
   } else {
-    LOG(ERROR) << StringPrintf("nfa_rw_handle_event: unhandled event 0x%02X",
+    LOG(ERROR) << StringPrintf("%s: unhandled event 0x%02X", __func__,
                                p_msg->event);
     return true;
   }

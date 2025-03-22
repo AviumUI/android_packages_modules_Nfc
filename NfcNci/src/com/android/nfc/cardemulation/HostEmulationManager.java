@@ -69,7 +69,6 @@ import com.android.nfc.NfcStatsLog;
 import com.android.nfc.PerfettoTrigger;
 import com.android.nfc.cardemulation.RegisteredAidCache.AidResolveInfo;
 import com.android.nfc.cardemulation.util.StatsdUtils;
-import com.android.nfc.cardemulation.util.StatsdUtilsContext;
 import com.android.nfc.flags.Flags;
 import com.android.nfc.proto.NfcEventProto;
 
@@ -209,6 +208,7 @@ public class HostEmulationManager {
 
     boolean mEnableObserveModeAfterTransaction = false;
     boolean mEnableObserveModeOnFieldOff = false;
+    PollingFrame mFirmwareExitFrame = null;
     ComponentName mPaymentServiceName = null;
     @UserIdInt int mPaymentServiceUserId; // The userId of the payment service
     ComponentName mLastBoundPaymentServiceName;
@@ -252,7 +252,12 @@ public class HostEmulationManager {
                 @Override
                 public void run() {
                     synchronized (mLock) {
-                        unbindInactiveServicesLocked();
+                        if (isHostCardEmulationActivated()) {
+                            // Skip in active state
+                            rescheduleInactivityChecks();
+                        } else {
+                            unbindInactiveServicesLocked();
+                        }
                     }
                 }
 
@@ -268,8 +273,12 @@ public class HostEmulationManager {
                                 try {
                                     mContext.unbindService(connection.mServiceConnection);
                                 } catch (IllegalArgumentException iae) {
-                                    Log.wtf(TAG, "Exception while unbinding "
-                                        + key.getComponentName() + " service connection", iae);
+                                    Log.wtf(TAG,
+                                            "unbindInactiveServicesLocked: "
+                                                    + "Exception while unbinding "
+                                                    + key.getComponentName()
+                                                    + " service connection",
+                                            iae);
                                 }
                             }
                         } else {
@@ -286,13 +295,14 @@ public class HostEmulationManager {
         @Override
         public void run() {
             synchronized (mLock) {
-              Log.d(TAG, "re-enabling observe mode after transaction.");
-              mEnableObserveModeAfterTransaction = false;
-              mEnableObserveModeOnFieldOff = false;
+                Log.d(TAG, "mEnableObserveModeAfterTransactionRunnable.run");
+                mEnableObserveModeAfterTransaction = false;
+                mEnableObserveModeOnFieldOff = false;
             }
             NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
             if (adapter == null) {
-                Log.e(TAG, "adapter is null, returning");
+                Log.e(TAG, "mEnableObserveModeAfterTransactionRunnable.run: "
+                        + "adapter is null, returning");
                 return;
             }
             adapter.setObserveModeEnabled(true);
@@ -352,7 +362,7 @@ public class HostEmulationManager {
         mHandler.post(() -> {
             synchronized (mLock) {
                 if (!isHostCardEmulationActivated()) {
-                    Log.d(TAG, "onPreferredPaymentServiceChanged, resetting active service");
+                    Log.d(TAG, "onPreferredPaymentServiceChanged: resetting active service");
                     resetActiveService();
                 }
 
@@ -453,8 +463,11 @@ public class HostEmulationManager {
                 if (arePackagesInForeground()) {
                     return;
                 }
-                Log.w(TAG, "Observe mode not disabled and no application from the following " +
-                    "packages are in the foreground: " + String.join(", ", mServicePackageNames));
+                Log.w(TAG,
+                        "AutoDisableObserveModeRunnable: Observe mode not disabled and "
+                                + "no application from the following "
+                                + "packages are in the foreground: "
+                                + String.join(", ", mServicePackageNames));
                 allowOneTransaction();
             }
         }
@@ -537,13 +550,13 @@ public class HostEmulationManager {
     }
 
     private void setPollingLoopStateLocked(PollingLoopState state) {
-        Log.d(TAG, "Polling loop state: " + mPollingLoopState + " -> " + state);
+        Log.d(TAG, "setPollingLoopStateLocked: " + mPollingLoopState + " -> " + state);
         mPollingLoopState = state;
     }
 
     @TargetApi(35)
     public void onPollingLoopDetected(List<PollingFrame> pollingFrames) {
-        Log.d(TAG, "onPollingLoopDetected, size: " + pollingFrames.size());
+        Log.d(TAG, "onPollingLoopDetected: size: " + pollingFrames.size());
         synchronized (mLock) {
             rescheduleInactivityChecks();
             // We need to have this check here in addition to the one in onFieldChangeDetected,
@@ -607,10 +620,21 @@ public class HostEmulationManager {
                         }
                         if (serviceInfo.getShouldAutoTransact(dataStr)) {
                             if (mStatsdUtils != null) {
+                                mStatsdUtils.logAutoTransactReported(
+                                    StatsdUtils.PROCESSOR_HOST, data);
                                 mStatsdUtils.setNextObserveModeTriggerSource(
                                     StatsdUtils.TRIGGER_SOURCE_AUTO_TRANSACT);
                             }
-                            allowOneTransaction();
+                            if (mFirmwareExitFrame != null && Arrays.equals(
+                                    mFirmwareExitFrame.getData(), pollingFrame.getData())) {
+                                mFirmwareExitFrame = null;
+                                mEnableObserveModeAfterTransaction = true;
+                                Log.d(TAG,
+                                        "Polling frame matches exit frame, leaving observe mode "
+                                                + "disabled");
+                            } else {
+                                allowOneTransaction();
+                            }
                             pollingFrame.setTriggeredAutoTransact(true);
                         }
                         UserHandle user = UserHandle.getUserHandleForUid(serviceInfo.getUid());
@@ -640,6 +664,7 @@ public class HostEmulationManager {
                     mStatsdUtils.logPollingFrames();
                 }
             }
+            mFirmwareExitFrame = null;
 
             if (mPollingLoopState == PollingLoopState.EVALUATING_POLLING_LOOP) {
                 if (mPendingPollingLoopFrames.size() >= 3) {
@@ -688,8 +713,8 @@ public class HostEmulationManager {
                         mPendingPollingLoopFrames);
                     mPendingPollingLoopFrames = null;
                 } else {
-                    Log.i(TAG, "No preferred service to deliver polling frames to,"
-                    + " allowing transaction.");
+                    Log.i(TAG, "onPollingLoopDetected: No preferred service to deliver "
+                            + "polling frames to, allowing transaction");
                     allowOneTransaction();
                 }
             }
@@ -697,10 +722,19 @@ public class HostEmulationManager {
     }
 
     private void allowOneTransaction() {
-        Log.d(TAG, "disabling observe mode for one transaction.");
+        Log.d(TAG, "allowOneTransaction");
         mEnableObserveModeAfterTransaction = true;
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         mHandler.post(() -> adapter.setObserveModeEnabled(false));
+    }
+
+    /**
+     * Observe mode was disabled in firmware, we shouldn't autotransact on the next frame.
+     *
+     * This assumes the exit frame will be in the next batch of processed polling frames.
+     */
+    public void onObserveModeDisabledInFirmware(PollingFrame exitFrame) {
+        mFirmwareExitFrame = exitFrame;
     }
 
     /**
@@ -714,7 +748,7 @@ public class HostEmulationManager {
             mAidCache.onPreferredForegroundServiceChanged(serviceAndUser);
 
             if (!isHostCardEmulationActivated()) {
-                Log.d(TAG, "onPreferredForegroundServiceChanged, resetting active service");
+                Log.d(TAG, "onPreferredForegroundServiceChanged: resetting active service");
                 resetActiveService();
             }
             if (service != null) {
@@ -731,7 +765,7 @@ public class HostEmulationManager {
             mHandler.postDelayed(mReturnToIdleStateRunnable, FIELD_OFF_IDLE_DELAY_MS);
         }
         if (!fieldOn && mEnableObserveModeOnFieldOff && mEnableObserveModeAfterTransaction) {
-            Log.d(TAG, "Field off detected, will re-enable observe mode.");
+            Log.d(TAG, "onFieldChangeDetected: re-enable observe mode");
             mHandler.postDelayed(mEnableObserveModeAfterTransactionRunnable,
                 RE_ENABLE_OBSERVE_MODE_DELAY_MS);
         }
@@ -742,7 +776,7 @@ public class HostEmulationManager {
     }
 
     public void onHostEmulationActivated() {
-        Log.d(TAG, "notifyHostEmulationActivated");
+        Log.d(TAG, "onHostEmulationActivated");
         synchronized (mLock) {
             if (nfcHceLatencyEvents()) {
                 Trace.beginAsyncSection(EVENT_HCE_ACTIVATED, 0);
@@ -754,7 +788,7 @@ public class HostEmulationManager {
             intent.setPackage(NfcInjector.getInstance().getNfcPackageName());
             mContext.sendBroadcastAsUser(intent, UserHandle.ALL);
             if (mState != STATE_IDLE && mState != STATE_POLLING_LOOP) {
-                Log.e(TAG, "Got activation event in non-idle state");
+                Log.e(TAG, "onHostEmulationActivated: Got activation event in non-idle state");
             }
             mState = STATE_W4_SELECT;
         }
@@ -784,7 +818,7 @@ public class HostEmulationManager {
     UnroutableAidBugReportRunnable mUnroutableAidBugReportRunnable = null;
 
     public void onHostEmulationData(byte[] data) {
-        Log.d(TAG, "notifyHostEmulationData");
+        Log.d(TAG, "onHostEmulationData");
         mHandler.removeCallbacks(mEnableObserveModeAfterTransactionRunnable);
         rescheduleInactivityChecks();
         String selectAid = findSelectAid(data);
@@ -793,10 +827,10 @@ public class HostEmulationManager {
         AidResolveInfo resolveInfo = null;
         synchronized (mLock) {
             if (mState == STATE_IDLE) {
-                Log.e(TAG, "Got data in idle state.");
+                Log.e(TAG, "onHostEmulationData: Got data in idle state.");
                 return;
             } else if (mState == STATE_W4_DEACTIVATE) {
-                Log.e(TAG, "Dropping APDU in STATE_W4_DECTIVATE");
+                Log.e(TAG, "onHostEmulationData: Dropping APDU in STATE_W4_DECTIVATE");
                 return;
             }
             if (selectAid != null) {
@@ -807,12 +841,15 @@ public class HostEmulationManager {
                 resolveInfo = mAidCache.resolveAid(selectAid);
                 if (resolveInfo == null || resolveInfo.services.size() == 0) {
                     if (selectAid.equals(NDEF_V1_AID) || selectAid.equals(NDEF_V2_AID)) {
-                        Log.w(TAG, "Can't route NDEF AID, sending AID_NOT_FOUND");
+                        Log.w(TAG,
+                                "onHostEmulationData: Can't route NDEF AID, sending AID_NOT_FOUND");
                     } else if (!mPowerManager.isScreenOn()) {
                       Log.i(TAG,
-                          "Screen is off, sending AID_NOT_FOUND, but not triggering bug report");
+                              "onHostEmulationData: Screen is off, sending AID_NOT_FOUND, "
+                                      + "but not triggering bug report");
                     } else {
-                        Log.w(TAG, "Can't handle AID " + selectAid + " sending AID_NOT_FOUND");
+                        Log.w(TAG, "onHostEmulationData: Can't handle AID " + selectAid
+                                + " sending AID_NOT_FOUND");
                         if (android.nfc.Flags.nfcEventListener()) {
                             notifyAidNotRoutedListener(selectAid);
                         }
@@ -855,7 +892,7 @@ public class HostEmulationManager {
                           && NfcInjector.getInstance().isDeviceLocked()) {
                         NfcService.getInstance().sendRequireUnlockIntent();
                         NfcService.getInstance().sendData(AID_NOT_FOUND);
-                        if (DBG) Log.d(TAG, "requiresUnlock()! show toast");
+                        if (DBG) Log.d(TAG, "onHostEmulationData: requiresUnlock()! show toast");
                         if (mStatsdUtils != null) {
                             mStatsdUtils.logCardEmulationWrongSettingEvent();
                         }
@@ -864,7 +901,7 @@ public class HostEmulationManager {
                     }
                     if (defaultServiceInfo.requiresScreenOn() && !mPowerManager.isScreenOn()) {
                         NfcService.getInstance().sendData(AID_NOT_FOUND);
-                        if (DBG) Log.d(TAG, "requiresScreenOn()!");
+                        if (DBG) Log.d(TAG, "onHostEmulationData: requiresScreenOn()!");
                         if (mStatsdUtils != null) {
                             mStatsdUtils.logCardEmulationWrongSettingEvent();
                         }
@@ -873,8 +910,8 @@ public class HostEmulationManager {
                     // In no circumstance should this be an OffHostService -
                     // we should never get this AID on the host in the first place
                     if (!defaultServiceInfo.isOnHost()) {
-                        Log.e(TAG, "AID that was meant to go off-host was routed to host." +
-                                " Check routing table configuration.");
+                        Log.e(TAG, "onHostEmulationData: AID that was meant to go off-host was "
+                                + "routed to host. Check routing table configuration.");
                         NfcService.getInstance().sendData(AID_NOT_FOUND);
                         if (mStatsdUtils != null) {
                             mStatsdUtils.logCardEmulationNoRoutingEvent();
@@ -923,7 +960,7 @@ public class HostEmulationManager {
                         Messenger existingService =
                                 bindServiceIfNeededLocked(user.getIdentifier(), resolvedService);
                         if (existingService != null) {
-                            Log.d(TAG, "Send data to existing service");
+                            Log.d(TAG, "onHostEmulationData: Send data to existing service");
                             NfcInjector.getInstance().getNfcEventLog().logEvent(
                                     NfcEventProto.EventType.newBuilder()
                                             .setCeRoutedAid(
@@ -941,7 +978,7 @@ public class HostEmulationManager {
                             sendDataToServiceLocked(existingService, data);
                         } else {
                             // Waiting for service to be bound
-                            Log.d(TAG, "Waiting for new service.");
+                            Log.d(TAG, "onHostEmulationData: Waiting for new service.");
                             // Queue SELECT APDU to be used
                             mSelectApdu = data;
                             mState = STATE_W4_SERVICE;
@@ -960,12 +997,13 @@ public class HostEmulationManager {
                                     uid);
                         }
                     } else {
-                        Log.d(TAG, "Dropping non-select APDU in STATE_W4_SELECT");
+                        Log.d(TAG, "onHostEmulationData: Dropping non-select APDU "
+                                + "in STATE_W4_SELECT");
                         NfcService.getInstance().sendData(UNKNOWN_ERROR);
                     }
                     break;
                 case STATE_W4_SERVICE:
-                    Log.d(TAG, "Unexpected APDU in STATE_W4_SERVICE");
+                    Log.d(TAG, "onHostEmulationData: Unexpected APDU in STATE_W4_SERVICE");
                     break;
                 case STATE_XFER:
                     if (selectAid != null) {
@@ -985,7 +1023,7 @@ public class HostEmulationManager {
                         sendDataToServiceLocked(mActiveService, data);
                     } else {
                         // No SELECT AID and no active service.
-                        Log.d(TAG, "Service no longer bound, dropping APDU");
+                        Log.d(TAG, "onHostEmulationData: Service no longer bound, dropping APDU");
                     }
                     break;
             }
@@ -993,10 +1031,11 @@ public class HostEmulationManager {
     }
 
     public void onHostEmulationDeactivated() {
-        Log.d(TAG, "notifyHostEmulationDeactivated");
+        Log.d(TAG, "onHostEmulationDeactivated");
         synchronized (mLock) {
             if (mState == STATE_IDLE) {
-                Log.e(TAG, "Got deactivation event while in idle state");
+                Log.e(TAG, "onHostEmulationDeactivated: Got deactivation "
+                        + "event while in idle state");
             }
             sendDeactivateToActiveServiceLocked(HostApduService.DEACTIVATION_LINK_LOSS);
             unbindServiceIfNeededLocked();
@@ -1008,7 +1047,7 @@ public class HostEmulationManager {
             }
 
             if (mEnableObserveModeAfterTransaction) {
-                Log.d(TAG, "HCE deactivated, will re-enable observe mode.");
+                Log.d(TAG, "onHostEmulationDeactivated: re-enable observe mode.");
                 mHandler.postDelayed(mEnableObserveModeAfterTransactionRunnable,
                     RE_ENABLE_OBSERVE_MODE_DELAY_MS);
             }
@@ -1036,7 +1075,7 @@ public class HostEmulationManager {
     }
 
     public void onOffHostAidSelected() {
-        Log.d(TAG, "notifyOffHostAidSelected");
+        Log.d(TAG, "onOffHostAidSelected");
         synchronized (mLock) {
             mHandler.removeCallbacks(mEnableObserveModeAfterTransactionRunnable);
             rescheduleInactivityChecks();
@@ -1046,7 +1085,8 @@ public class HostEmulationManager {
                 sendDeactivateToActiveServiceLocked(HostApduService.DEACTIVATION_DESELECTED);
             }
             if (mEnableObserveModeAfterTransaction) {
-                Log.i(TAG, "OffHost AID selected, waiting for Field off to reenable observe mode");
+                Log.i(TAG, "onOffHostAidSelected: OffHost AID selected, "
+                        + "waiting for Field off to reenable observe mode");
                 mEnableObserveModeOnFieldOff = true;
             }
             resetActiveService();
@@ -1062,7 +1102,7 @@ public class HostEmulationManager {
 
     Messenger bindServiceIfNeededLocked(@UserIdInt int userId, ComponentName service) {
         if (service == null) {
-            Log.e(TAG, "service ComponentName is null");
+            Log.e(TAG, "bindServiceIfNeededLocked: service ComponentName is null");
             return null;
         }
 
@@ -1073,27 +1113,30 @@ public class HostEmulationManager {
 
         if (mPaymentServiceName != null && mPaymentServiceName.equals(service)
                 && mPaymentServiceUserId == userId) {
-            Log.d(TAG, "Service already bound as payment service.");
+            Log.d(TAG, "bindServiceIfNeededLocked: Service already bound as payment service.");
             return mPaymentService;
         } else if (!mPaymentServiceBound && preferredPaymentServiceName != null
                 && preferredPaymentServiceName.equals(service)
                 && preferredPaymentUserId == userId) {
-            Log.d(TAG, "Service should be bound as payment service but is not, binding now");
+            Log.d(TAG, "bindServiceIfNeededLocked: Service should be bound as "
+                    + "payment service but is not, binding now");
             bindPaymentServiceLocked(userId, preferredPaymentServiceName);
             return null;
         } else if (!isMultipleBindingSupported()
                 && mServiceName != null
                 && mServiceName.equals(service)
                 && mServiceUserId == userId) {
-            Log.d(TAG, "Service already bound as regular service.");
+            Log.d(TAG, "bindServiceIfNeededLocked: Service already bound as regular service.");
             return mService;
         } else if (isMultipleBindingSupported()
                 && mComponentNameToConnectionsMap.containsKey(newServiceAndUser)
                 && mComponentNameToConnectionsMap.get(newServiceAndUser).mMessenger != null) {
-            Log.d(TAG, "Service" + service + " already bound as regular service.");
+            Log.d(TAG, "bindServiceIfNeededLocked: Service" + service
+                    + " already bound as regular service.");
             return mComponentNameToConnectionsMap.get(newServiceAndUser).mMessenger;
         } else {
-            Log.d(TAG, "Binding to service " + service + " for userId:" + userId);
+            Log.d(TAG, "bindServiceIfNeededLocked: Binding to service " + service + " for userId:"
+                    + userId);
             if (nfcHceLatencyEvents()) {
                 Trace.beginAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
             }
@@ -1125,7 +1168,7 @@ public class HostEmulationManager {
                     if (nfcHceLatencyEvents()) {
                         Trace.endAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
                     }
-                    Log.e(TAG, "Could not bind service.");
+                    Log.e(TAG, "bindServiceIfNeededLocked: Could not bind service.");
                 } else {
                     mServiceUserId = userId;
                 }
@@ -1133,7 +1176,8 @@ public class HostEmulationManager {
                 if (nfcHceLatencyEvents()) {
                     Trace.endAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
                 }
-                Log.e(TAG, "Could not bind service due to security exception.");
+                Log.e(TAG, "bindServiceIfNeededLocked: Could not bind service "
+                        + "due to security exception.");
             }
             return null;
         }
@@ -1147,7 +1191,6 @@ public class HostEmulationManager {
 
     void sendDataToServiceLocked(Messenger service, byte[] data) {
         mState = STATE_XFER;
-
 
         int cookie = 0;
         if (nfcHceLatencyEvents()) {
@@ -1195,9 +1238,10 @@ public class HostEmulationManager {
             if (nfcHceLatencyEvents()) {
                 Trace.endAsyncSection(EVENT_HCE_COMMAND_APDU, cookie);
             }
-            Log.e(TAG, "Remote service " + mActiveServiceName + " has died, dropping APDU", e);
+            Log.e(TAG, "sendDataToServiceLocked: Remote service " + mActiveServiceName
+                    + " has died, dropping APDU", e);
             if (Objects.equals(mActiveService, mPaymentService)) {
-                Log.wtf(TAG, "Rebinding payment service", e);
+                Log.wtf(TAG, "sendDataToServiceLocked: Rebinding payment service", e);
                 bindPaymentServiceLocked(mPaymentServiceUserId, mLastBoundPaymentServiceName);
             }
         }
@@ -1235,10 +1279,11 @@ public class HostEmulationManager {
         try {
             mActiveService.send(msg);
         } catch (RemoteException e) {
-            Log.e(TAG, "Remote service " + mActiveServiceName + " has died, dropping frames", e);
+            Log.e(TAG, "sendPollingFramesToServiceLocked: Remote service " + mActiveServiceName
+                    + " has died, dropping frames", e);
             allowOneTransaction();
             if (Objects.equals(mActiveService, mPaymentService)) {
-                Log.wtf(TAG, "Rebinding payment service", e);
+                Log.wtf(TAG, "sendPollingFramesToServiceLocked: Rebinding payment service", e);
                 bindPaymentServiceLocked(mPaymentServiceUserId, mLastBoundPaymentServiceName);
             }
         }
@@ -1256,7 +1301,7 @@ public class HostEmulationManager {
     }
 
     void unbindPaymentServiceLocked() {
-        Log.d(TAG, "Unbinding payment service");
+        Log.d(TAG, "unbindPaymentServiceLocked");
         if (mPaymentServiceBound) {
             try {
                 mContext.unbindService(mPaymentConnection);
@@ -1265,7 +1310,8 @@ public class HostEmulationManager {
                         new ComponentNameAndUser(mPaymentServiceUserId, mPaymentServiceName));
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Failed to unbind payment service: " + mPaymentServiceName, e);
+                Log.w(TAG, "unbindPaymentServiceLocked: Failed to unbind: " + mPaymentServiceName,
+                        e);
             }
             mPaymentServiceBound = false;
         }
@@ -1281,7 +1327,7 @@ public class HostEmulationManager {
         }
         unbindPaymentServiceLocked();
 
-        Log.d(TAG, "Binding to payment service " + serviceName + " for userId:" + userId);
+        Log.d(TAG, "bindPaymentServiceLocked:" + serviceName + " for userId:" + userId);
         Intent intent = new Intent(HostApduService.SERVICE_INTERFACE);
         intent.setComponent(serviceName);
         try {
@@ -1300,13 +1346,15 @@ public class HostEmulationManager {
                 if (nfcHceLatencyEvents()) {
                     Trace.endAsyncSection(EVENT_HCE_BIND_PAYMENT_SERVICE, 0);
                 }
-                Log.e(TAG, "Could not bind (persistent) payment service.");
+                Log.e(TAG, "bindPaymentServiceLocked: Could not bind (persistent) "
+                        + "payment service");
             }
         } catch (SecurityException e) {
             if (nfcHceLatencyEvents()) {
                 Trace.endAsyncSection(EVENT_HCE_BIND_PAYMENT_SERVICE, 0);
             }
-            Log.e(TAG, "Could not bind service due to security exception.");
+            Log.e(TAG, "bindPaymentServiceLocked: Could not bind service "
+                    + "due to security exception");
         }
     }
 
@@ -1326,11 +1374,11 @@ public class HostEmulationManager {
         }
 
         if (mServiceBound) {
-            Log.d(TAG, "Unbinding from service " + mServiceName);
+            Log.d(TAG, "unbindServiceIfNeededLocked: service " + mServiceName);
             try {
                 mContext.unbindService(mConnection);
             } catch (Exception e) {
-                Log.w(TAG, "Failed to unbind service " + mServiceName, e);
+                Log.w(TAG, "unbindServiceIfNeededLocked: Failed to unbind " + mServiceName, e);
             }
             mServiceBound = false;
         }
@@ -1345,8 +1393,8 @@ public class HostEmulationManager {
             try {
                 mNfcOemExtensionCallback.onLaunchHceTapAgainActivity(service, category);
                 return;
-            } catch(RemoteException e){
-                Log.e(TAG, "onLaunchHceTapAgainActivity failed",e);
+            } catch (RemoteException e) {
+                Log.e(TAG, "launchTapAgain: onLaunchHceTapAgainActivity failed", e);
             }
         }
         Intent dialogIntent = new Intent(mContext, TapAgainDialog.class);
@@ -1364,8 +1412,8 @@ public class HostEmulationManager {
                 mNfcOemExtensionCallback.onLaunchHceAppChooserActivity(
                     selectedAid, services, failedComponent, category);
                 return;
-            }catch (RemoteException e){
-                Log.e(TAG, "onLaunchHceAppChooserActivity failed",e);
+            } catch (RemoteException e) {
+                Log.e(TAG, "launchResolver: onLaunchHceAppChooserActivity failed", e);
             }
         }
         Intent intent = new Intent(mContext, AppChooserActivity.class);
@@ -1380,7 +1428,7 @@ public class HostEmulationManager {
 
     String findSelectAid(byte[] data) {
         if (data == null || data.length < SELECT_APDU_HDR_LENGTH + MINIMUM_AID_LENGTH) {
-            if (DBG) Log.d(TAG, "Data size too small for SELECT APDU");
+            if (DBG) Log.d(TAG, "findSelectAid: Data size too small for SELECT APDU");
             return null;
         }
         // To accept a SELECT AID for dispatch, we require the following:
@@ -1391,7 +1439,8 @@ public class HostEmulationManager {
         //     and we only support "first or only occurrence".
         if (data[0] == 0x00 && data[1] == INSTR_SELECT && data[2] == 0x04) {
             if (data[3] != 0x00) {
-                Log.d(TAG, "Selecting next, last or previous AID occurrence is not supported");
+                Log.d(TAG, "findSelectAid: Selecting next, last or previous "
+                        + "AID occurrence is not supported");
             }
             int aidLength = Byte.toUnsignedInt(data[4]);
             if (data.length < SELECT_APDU_HDR_LENGTH + aidLength) {
@@ -1452,8 +1501,8 @@ public class HostEmulationManager {
             synchronized (mLock) {
                 /* Preferred Payment Service has been changed. */
                 if (!mLastBoundPaymentServiceName.equals(name)) {
-                    Log.i(TAG, "Ignoring bound payment service, " + name + " != "
-                    + mLastBoundPaymentServiceName);
+                    Log.i(TAG, "onServiceConnected: Ignoring bound payment service, " + name
+                            + " != " + mLastBoundPaymentServiceName);
                     return;
                 }
                 mPaymentServiceName = name;
@@ -1472,7 +1521,7 @@ public class HostEmulationManager {
                                     this, mPaymentService));
                     }
                 }
-                Log.i(TAG, "Payment service bound: " + name);
+                Log.i(TAG, "onServiceConnected: Payment service bound: " + name);
                 if (nfcHceLatencyEvents()) {
                     Trace.endAsyncSection(EVENT_HCE_BIND_PAYMENT_SERVICE, 0);
                 }
@@ -1505,7 +1554,7 @@ public class HostEmulationManager {
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            Log.i(TAG, "Payment service disconnected: " + name);
+            Log.i(TAG, "onServiceDisconnected: " + name);
             ComponentName paymentServiceName = new ComponentName("", "");
             synchronized (mLock) {
                 if (isMultipleBindingSupported()) {
@@ -1535,7 +1584,7 @@ public class HostEmulationManager {
 
         @Override
         public void onBindingDied(ComponentName name) {
-            Log.i(TAG, "Payment service died: " + name);
+            Log.i(TAG, "onBindingDied: " + name);
             ComponentName paymentServiceName = new ComponentName("", "");
             synchronized (mLock) {
                 if (mPaymentServiceName != null) paymentServiceName = mPaymentServiceName;
@@ -1596,7 +1645,7 @@ public class HostEmulationManager {
                 if (nfcHceLatencyEvents()) {
                     Trace.endAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
                 }
-                Log.d(TAG, "Service bound: " + name);
+                Log.d(TAG, "onServiceConnected: Service bound: " + name);
 
                 // Send pending select APDU
                 if (mSelectApdu != null) {
@@ -1629,7 +1678,7 @@ public class HostEmulationManager {
                         onPollingLoopDetected(unprocessedPollingFrames);
                     }
                 } else {
-                    Log.d(TAG, "bound with nothing to send");
+                    Log.d(TAG, "onServiceConnected: bound with nothing to send");
                 }
             }
         }
@@ -1637,7 +1686,7 @@ public class HostEmulationManager {
         @Override
         public void onServiceDisconnected(ComponentName name) {
             synchronized (mLock) {
-                Log.d(TAG, "Service unbound: " + name);
+                Log.d(TAG, "onServiceDisconnected: unbound: " + name);
                 if (isMultipleBindingSupported()) {
                     ComponentNameAndUser nameAndUser = new ComponentNameAndUser(mUserId, name);
                     mComponentNameToConnectionsMap.remove(nameAndUser);
@@ -1658,10 +1707,12 @@ public class HostEmulationManager {
         public void handleMessage(Message msg) {
             synchronized(mLock) {
                 if (mActiveService == null) {
-                    Log.d(TAG, "Dropping service response message; service no longer active.");
+                    Log.d(TAG, "handleMessage: Dropping service response message; "
+                            + "service no longer active.");
                     return;
                 } else if (!msg.replyTo.getBinder().equals(mActiveService.getBinder())) {
-                    Log.d(TAG, "Dropping service response message; service no longer bound.");
+                    Log.d(TAG, "handleMessage: Dropping service response message; "
+                            + "service no longer bound.");
                     return;
                 }
             }
@@ -1672,7 +1723,7 @@ public class HostEmulationManager {
                 }
                 byte[] data = dataBundle.getByteArray(DATA_KEY);
                 if (data == null || data.length == 0) {
-                    Log.e(TAG, "Dropping empty R-APDU");
+                    Log.e(TAG, "handleMessage: Dropping empty R-APDU");
                     return;
                 }
                 int state;
@@ -1680,13 +1731,14 @@ public class HostEmulationManager {
                     state = mState;
                 }
                 if (state == STATE_XFER) {
-                    Log.d(TAG, "Sending data");
+                    Log.d(TAG, "handleMessage: Sending data");
                     NfcService.getInstance().sendData(data);
                     if (mStatsdUtils != null) {
                         mStatsdUtils.notifyCardEmulationEventResponseReceived();
                     }
                 } else {
-                    Log.d(TAG, "Dropping data, wrong state " + Integer.toString(state));
+                    Log.d(TAG,
+                            "handleMessage: Dropping data, wrong state " + Integer.toString(state));
                 }
 
                 if (nfcHceLatencyEvents()) {
@@ -1697,12 +1749,12 @@ public class HostEmulationManager {
                         ackMsg.replyTo = mMessenger;
                         msg.replyTo.send(ackMsg);
                     } catch (RemoteException e) {
-                        Log.e(TAG, "Failed to acknowledge MSG_RESPONSE_APDU", e);
+                        Log.e(TAG, "handleMessage: Failed to acknowledge MSG_RESPONSE_APDU", e);
                     }
                 }
             } else if (msg.what == HostApduService.MSG_UNHANDLED) {
                 synchronized (mLock) {
-                    Log.d(TAG, "Received MSG_UNHANDLED");
+                    Log.d(TAG, "handleMessage: Received MSG_UNHANDLED");
                     AidResolveInfo resolveInfo = mAidCache.resolveAid(mLastSelectedAid);
 
                     if (resolveInfo.services.size() > 0) {
@@ -1781,22 +1833,22 @@ public class HostEmulationManager {
     }
 
     @VisibleForTesting
-    public int getState(){
+    public int getState() {
         return mState;
     }
 
     @VisibleForTesting
-    public ServiceConnection getServiceConnection(){
+    public ServiceConnection getServiceConnection() {
         return mConnection;
     }
 
     @VisibleForTesting
-    public ServiceConnection getPaymentConnection(){
+    public ServiceConnection getPaymentConnection() {
         return mPaymentConnection;
     }
 
     @VisibleForTesting
-    public IBinder getMessenger(){
+    public IBinder getMessenger() {
         if (mActiveService != null) {
             return mActiveService.getBinder();
         }
@@ -1809,7 +1861,7 @@ public class HostEmulationManager {
     }
 
     @VisibleForTesting
-    public ComponentName getServiceName(){
+    public ComponentName getServiceName() {
         return mLastBoundPaymentServiceName;
     }
 

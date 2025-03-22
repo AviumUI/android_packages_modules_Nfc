@@ -76,8 +76,8 @@ tNFA_DM_DISC_TECH_PROTO_MASK nfa_dm_change_listen_mask(
     tNFA_TECHNOLOGY_MASK change_listen_mask) {
   if (mute_tech_route_option) {
     /* Check listening tech */
-    LOG(VERBOSE) << StringPrintf("listen tech will be changed to 0x%x",
-                                 change_listen_mask);
+    LOG(VERBOSE) << StringPrintf("%s: listen tech will be changed to 0x%x",
+                                 __func__, change_listen_mask);
     dm_disc_mask &= NFA_DM_DISC_MASK_POLL;
     if (change_listen_mask & NFA_TECHNOLOGY_MASK_A) {
       dm_disc_mask |= (NFA_DM_DISC_MASK_LA_T1T | NFA_DM_DISC_MASK_LA_T2T |
@@ -89,11 +89,11 @@ tNFA_DM_DISC_TECH_PROTO_MASK nfa_dm_change_listen_mask(
     if (change_listen_mask & NFA_TECHNOLOGY_MASK_F)
       dm_disc_mask |= NFA_DM_DISC_MASK_LF_T3T;
 
-    LOG(VERBOSE) << StringPrintf("listen tech will set to 0x%x",
+    LOG(VERBOSE) << StringPrintf("%s: listen tech will set to 0x%x", __func__,
                                  (dm_disc_mask & NFA_DM_DISC_MASK_LISTEN));
   } else {
     LOG(VERBOSE) << StringPrintf(
-        "%s; listen tech: 0x%x, unset tech muted in RT, added to discovery",
+        "%s:  listen tech=0x%x, unset tech muted in RT, added to discovery",
         __func__, change_listen_mask);
     if ((change_listen_mask & NFA_TECHNOLOGY_MASK_A) == 0) {
       dm_disc_mask |= (NFA_DM_DISC_MASK_LA_T1T | NFA_DM_DISC_MASK_LA_T2T |
@@ -105,7 +105,7 @@ tNFA_DM_DISC_TECH_PROTO_MASK nfa_dm_change_listen_mask(
     if ((change_listen_mask & NFA_TECHNOLOGY_MASK_F) == 0) {
       dm_disc_mask |= (NFA_DM_DISC_MASK_LF_T3T);
     }
-    LOG(VERBOSE) << StringPrintf("listen tech will set to 0x%x",
+    LOG(VERBOSE) << StringPrintf("%s: listen tech will set to 0x%x", __func__,
                                  (dm_disc_mask & NFA_DM_DISC_MASK_LISTEN));
   }
 
@@ -135,7 +135,7 @@ tNFA_DM_DISC_TECH_PROTO_MASK nfa_dm_change_poll_mask(
   if (change_poll_mask & NFA_TECHNOLOGY_MASK_KOVIO)
     dm_disc_mask |= NFA_DM_DISC_MASK_P_KOVIO;
 
-  LOG(VERBOSE) << StringPrintf("poll tech mask will set to 0x%x",
+  LOG(VERBOSE) << StringPrintf("%s: poll tech mask will set to 0x%x", __func__,
                                (dm_disc_mask & NFA_DM_DISC_MASK_POLL));
 
   return dm_disc_mask;
@@ -153,7 +153,7 @@ tNFA_DM_DISC_TECH_PROTO_MASK nfa_dm_change_poll_mask(
 static void nfa_dm_set_rf_field_info_ntf(uint8_t val) {
   uint8_t params[10], *p;
 
-  LOG(DEBUG) << StringPrintf("%s; val = 0x%x", __func__, val);
+  LOG(DEBUG) << StringPrintf("%s:  val = 0x%x", __func__, val);
 
   p = params;
 
@@ -184,17 +184,19 @@ static uint8_t nfa_dm_get_rf_discover_config(
   uint8_t rf_field_val;
 
   if (nfa_dm_cb.flags & NFA_DM_FLAGS_LISTEN_DISABLED) {
-    LOG(VERBOSE) << StringPrintf("%s; listen disabled, rm listen from 0x%x",
+    LOG(VERBOSE) << StringPrintf("%s:  listen disabled, rm listen from 0x%x",
                                  __func__, dm_disc_mask);
     dm_disc_mask &= NFA_DM_DISC_MASK_POLL;
   }
 
   if (nfa_dm_cb.flags & NFA_DM_FLAGS_LISTEN_TECH_CHANGED) {
+    LOG(VERBOSE) << StringPrintf("%s: listen tech will be changed to 0x%x",
+                                 __func__, nfa_dm_cb.change_listen_mask);
     dm_disc_mask =
         nfa_dm_change_listen_mask(dm_disc_mask, nfa_dm_cb.change_listen_mask);
   } else if (dm_disc_listen_mask_dfl != 0) {
-    LOG(VERBOSE) << StringPrintf("default listen tech 0x%x will be used",
-                                 dm_disc_listen_mask_dfl);
+    LOG(VERBOSE) << StringPrintf("%s: default listen tech 0x%x will be used",
+                                 __func__, dm_disc_listen_mask_dfl);
     dm_disc_mask =
         nfa_dm_change_listen_mask(dm_disc_mask, dm_disc_listen_mask_dfl);
   }
@@ -205,14 +207,14 @@ static uint8_t nfa_dm_get_rf_discover_config(
 
   if (nfa_dm_cb.flags & NFA_DM_FLAGS_POLL_TECH_CHANGED) {
     /* Check polling tech */
-    LOG(VERBOSE) << StringPrintf("poll tech will be changed to 0x%x",
-                               nfa_dm_cb.change_poll_mask);
+    LOG(VERBOSE) << StringPrintf("%s: poll tech will be changed to 0x%x",
+                                 __func__, nfa_dm_cb.change_poll_mask);
     dm_disc_mask &= NFA_DM_DISC_MASK_LISTEN;
     dm_disc_mask =
         nfa_dm_change_poll_mask(dm_disc_mask, nfa_dm_cb.change_poll_mask);
   } else if (dm_disc_poll_mask_dfl != 0) {
-    LOG(VERBOSE) << StringPrintf("default poll tech 0x%x will be used",
-                                 dm_disc_poll_mask_dfl);
+    LOG(VERBOSE) << StringPrintf("%s: default poll tech 0x%x will be used",
+                                 __func__, dm_disc_poll_mask_dfl);
     dm_disc_mask = nfa_dm_change_poll_mask(dm_disc_mask, dm_disc_poll_mask_dfl);
   }
 
@@ -291,7 +293,8 @@ static uint8_t nfa_dm_get_rf_discover_config(
       num_params++;
       if (num_params >= max_params) return num_params;
     } else {
-      LOG(ERROR) << StringPrintf("Unsupported type POLL_B_PRIME!");
+      LOG(ERROR) << StringPrintf("%s: Unsupported type POLL_B_PRIME!",
+                                 __func__);
     }
   }
 
@@ -303,7 +306,7 @@ static uint8_t nfa_dm_get_rf_discover_config(
       num_params++;
       if (num_params >= max_params) return num_params;
     } else {
-      LOG(ERROR) << StringPrintf("Unsupported type POLL_KOVIO!");
+      LOG(ERROR) << StringPrintf("%s: Unsupported type POLL_KOVIO!", __func__);
     }
   }
 
@@ -324,7 +327,8 @@ static uint8_t nfa_dm_get_rf_discover_config(
       num_params++;
       if (num_params >= max_params) return num_params;
     } else {
-      LOG(ERROR) << StringPrintf("Unsupported type LISTEN_B_PRIME!");
+      LOG(ERROR) << StringPrintf("%s: Unsupported type LISTEN_B_PRIME!",
+                                 __func__);
     }
   }
 
@@ -346,7 +350,8 @@ static tNFA_STATUS nfa_dm_set_rf_listen_mode_config(
   uint8_t platform = 0;
   uint8_t sens_info = 0;
 
-  LOG(VERBOSE) << StringPrintf("tech_proto_mask = 0x%08X", tech_proto_mask);
+  LOG(VERBOSE) << StringPrintf("%s: tech_proto_mask = 0x%08X", __func__,
+                               tech_proto_mask);
 
   /*
   ** T1T listen     LA_PROT 0x80, LA_SENS_RES byte1:0x00 byte2:0x0C
@@ -603,7 +608,7 @@ static void nfa_dm_set_rf_listen_mode_raw_config(
 
   *p_disc_mask = disc_mask;
 
-  LOG(VERBOSE) << StringPrintf("disc_mask = 0x%x", disc_mask);
+  LOG(VERBOSE) << StringPrintf("%s: disc_mask = 0x%x", __func__, disc_mask);
 }
 
 /*******************************************************************************
@@ -678,9 +683,9 @@ static tNFA_DM_DISC_TECH_PROTO_MASK nfa_dm_disc_get_disc_mask(
   }
 
   LOG(VERBOSE) << StringPrintf(
-      "tech_n_mode:0x%X, protocol:0x%X, "
-      "disc_mask:0x%X",
-      tech_n_mode, protocol, disc_mask);
+      "%s: tech_n_mode=0x%X, protocol=0x%X, "
+      "disc_mask=0x%X",
+      __func__, tech_n_mode, protocol, disc_mask);
   return (disc_mask);
 }
 
@@ -697,7 +702,7 @@ static void nfa_dm_disc_discovery_cback(tNFC_DISCOVER_EVT event,
                                         tNFC_DISCOVER* p_data) {
   tNFA_DM_RF_DISC_SM_EVENT dm_disc_event = NFA_DM_DISC_SM_MAX_EVENT;
 
-  LOG(VERBOSE) << StringPrintf("event:0x%X", event);
+  LOG(VERBOSE) << StringPrintf("%s: event=0x%X", __func__, event);
 
   switch (event) {
     case NFC_START_DEVT:
@@ -746,7 +751,7 @@ static void nfa_dm_disc_discovery_cback(tNFC_DISCOVER_EVT event,
       nfa_wlc_event_notify(NFA_WLC_CHARGING_RESULT_EVT, &wlc_cback_data);
       return;
     default:
-      LOG(ERROR) << StringPrintf("Unexpected event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected event", __func__);
       return;
   }
 
@@ -820,7 +825,8 @@ void nfa_dm_disc_conn_event_notify(uint8_t event, tNFA_STATUS status) {
 static tNFC_STATUS nfa_dm_disc_force_to_idle(void) {
   tNFC_STATUS status = NFC_STATUS_SEMANTIC_ERROR;
 
-  LOG(VERBOSE) << StringPrintf("disc_flags = 0x%x", nfa_dm_cb.disc_cb.disc_flags);
+  LOG(VERBOSE) << StringPrintf("%s: disc_flags = 0x%x", __func__,
+                               nfa_dm_cb.disc_cb.disc_flags);
 
   /* do not execute more than one */
   if (nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_W4_NTF) {
@@ -846,7 +852,7 @@ static void nfa_dm_disc_deact_ntf_timeout_cback(__attribute__((unused))
                                                 TIMER_LIST_ENT* p_tle) {
   LOG(ERROR) << __func__;
   if (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_LISTEN_ACTIVE) {
-    LOG(ERROR) << "Ignoring deact_ntf_timeout in LISTEN_ACTIVE";
+    LOG(ERROR) << __func__ << ": Ignoring deact_ntf_timeout in LISTEN_ACTIVE";
     tNFA_DM_RF_DISC_DATA p_data;
     p_data.nfc_discover.deactivate.status = NFC_STATUS_OK;
     p_data.nfc_discover.deactivate.type = NFC_DEACTIVATE_TYPE_IDLE;
@@ -1007,8 +1013,8 @@ void nfa_dm_start_rf_discover(void) {
       nfa_dm_cb.disc_cb.entry[xx].selected_disc_mask = poll_mask | listen_mask;
 
       LOG(VERBOSE) << StringPrintf(
-          "%s; nfa_dm_cb.disc_cb.entry[%d].selected_disc_mask = 0x%x", __func__,
-          xx, nfa_dm_cb.disc_cb.entry[xx].selected_disc_mask);
+          "%s:  nfa_dm_cb.disc_cb.entry[%d].selected_disc_mask = 0x%x",
+          __func__, xx, nfa_dm_cb.disc_cb.entry[xx].selected_disc_mask);
 
       dm_disc_mask |= nfa_dm_cb.disc_cb.entry[xx].selected_disc_mask;
     }
@@ -1032,7 +1038,8 @@ void nfa_dm_start_rf_discover(void) {
     }
   }
 
-  LOG(VERBOSE) << StringPrintf("dm_disc_mask = 0x%x", dm_disc_mask);
+  LOG(VERBOSE) << StringPrintf("%s: dm_disc_mask = 0x%x", __func__,
+                               dm_disc_mask);
 
   /* Get Discovery Technology parameters */
   num_params = nfa_dm_get_rf_discover_config(dm_disc_mask, disc_params,
@@ -1111,12 +1118,12 @@ void nfa_dm_start_rf_intf_ext(tNFA_INTF_EXT_TYPE extension_id, uint8_t* p_data,
   tNFA_DM_DISC_RF_EXT_PARAMS start_ext_params;
 
   LOG(VERBOSE) << StringPrintf(
-      "%s; rf_ext_id:0x%X, Start Parameter length:0x%X", __func__, extension_id,
-      len);
+      "%s:  rf_ext_id=0x%X, Start Parameter length=0x%X", __func__,
+      extension_id, len);
 
   if ((extension_id != NCI_INTF_EXT_WLCP_NON_AUTO) &&
       (extension_id != NCI_INTF_EXT_WLCP_SEMI_AUTO)) {
-    LOG(ERROR) << StringPrintf("%s; Not supported RF Interface Extension",
+    LOG(ERROR) << StringPrintf("%s:  Not supported RF Interface Extension",
                                __func__);
     return;
   }
@@ -1158,8 +1165,8 @@ void nfa_dm_start_wireless_power_transfer(uint8_t power_adj_req,
                                           uint8_t wpt_time_int) {
   tNFA_DM_DISC_WPT_START_PARAMS start_wpt_params;
 
-  LOG(VERBOSE) << StringPrintf("%s; power_adj_req: 0x%X, wpt_time_int: 0x%X",
-                             __func__, power_adj_req, wpt_time_int);
+  LOG(VERBOSE) << StringPrintf("%s:  power_adj_req=0x%X, wpt_time_int=0x%X",
+                               __func__, power_adj_req, wpt_time_int);
 
   if ((nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_POLL_ACTIVE) &&
       (nfa_dm_cb.flags & NFA_DM_FLAGS_RF_EXT_ACTIVE)) {
@@ -1179,8 +1186,8 @@ void nfa_dm_start_wireless_power_transfer(uint8_t power_adj_req,
     /* Wrong state: notify failed status right away */
     wlc_cback_data.status = NFA_STATUS_FAILED;
 
-    LOG(VERBOSE) << StringPrintf("%s; wlc_cback_data.status: 0x%X", __func__,
-                               wlc_cback_data.status);
+    LOG(VERBOSE) << StringPrintf("%s:  wlc_cback_data.status=0x%X", __func__,
+                                 wlc_cback_data.status);
 
     nfa_wlc_event_notify(NFA_WLC_START_WPT_RESULT_EVT, &wlc_cback_data);
   }
@@ -1207,7 +1214,7 @@ bool nfa_dm_disc_handle_kovio_activation(tNFC_DISCOVER* p_data,
          p_data->activate.rf_tech_param.param.pk.uid_len) ||
         (memcmp(p_data->activate.rf_tech_param.param.pk.uid,
                 nfa_dm_cb.activated_nfcid, nfa_dm_cb.activated_nfcid_len))) {
-      LOG(VERBOSE) << StringPrintf("new Kovio tag is detected");
+      LOG(VERBOSE) << StringPrintf("%s: new Kovio tag is detected", __func__);
 
       /* notify presence check failure for previous tag, if presence check is
        * pending */
@@ -1261,8 +1268,8 @@ static tNFA_STATUS nfa_dm_disc_notify_activation(tNFC_DISCOVER* p_data) {
 
   tNFA_DM_DISC_TECH_PROTO_MASK activated_disc_mask;
 
-  LOG(VERBOSE) << StringPrintf("tech_n_mode:0x%X, proto:0x%X", tech_n_mode,
-                             protocol);
+  LOG(VERBOSE) << StringPrintf("%s: tech_n_mode=0x%X, proto=0x%X", __func__,
+                               tech_n_mode, protocol);
 
   if (nfa_dm_cb.disc_cb.excl_disc_entry.in_use) {
     nfa_dm_cb.disc_cb.activated_tech_mode = tech_n_mode;
@@ -1300,7 +1307,7 @@ static tNFA_STATUS nfa_dm_disc_notify_activation(tNFC_DISCOVER* p_data) {
         nfa_dm_cb.disc_cb.activated_handle = xx;
 
         LOG(VERBOSE) << StringPrintf(
-            "activated_rf_interface:0x%x, activated_handle: 0x%x",
+            "%s: activated_rf_interface=0x%x, activated_handle=0x%x", __func__,
             nfa_dm_cb.disc_cb.activated_rf_interface,
             nfa_dm_cb.disc_cb.activated_handle);
 
@@ -1376,7 +1383,7 @@ static tNFA_STATUS nfa_dm_disc_notify_activation(tNFC_DISCOVER* p_data) {
       (tech_n_mode == NFC_DISCOVERY_TYPE_LISTEN_A)) {
     if (appl_dta_mode_flag == 1 && tech_n_mode == NFC_DISCOVERY_TYPE_LISTEN_A) {
       LOG(VERBOSE) << StringPrintf(
-          "DTA Mode Enabled : NFC-A Passive Listen Mode");
+          "%s: DTA Mode Enabled : NFC-A Passive Listen Mode", __func__);
     }
   }
 
@@ -1388,7 +1395,7 @@ static tNFA_STATUS nfa_dm_disc_notify_activation(tNFC_DISCOVER* p_data) {
     nfa_dm_cb.disc_cb.activated_handle = xx;
 
     LOG(VERBOSE) << StringPrintf(
-        "activated_protocol:0x%x, activated_handle: 0x%x",
+        "%s: activated_protocol=0x%x, activated_handle=0x%x", __func__,
         nfa_dm_cb.disc_cb.activated_protocol,
         nfa_dm_cb.disc_cb.activated_handle);
 
@@ -1428,11 +1435,11 @@ static void nfa_dm_disc_notify_deactivation(tNFA_DM_RF_DISC_SM_EVENT sm_event,
   tNFA_CONN_EVT_DATA evt_data;
   tNFC_DISCOVER disc_data;
 
-  LOG(VERBOSE) << StringPrintf("activated_handle=%d",
-                             nfa_dm_cb.disc_cb.activated_handle);
+  LOG(VERBOSE) << StringPrintf("%s: activated_handle=%d", __func__,
+                               nfa_dm_cb.disc_cb.activated_handle);
 
   if (nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_CHECKING) {
-    LOG(VERBOSE) << StringPrintf("for sleep wakeup");
+    LOG(VERBOSE) << StringPrintf("%s: for sleep wakeup", __func__);
     return;
   }
 
@@ -1584,6 +1591,7 @@ bool nfa_dm_is_raw_frame_session(void) {
 **
 *******************************************************************************/
 static void nfa_dm_disc_end_sleep_wakeup(tNFC_STATUS status) {
+  LOG(DEBUG) << __func__;
   if ((nfa_dm_cb.disc_cb.activated_protocol == NFC_PROTOCOL_KOVIO) &&
       (nfa_dm_cb.disc_cb.kovio_tle.in_use)) {
     /* ignore it while doing Kovio presence check */
@@ -1747,9 +1755,9 @@ void nfa_dm_disc_new_state(tNFA_DM_RF_DISC_STATE new_state) {
   tNFA_DM_RF_DISC_STATE old_state = nfa_dm_cb.disc_cb.disc_state;
 
   LOG(VERBOSE) << StringPrintf(
-      "old_state: %s (%d), new_state: %s (%d) "
-      "disc_flags: 0x%x",
-      nfa_dm_disc_state_2_str(nfa_dm_cb.disc_cb.disc_state).c_str(),
+      "%s: old_state=%s (%d), new_state=%s (%d) "
+      "disc_flags=0x%x",
+      __func__, nfa_dm_disc_state_2_str(nfa_dm_cb.disc_cb.disc_state).c_str(),
       nfa_dm_cb.disc_cb.disc_state, nfa_dm_disc_state_2_str(new_state).c_str(),
       new_state, nfa_dm_cb.disc_cb.disc_flags);
 
@@ -1785,7 +1793,8 @@ void nfa_dm_disc_new_state(tNFA_DM_RF_DISC_STATE new_state) {
        (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_DISCOVERY)) &&
       (!(nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_W4_RSP)) &&
       (nfc_cb.is_nfcee_discovery_required)) {
-    LOG(VERBOSE) << StringPrintf("Triggering Pending EE discovery...");
+    LOG(VERBOSE) << StringPrintf("%s: Triggering Pending EE discovery...",
+                                 __func__);
     nfa_dm_nfc_response_cback_wrapper(NFC_NFCEE_STATUS_REVT,
                                       &nfc_cb.nfcee_data);
   }
@@ -1923,7 +1932,7 @@ static void nfa_dm_disc_sm_idle(tNFA_DM_RF_DISC_SM_EVENT event,
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 }
@@ -1968,7 +1977,7 @@ static void nfa_dm_disc_sm_discovery(tNFA_DM_RF_DISC_SM_EVENT event,
     case NFA_DM_RF_INTF_ACTIVATED_NTF:
       if (nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_W4_RSP) {
         LOG(VERBOSE) << StringPrintf(
-            "RF Activated while waiting for deactivation RSP");
+            "%s: RF Activated while waiting for deactivation RSP", __func__);
         /* it's race condition. DH has to wait for deactivation NTF */
         nfa_dm_cb.disc_cb.disc_flags |= NFA_DM_DISC_FLAGS_W4_NTF;
       } else {
@@ -1986,8 +1995,9 @@ static void nfa_dm_disc_sm_discovery(tNFA_DM_RF_DISC_SM_EVENT event,
         if (nfa_dm_disc_notify_activation(&(p_data->nfc_discover)) ==
             NFA_STATUS_FAILED) {
           LOG(VERBOSE) << StringPrintf(
-              "Not matched, restart discovery after receiving "
-              "deactivate ntf");
+              "%s: Not matched, restart discovery after receiving "
+              "deactivate ntf",
+              __func__);
 
           /* after receiving deactivate event, restart discovery */
           nfa_dm_cb.disc_cb.disc_flags |=
@@ -2018,7 +2028,7 @@ static void nfa_dm_disc_sm_discovery(tNFA_DM_RF_DISC_SM_EVENT event,
     case NFA_DM_CORE_INTF_ERROR_NTF:
       break;
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 }
@@ -2075,14 +2085,15 @@ static void nfa_dm_disc_sm_w4_all_discoveries(tNFA_DM_RF_DISC_SM_EVENT event,
       if (nfa_dm_disc_notify_activation(&(p_data->nfc_discover)) ==
           NFA_STATUS_FAILED) {
         LOG(VERBOSE) << StringPrintf(
-            "Not matched, restart discovery after receiving deactivate ntf");
+            "%s: Not matched, restart discovery after receiving deactivate ntf",
+            __func__);
 
         /* after receiving deactivate event, restart discovery */
         NFC_Deactivate(NFA_DEACTIVATE_TYPE_IDLE);
       }
       break;
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 }
@@ -2140,7 +2151,7 @@ static void nfa_dm_disc_sm_w4_host_select(tNFA_DM_RF_DISC_SM_EVENT event,
         // RF_DEACTIVATE_CMD was sent and INTF_ACTIVATED received before the
         // RSP, RFST is changed to POLL_ACTIVE, hence a NTF must be waited too
         LOG(DEBUG) << StringPrintf(
-            "%s; Adding NTF flag because activation was received before RSP",
+            "%s:  Adding NTF flag because activation was received before RSP",
             __func__);
         nfa_dm_cb.disc_cb.disc_flags |= NFA_DM_DISC_FLAGS_W4_NTF;
       }
@@ -2154,7 +2165,8 @@ static void nfa_dm_disc_sm_w4_host_select(tNFA_DM_RF_DISC_SM_EVENT event,
         nfa_dm_disc_end_sleep_wakeup(NFC_STATUS_OK);
       } else if (status == NFA_STATUS_FAILED) {
         LOG(VERBOSE) << StringPrintf(
-            "Not matched, restart discovery after receiving deactivate ntf");
+            "%s: Not matched, restart discovery after receiving deactivate ntf",
+            __func__);
 
         /* after receiving deactivate event, restart discovery */
         NFC_Deactivate(NFA_DEACTIVATE_TYPE_IDLE);
@@ -2192,7 +2204,7 @@ static void nfa_dm_disc_sm_w4_host_select(tNFA_DM_RF_DISC_SM_EVENT event,
       }
       break;
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 
@@ -2240,7 +2252,7 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
         status = nfa_dm_send_deactivate_cmd(p_data->deactivate_type);
         if (status != NFA_STATUS_OK) {
           LOG(ERROR) << StringPrintf(
-              "%s; Error calling nfa_dm_send_deactivate_cmd()", __func__);
+              "%s:  Error calling nfa_dm_send_deactivate_cmd()", __func__);
         }
       }
 
@@ -2276,7 +2288,7 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
         /* it's race condition. received deactivate NTF before receiving RSP */
         /* notify deactivation after receiving deactivate RSP */
         LOG(VERBOSE) << StringPrintf(
-            "Rx deactivate NTF while waiting for deactivate RSP");
+            "%s: Rx deactivate NTF while waiting for deactivate RSP", __func__);
         break;
       }
       if (p_data->nfc_discover.deactivate.reason !=
@@ -2335,8 +2347,10 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
         }
         if ((nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_STOPPING) &&
             (!old_sleep_wakeup_flag)) {
-          LOG(DEBUG) << StringPrintf("%s; Rx DEACT_NTF(SLEEP) while stopping,"
-              "resending DEACT_CMD(idle) now", __func__);
+          LOG(DEBUG) << StringPrintf(
+              "%s:  Rx DEACT_NTF(SLEEP) while stopping,"
+              "resending DEACT_CMD(idle) now",
+              __func__);
           /* stop discovery */
           NFC_Deactivate(NFA_DEACTIVATE_TYPE_IDLE);
         }
@@ -2352,7 +2366,9 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
          */
         nfa_dm_cb.deactivate_cmd_retry_count = 0;
         LOG(VERBOSE) << __func__
-                   << StringPrintf("NFA_DM_RF_DEACTIVATE_NTF to discovery");
+                     << StringPrintf(
+                            "%s: NFA_DM_RF_DEACTIVATE_NTF to discovery",
+                            __func__);
         if (p_data->nfc_discover.deactivate.reason ==
             NFC_DEACTIVATE_REASON_DH_REQ_FAILED) {
           // If in pres check and at this point still errors
@@ -2386,7 +2402,7 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
 
       } else {
         LOG(VERBOSE) << StringPrintf(
-            "%s; Fail to start "
+            "%s:  Fail to start "
             "RF extension, deactivation ongoing",
             __func__);
         if (nfa_dm_cb.flags & NFA_DM_FLAGS_ENABLE_WLCP_PEND) {
@@ -2444,7 +2460,7 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
         NFC_StartEPRemovalDetection(p_data->detect_removal.waiting_time);
       } else {
         LOG(VERBOSE) << StringPrintf(
-            "%s; Fail to start "
+            "%s:  Fail to start "
             "removal detection procedure, deactivation ongoing",
             __func__);
 
@@ -2465,7 +2481,7 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
       /* removal detection started successfully, wait for end completion
        * notification in new state */
       LOG(VERBOSE) << StringPrintf(
-          "%s; Removal detection"
+          "%s:  Removal detection"
           " started successfully",
           __func__);
       /* change state to NFA_DM_RFST_POLL_REMOVAL_DETECTION */
@@ -2509,19 +2525,19 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
             break;
           } else {
             LOG(ERROR) << StringPrintf(
-                "%s; Unexpected WPT_START_CMD, \
+                "%s:  Unexpected WPT_START_CMD, \
                 power transfer phase already started",
                 __func__);
           }
         } else {
           LOG(VERBOSE) << StringPrintf(
-              "%s; Unexpected WPT_START_CMD, \
+              "%s:  Unexpected WPT_START_CMD, \
               already waiting for RSP of a previous command",
               __func__);
         }
       } else {
         LOG(VERBOSE) << StringPrintf(
-            "%s; Unexpected WPT_START_CMD, \
+            "%s:  Unexpected WPT_START_CMD, \
             WLC-P not enabled",
             __func__);
       }
@@ -2542,20 +2558,20 @@ static void nfa_dm_disc_sm_poll_active(tNFA_DM_RF_DISC_SM_EVENT event,
         if (p_data->nfc_discover.status == NFC_STATUS_OK) {
           wlc_cback_data.status = NFA_STATUS_OK;
           nfa_wlc_cb.flags |= NFA_WLC_FLAGS_WPT_NTF_PENDING;
-          LOG(VERBOSE) << StringPrintf("%s; WPT started", __func__);
+          LOG(VERBOSE) << StringPrintf("%s:  WPT started", __func__);
         } else {
           wlc_cback_data.status = NFA_STATUS_FAILED;
         }
         nfa_wlc_event_notify(NFA_WLC_START_WPT_RESULT_EVT, &wlc_cback_data);
       }
       LOG(VERBOSE) << StringPrintf(
-          "%s; nfa_dm_cb.flags=0x%x, \
+          "%s:  nfa_dm_cb.flags=0x%x, \
           nfa_wlc_cb.flags=0x%x",
           __func__, nfa_dm_cb.flags, nfa_wlc_cb.flags);
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 
@@ -2584,7 +2600,7 @@ static void nfa_dm_disc_sm_poll_removal_detection(
     case NFA_DM_RF_REMOVAL_DETECTION_NTF:
       /* deactivate to idle */
       LOG(ERROR) << StringPrintf(
-          "%s; Unexpected notification, "
+          "%s:  Unexpected notification, "
           "deactivate to idle",
           __func__);
       nfa_dm_send_deactivate_cmd(NFA_DEACTIVATE_TYPE_IDLE);
@@ -2623,7 +2639,8 @@ static void nfa_dm_disc_sm_poll_removal_detection(
         /* it's race condition. received deactivate NTF before receiving RSP */
         /* notify deactivation after receiving deactivate RSP */
         LOG(VERBOSE) << StringPrintf(
-            "%s; Rx deactivate NTF while waiting for deactivate RSP", __func__);
+            "%s:  Rx deactivate NTF while waiting for deactivate RSP",
+            __func__);
         break;
       }
 
@@ -2660,7 +2677,7 @@ static void nfa_dm_disc_sm_poll_removal_detection(
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("%s; Unexpected discovery event", __func__);
+      LOG(ERROR) << StringPrintf("%s:  Unexpected discovery event", __func__);
       break;
   }
 }
@@ -2711,7 +2728,8 @@ static void nfa_dm_disc_sm_listen_active(tNFA_DM_RF_DISC_SM_EVENT event,
         /* it's race condition. received deactivate NTF before receiving RSP */
         /* notify deactivation after receiving deactivate RSP */
         LOG(DEBUG) << StringPrintf(
-            "%s; Rx deactivate NTF while waiting for deactivate RSP", __func__);
+            "%s:  Rx deactivate NTF while waiting for deactivate RSP",
+            __func__);
         if ((p_data->nfc_discover.deactivate.type ==
              NFC_DEACTIVATE_TYPE_SLEEP) ||
             (p_data->nfc_discover.deactivate.type ==
@@ -2734,7 +2752,7 @@ static void nfa_dm_disc_sm_listen_active(tNFA_DM_RF_DISC_SM_EVENT event,
             // If receiving DEACT_CMD(disc) while in RFST_DISCOVERY
             // then NFCC returns to RFST_IDLE (NCI)
             LOG(WARNING) << StringPrintf(
-                "%s; Already in RFST_DISCOVERY, new state is RFST_IDLE",
+                "%s:  Already in RFST_DISCOVERY, new state is RFST_IDLE",
                 __func__);
             nfa_dm_disc_new_state(NFA_DM_RFST_IDLE);
           }
@@ -2770,7 +2788,7 @@ static void nfa_dm_disc_sm_listen_active(tNFA_DM_RF_DISC_SM_EVENT event,
     case NFA_DM_CORE_INTF_ERROR_NTF:
       break;
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 }
@@ -2827,7 +2845,8 @@ static void nfa_dm_disc_sm_listen_sleep(tNFA_DM_RF_DISC_SM_EVENT event,
                  NFA_DEACTIVATE_TYPE_DISCOVERY) {
         nfa_dm_disc_new_state(NFA_DM_RFST_DISCOVERY);
       } else {
-        LOG(ERROR) << StringPrintf("Unexpected deactivation type");
+        LOG(ERROR) << StringPrintf("%s: Unexpected deactivation type",
+                                   __func__);
         nfa_dm_disc_new_state(NFA_DM_RFST_IDLE);
         nfa_dm_start_rf_discover();
       }
@@ -2841,14 +2860,15 @@ static void nfa_dm_disc_sm_listen_sleep(tNFA_DM_RF_DISC_SM_EVENT event,
       if (nfa_dm_disc_notify_activation(&(p_data->nfc_discover)) ==
           NFA_STATUS_FAILED) {
         LOG(VERBOSE) << StringPrintf(
-            "Not matched, restart discovery after receiving deactivate ntf");
+            "%s: Not matched, restart discovery after receiving deactivate ntf",
+            __func__);
 
         /* after receiving deactivate event, restart discovery */
         NFC_Deactivate(NFA_DEACTIVATE_TYPE_IDLE);
       }
       break;
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 }
@@ -2869,12 +2889,13 @@ static void nfa_dm_disc_sm_lp_listen(tNFA_DM_RF_DISC_SM_EVENT event,
       nfa_dm_disc_new_state(NFA_DM_RFST_LP_ACTIVE);
       if (nfa_dm_disc_notify_activation(&(p_data->nfc_discover)) ==
           NFA_STATUS_FAILED) {
-        LOG(VERBOSE) << StringPrintf("Not matched, unexpected activation");
+        LOG(VERBOSE) << StringPrintf("%s: Not matched, unexpected activation",
+                                     __func__);
       }
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 }
@@ -2897,7 +2918,7 @@ static void nfa_dm_disc_sm_lp_active(tNFA_DM_RF_DISC_SM_EVENT event,
                                       &(p_data->nfc_discover));
       break;
     default:
-      LOG(ERROR) << StringPrintf("Unexpected discovery event");
+      LOG(ERROR) << StringPrintf("%s: Unexpected discovery event", __func__);
       break;
   }
 }
@@ -2914,9 +2935,9 @@ static void nfa_dm_disc_sm_lp_active(tNFA_DM_RF_DISC_SM_EVENT event,
 void nfa_dm_disc_sm_execute(tNFA_DM_RF_DISC_SM_EVENT event,
                             tNFA_DM_RF_DISC_DATA* p_data) {
   LOG(VERBOSE) << StringPrintf(
-      "state: %s (%d), event: %s(%d) disc_flags: "
+      "%s: state=%s (%d), event=%s(%d) disc_flags: "
       "0x%x",
-      nfa_dm_disc_state_2_str(nfa_dm_cb.disc_cb.disc_state).c_str(),
+      __func__, nfa_dm_disc_state_2_str(nfa_dm_cb.disc_cb.disc_state).c_str(),
       nfa_dm_cb.disc_cb.disc_state, nfa_dm_disc_event_2_str(event).c_str(),
       event, nfa_dm_cb.disc_cb.disc_flags);
 
@@ -2972,7 +2993,7 @@ void nfa_dm_disc_sm_execute(tNFA_DM_RF_DISC_SM_EVENT event,
       break;
   }
   LOG(VERBOSE) << StringPrintf(
-      "new state: %s (%d), disc_flags: 0x%x",
+      "%s: new state=%s (%d), disc_flags=0x%x", __func__,
       nfa_dm_disc_state_2_str(nfa_dm_cb.disc_cb.disc_state).c_str(),
       nfa_dm_cb.disc_cb.disc_state, nfa_dm_cb.disc_cb.disc_flags);
 }
@@ -2991,7 +3012,7 @@ tNFA_HANDLE nfa_dm_add_rf_discover(tNFA_DM_DISC_TECH_PROTO_MASK disc_mask,
                                    tNFA_DISCOVER_CBACK* p_disc_cback) {
   uint8_t xx;
 
-  LOG(VERBOSE) << StringPrintf("disc_mask=0x%x", disc_mask);
+  LOG(VERBOSE) << StringPrintf("%s: disc_mask=0x%x", __func__, disc_mask);
 
   for (xx = 0; xx < NFA_DM_DISC_NUM_ENTRIES; xx++) {
     if (!nfa_dm_cb.disc_cb.entry[xx].in_use) {
@@ -3085,12 +3106,12 @@ void nfa_dm_stop_excl_discovery(void) {
 **
 *******************************************************************************/
 void nfa_dm_delete_rf_discover(tNFA_HANDLE handle) {
-  LOG(VERBOSE) << StringPrintf("handle=0x%x", handle);
+  LOG(VERBOSE) << StringPrintf("%s: handle=0x%x", __func__, handle);
 
   if (handle < NFA_DM_DISC_NUM_ENTRIES) {
     nfa_dm_cb.disc_cb.entry[handle].in_use = false;
   } else {
-    LOG(ERROR) << StringPrintf("Invalid discovery handle");
+    LOG(ERROR) << StringPrintf("%s: Invalid discovery handle", __func__);
   }
 }
 
@@ -3109,8 +3130,8 @@ void nfa_dm_rf_discover_select(uint8_t rf_disc_id, tNFA_NFC_PROTOCOL protocol,
   tNFA_CONN_EVT_DATA conn_evt;
 
   LOG(VERBOSE) << StringPrintf(
-      "rf_disc_id:0x%X, protocol:0x%X, rf_interface:0x%X", rf_disc_id, protocol,
-      rf_interface);
+      "%s: rf_disc_id=0x%X, protocol=0x%X, rf_interface=0x%X", __func__,
+      rf_disc_id, protocol, rf_interface);
 
   if (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_W4_HOST_SELECT) {
     /* state is OK: notify the status when the response is received from NFCC */
@@ -3142,7 +3163,8 @@ bool nfa_dm_rf_removal_detection(uint8_t waiting_time) {
   tNFA_DM_DETECT_EP_REMOVAL_PARAMS detect_params;
   tNFA_CONN_EVT_DATA conn_evt;
 
-  LOG(VERBOSE) << StringPrintf("%s; waiting_time:0x%X", __func__, waiting_time);
+  LOG(VERBOSE) << StringPrintf("%s:  waiting_time=0x%X", __func__,
+                               waiting_time);
 
   if (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_POLL_ACTIVE) {
     if ((nfa_dm_cb.disc_cb.activated_protocol == NFC_PROTOCOL_T2T) ||
@@ -3161,7 +3183,7 @@ bool nfa_dm_rf_removal_detection(uint8_t waiting_time) {
                              &nfa_dm_rf_disc_data);
     } else {
       LOG(ERROR) << __func__
-                 << " - Activated RF interface not ISO-DEP "
+                 << ": Activated RF interface not ISO-DEP "
                     "or Frame RF Interface";
       conn_evt.status = NFA_STATUS_FAILED;
       nfa_dm_conn_cback_event_notify(NFA_DETECT_REMOVAL_STARTED_EVT, &conn_evt);
@@ -3169,7 +3191,7 @@ bool nfa_dm_rf_removal_detection(uint8_t waiting_time) {
     }
   } else {
     /* Wrong state: notify failed status right away */
-    LOG(ERROR) << __func__ << " - NFCC not in poll active state";
+    LOG(ERROR) << __func__ << ": NFCC not in poll active state";
     conn_evt.status = NFA_STATUS_FAILED;
     nfa_dm_conn_cback_event_notify(NFA_DETECT_REMOVAL_STARTED_EVT, &conn_evt);
   }
@@ -3186,7 +3208,8 @@ bool nfa_dm_rf_removal_detection(uint8_t waiting_time) {
 **
 *******************************************************************************/
 tNFA_STATUS nfa_dm_rf_deactivate(tNFA_DEACTIVATE_TYPE deactivate_type) {
-  LOG(VERBOSE) << StringPrintf("deactivate_type:0x%X", deactivate_type);
+  LOG(VERBOSE) << StringPrintf("%s: deactivate_type=0x%X", __func__,
+                               deactivate_type);
 
   if (deactivate_type == NFA_DEACTIVATE_TYPE_SLEEP) {
     if (nfa_dm_cb.disc_cb.activated_protocol == NFA_PROTOCOL_NFC_DEP)
@@ -3205,7 +3228,8 @@ tNFA_STATUS nfa_dm_rf_deactivate(tNFA_DEACTIVATE_TYPE deactivate_type) {
         return NFA_STATUS_OK;
       } else {
         /* it could be race condition. */
-        LOG(VERBOSE) << StringPrintf("already in discovery state");
+        LOG(VERBOSE) << StringPrintf("%s: already in discovery state",
+                                     __func__);
         return NFA_STATUS_FAILED;
       }
     } else if (deactivate_type == NFA_DEACTIVATE_TYPE_IDLE) {
@@ -3346,7 +3370,7 @@ void nfa_dm_get_tech_route_block(uint8_t* listen_techmask, bool* enable) {
   }
 
   if (*enable) {
-    LOG(VERBOSE) << StringPrintf("%s; change_listen_mask: 0x%x, ", __func__,
+    LOG(VERBOSE) << StringPrintf("%s:  change_listen_mask=0x%x, ", __func__,
                                  *listen_techmask);
   }
 }
@@ -3361,7 +3385,7 @@ void nfa_dm_get_tech_route_block(uint8_t* listen_techmask, bool* enable) {
 **
 *******************************************************************************/
 bool nfa_dm_get_nfc_secure() {
-  LOG(INFO) << StringPrintf("%s; status: %d", __func__,
+  LOG(INFO) << StringPrintf("%s:  status=%d", __func__,
                             nfa_dm_cb.is_nfc_secure);
   return nfa_dm_cb.is_nfc_secure;
 }

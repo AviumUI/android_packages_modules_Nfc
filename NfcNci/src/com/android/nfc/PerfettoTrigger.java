@@ -44,7 +44,7 @@ public class PerfettoTrigger {
             long lastTrigger = sLastInvocationPerTrigger.get(triggerName.hashCode());
             long sinceLastTrigger = SystemClock.elapsedRealtime() - lastTrigger;
             if (sinceLastTrigger < THROTTLE_MILLIS) {
-                Log.v(TAG, "Not triggering " + triggerName
+                Log.v(TAG, "trigger: Not triggering " + triggerName
                         + " - not enough time since last trigger");
                 return;
             }
@@ -54,10 +54,10 @@ public class PerfettoTrigger {
 
         try {
             ProcessBuilder pb = new ProcessBuilder(TRIGGER_COMMAND, triggerName);
-            Log.v(TAG, "Triggering " + String.join(" ", pb.command()));
+            Log.v(TAG, "trigger: " + String.join(" ", pb.command()));
             pb.start();
         } catch (IOException e) {
-            Log.w(TAG, "Failed to trigger " + triggerName, e);
+            Log.w(TAG, "trigger: failed " + triggerName, e);
         }
     }
 }

@@ -22,12 +22,16 @@
 #include <android-base/strings.h>
 #include <config.h>
 
+#include <mutex>
+
 #include "NfcAdaptation.h"
 
 using namespace ::std;
 using namespace ::android::base;
 
 #define PATH_NCI_UPDATE_CONF "/data/vendor/nfc/libnfc-nci-update.conf"
+
+static std::mutex config_mutex;
 
 namespace {
 std::string searchConfigPath(std::string file_name) {
@@ -87,9 +91,8 @@ void NfcConfig::loadConfig() {
   }
 }
 
-NfcConfig::NfcConfig() { loadConfig(); }
-
 NfcConfig& NfcConfig::getInstance() {
+  std::lock_guard<std::mutex> lock(config_mutex);
   static NfcConfig theInstance;
   if (theInstance.config_.isEmpty()) {
     theInstance.loadConfig();

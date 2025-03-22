@@ -25,10 +25,10 @@ import static com.android.nfc.ScreenStateHelper.SCREEN_STATE_UNKNOWN;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import android.app.KeyguardManager;
 import android.hardware.display.DisplayManager;
 import android.os.PowerManager;
 import android.view.Display;
@@ -47,8 +47,6 @@ public class ScreenStateHelperTest {
     @Mock
     private PowerManager mMockPowerMngr;
     @Mock
-    private KeyguardManager mMockKeyguardMngr;
-    @Mock
     private DisplayManager mMockDisplayMngr;
     @Mock
     private NfcInjector mMockNfcInjector;
@@ -61,8 +59,7 @@ public class ScreenStateHelperTest {
                 .mockStatic(NfcInjector.class)
                 .strictness(Strictness.LENIENT).startMocking();
         MockitoAnnotations.initMocks(this);
-        mScreenStateHelper = new ScreenStateHelper(mMockKeyguardMngr, mMockPowerMngr,
-                mMockDisplayMngr);
+        mScreenStateHelper = new ScreenStateHelper(mMockPowerMngr, mMockDisplayMngr);
         when(NfcInjector.getInstance()).thenReturn(mMockNfcInjector);
     }
 
@@ -133,6 +130,7 @@ public class ScreenStateHelperTest {
         Display mockDisplay = mock(Display.class);
         when(mMockPowerMngr.isInteractive()).thenReturn(true);
         when(mMockDisplayMngr.getDisplay(anyInt())).thenReturn(mockDisplay);
+        when(mMockDisplayMngr.getDisplays(anyString())).thenReturn(new Display[0]);
         when((mockDisplay.getState())).thenReturn(Display.STATE_OFF);
         when(mMockNfcInjector.isDeviceLocked()).thenReturn(true);
 
@@ -144,6 +142,7 @@ public class ScreenStateHelperTest {
         Display mockDisplay = mock(Display.class);
         when(mMockPowerMngr.isInteractive()).thenReturn(true);
         when(mMockDisplayMngr.getDisplay(anyInt())).thenReturn(mockDisplay);
+        when(mMockDisplayMngr.getDisplays(anyString())).thenReturn(new Display[0]);
         when((mockDisplay.getState())).thenReturn(Display.STATE_OFF);
         when(mMockNfcInjector.isDeviceLocked()).thenReturn(false);
 

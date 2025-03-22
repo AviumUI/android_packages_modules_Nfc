@@ -70,7 +70,7 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
   tNFC_STATUS status = NFC_STATUS_FAILED;
 
   LOG(VERBOSE) << StringPrintf(
-      "%s - sub_state:%s (0x%x)", __func__,
+      "%s: sub_state=%s (0x%x)", __func__,
       rw_i93_get_sub_state_name(p_i93->sub_state).c_str(), p_i93->sub_state);
 
   if (length == 0) {
@@ -82,8 +82,8 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
   length--;
 
   if (flags & I93_FLAG_ERROR_DETECTED) {
-    LOG(VERBOSE) << StringPrintf("%s - Got error flags (0x%02x)", __func__,
-                               flags);
+    LOG(VERBOSE) << StringPrintf("%s: Got error flags (0x%02x)", __func__,
+                                 flags);
     rw_i93_handle_error(NFC_STATUS_FAILED);
     return;
   }
@@ -105,8 +105,8 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
       ** CC[7] : LSB MLEN
       */
 
-      LOG(VERBOSE) << StringPrintf("%s - cc[4-7]: 0x%02X 0x%02X 0x%02X 0x%02X",
-                                 __func__, cc[0], cc[1], cc[2], cc[3]);
+      LOG(VERBOSE) << StringPrintf("%s: cc[4-7]=0x%02X 0x%02X 0x%02X 0x%02X",
+                                   __func__, cc[0], cc[1], cc[2], cc[3]);
 
       /* T5T_Area length = 8 * MLEN */
       /* CC is 8-byte, MLEN is defined by bytes 6 & 7 */
@@ -120,8 +120,8 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
       p_i93->t5t_area_start_block = 2;
 
       LOG(VERBOSE) << StringPrintf(
-          "%s - T5T Area size:%d, Nb blocks:0x%04X, Block size:0x%02X, "
-          "T5T Area last offset:%d",
+          "%s: T5T Area size=%d, Nb blocks=0x%04X, Block size=0x%02X, "
+          "T5T Area last offset=%d",
           __func__, t5t_area_len, p_i93->num_block, p_i93->block_size,
           p_i93->t5t_area_last_offset);
 
@@ -154,7 +154,7 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
       }
 
       if ((p_i93->block_size == 0) || (p_i93->num_block == 0)) {
-        LOG(DEBUG) << StringPrintf("%s; Unable to get tag memory size",
+        LOG(DEBUG) << StringPrintf("%s:  Unable to get tag memory size",
                                    __func__);
         rw_i93_handle_error(status);
       } else {
@@ -197,14 +197,14 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
       **       : Bit 2:More than 2040 bytes are supported [STM]
       */
 
-      LOG(VERBOSE) << StringPrintf("%s - cc[0-3]: 0x%02X 0x%02X 0x%02X 0x%02X",
-                                 __func__, cc[0], cc[1], cc[2], cc[3]);
+      LOG(VERBOSE) << StringPrintf("%s: cc[0-3]=0x%02X 0x%02X 0x%02X 0x%02X",
+                                   __func__, cc[0], cc[1], cc[2], cc[3]);
 
       if ((cc[0] == I93_ICODE_CC_MAGIC_NUMER_E1) ||
           (cc[0] == I93_ICODE_CC_MAGIC_NUMER_E2)) {
         if ((cc[1] & 0xC0) > I93_VERSION_1_x) {
-          LOG(VERBOSE) << StringPrintf("%s - Major mapping version above 1 %d.x",
-                                     __func__, cc[1] >> 6);
+          LOG(VERBOSE) << StringPrintf("%s: Major mapping version above 1 %d.x",
+                                       __func__, cc[1] >> 6);
           /* major mapping version above 1 not supported */
           rw_i93_handle_error(NFC_STATUS_FAILED);
           break;
@@ -248,7 +248,7 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
             if (length >= I93_BLEN_8BYTES) {
               STREAM_TO_ARRAY(&cc[4], p, 4);
               LOG(VERBOSE) << StringPrintf(
-                  "%s - cc[4-7]: 0x%02X 0x%02X 0x%02X 0x%02X", __func__, cc[4],
+                  "%s: cc[4-7]=0x%02X 0x%02X 0x%02X 0x%02X", __func__, cc[4],
                   cc[5], cc[6], cc[7]);
               t5t_area_len = cc[7] + (cc[6] << 8);
               t5t_area_len <<= 3;
@@ -289,8 +289,8 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
           }
 
           LOG(VERBOSE) << StringPrintf(
-              "%s - T5T Area size:%d, Nb blocks:0x%04X, "
-              "Block size:0x%02X, T5T Area last offset:%d",
+              "%s: T5T Area size=%d, Nb blocks=0x%04X, "
+              "Block size=0x%02X, T5T Area last offset=%d",
               __func__, t5t_area_len, p_i93->num_block, p_i93->block_size,
               p_i93->t5t_area_last_offset);
 
@@ -457,7 +457,7 @@ void rw_t5t_sm_detect_ndef(NFC_HDR* p_resp) {
         p_i93->sent_cmd = 0;
 
         LOG(VERBOSE) << StringPrintf(
-            "%s - NDEF cur_size (%d), max_size (%d), flags (0x%x)", __func__,
+            "%s: NDEF cur_size (%d), max_size (%d), flags (0x%x)", __func__,
             rw_data.ndef.cur_size, rw_data.ndef.max_size, rw_data.ndef.flags);
 
         (*(rw_cb.p_cback))(RW_I93_NDEF_DETECT_EVT, &rw_data);
@@ -505,7 +505,7 @@ void rw_t5t_sm_update_ndef(NFC_HDR* p_resp) {
   tRW_DATA rw_data;
 
   LOG(VERBOSE) << StringPrintf(
-      "%s - sub_state:%s (0x%x)", __func__,
+      "%s: sub_state=%s (0x%x)", __func__,
       rw_i93_get_sub_state_name(p_i93->sub_state).c_str(), p_i93->sub_state);
 
   if (length == 0 || p_i93->block_size > I93_MAX_BLOCK_LENGH) {
@@ -518,8 +518,8 @@ void rw_t5t_sm_update_ndef(NFC_HDR* p_resp) {
   length--;
 
   if (flags & I93_FLAG_ERROR_DETECTED) {
-    LOG(VERBOSE) << StringPrintf("%s - Got error flags (0x%02x)", __func__,
-                               flags);
+    LOG(VERBOSE) << StringPrintf("%s: Got error flags (0x%02x)", __func__,
+                                 flags);
     rw_i93_handle_error(NFC_STATUS_FAILED);
     return;
   }
@@ -760,7 +760,7 @@ void rw_t5t_sm_update_ndef(NFC_HDR* p_resp) {
         }
       } else {
         LOG(VERBOSE) << StringPrintf(
-            "%s - NDEF update complete, %d bytes, (%d-%d)", __func__,
+            "%s: NDEF update complete, %d bytes, (%d-%d)", __func__,
             p_i93->ndef_length, p_i93->ndef_tlv_start_offset,
             p_i93->ndef_tlv_last_offset);
 
@@ -801,7 +801,7 @@ void rw_t5t_sm_set_read_only(NFC_HDR* p_resp) {
   tRW_DATA rw_data;
 
   LOG(VERBOSE) << StringPrintf(
-      "%s - sub_state:%s (0x%x)", __func__,
+      "%s: sub_state=%s (0x%x)", __func__,
       rw_i93_get_sub_state_name(p_i93->sub_state).c_str(), p_i93->sub_state);
 
   if (length == 0) {
@@ -814,8 +814,8 @@ void rw_t5t_sm_set_read_only(NFC_HDR* p_resp) {
   length--;
 
   if (flags & I93_FLAG_ERROR_DETECTED) {
-    LOG(VERBOSE) << StringPrintf("%s - Got error flags (0x%02x)", __func__,
-                               flags);
+    LOG(VERBOSE) << StringPrintf("%s: Got error flags (0x%02x)", __func__,
+                                 flags);
     rw_i93_handle_error(NFC_STATUS_FAILED);
     return;
   }
@@ -854,14 +854,14 @@ void rw_t5t_sm_set_read_only(NFC_HDR* p_resp) {
     case RW_I93_SUBSTATE_LOCK_T5T_AREA:
 
       LOG(VERBOSE) << StringPrintf(
-          "%s - rw_offset:0x%02x, t5t_area_last_offset:0x%02x", __func__,
+          "%s: rw_offset=0x%02x, t5t_area_last_offset=0x%02x", __func__,
           p_i93->rw_offset, p_i93->t5t_area_last_offset);
 
       /* 2nd block to be locked can be the last 4 bytes of CC in case CC
        * is 8byte long, then T5T_Area starts */
       if (p_i93->rw_offset <= p_i93->t5t_area_last_offset) {
         if (p_i93->block_size == 0) {
-          LOG(ERROR) << StringPrintf("%s - zero block_size error", __func__);
+          LOG(ERROR) << StringPrintf("%s: zero block_size error", __func__);
           rw_i93_handle_error(NFC_STATUS_FAILED);
           break;
         }

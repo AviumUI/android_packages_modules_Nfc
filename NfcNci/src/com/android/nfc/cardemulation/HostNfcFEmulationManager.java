@@ -21,7 +21,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.nfc.cardemulation.CardEmulation;
 import android.nfc.cardemulation.HostNfcFService;
 import android.nfc.cardemulation.NfcFServiceInfo;
 import android.nfc.cardemulation.Utils;
@@ -31,10 +30,12 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.sysprop.NfcProperties;
 import android.os.UserHandle;
+import android.sysprop.NfcProperties;
 import android.util.Log;
 import android.util.proto.ProtoOutputStream;
+
+import androidx.annotation.VisibleForTesting;
 
 import com.android.nfc.NfcService;
 import com.android.nfc.NfcStatsLog;
@@ -44,7 +45,6 @@ import com.android.nfc.flags.Flags;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
-import androidx.annotation.VisibleForTesting;
 
 public class HostNfcFEmulationManager {
     static final String TAG = "HostNfcFEmulationManager";
@@ -114,11 +114,11 @@ public class HostNfcFEmulationManager {
     }
 
     public void onHostEmulationActivated() {
-        if (DBG) Log.d(TAG, "notifyHostEmulationActivated");
+        if (DBG) Log.d(TAG, "onHostEmulationActivated");
     }
 
     public void onHostEmulationData(byte[] data) {
-        if (DBG) Log.d(TAG, "notifyHostEmulationData");
+        if (DBG) Log.d(TAG, "onHostEmulationData");
         String nfcid2 = findNfcid2(data);
         ComponentName resolvedServiceName = null;
         NfcFServiceInfo resolvedService = null;
@@ -143,8 +143,10 @@ public class HostNfcFEmulationManager {
                 }
                 return;
             }
-            if (DBG) Log.d(TAG, "resolvedServiceName: " + resolvedServiceName.toString() +
-                    "mState: " + String.valueOf(mState));
+            if (DBG) {
+                Log.d(TAG, "onHostEmulationData: resolvedServiceName: "
+                        + resolvedServiceName.toString() + "mState: " + String.valueOf(mState));
+            }
             switch (mState) {
                 case STATE_IDLE:
                     int userId;
@@ -159,12 +161,12 @@ public class HostNfcFEmulationManager {
                     Messenger existingService =
                             bindServiceIfNeededLocked(userId, resolvedServiceName);
                     if (existingService != null) {
-                        Log.d(TAG, "Binding to existing service");
+                        Log.d(TAG, "onHostEmulationData: Binding to existing service");
                         mState = STATE_XFER;
                         sendDataToServiceLocked(existingService, data);
                     } else {
                         // Waiting for service to be bound
-                        Log.d(TAG, "Waiting for new service.");
+                        Log.d(TAG, "onHostEmulationData: Waiting for new service.");
                         // Queue packet to be used
                         mPendingPacket = data;
                         mState = STATE_W4_SERVICE;
@@ -180,7 +182,7 @@ public class HostNfcFEmulationManager {
                     }
                     break;
                 case STATE_W4_SERVICE:
-                    Log.d(TAG, "Unexpected packet in STATE_W4_SERVICE");
+                    Log.d(TAG, "onHostEmulationData: Unexpected packet in STATE_W4_SERVICE");
                     break;
                 case STATE_XFER:
                     // Regular packet data
@@ -191,7 +193,7 @@ public class HostNfcFEmulationManager {
     }
 
     public void onHostEmulationDeactivated() {
-        if (DBG) Log.d(TAG, "notifyHostEmulationDeactivated");
+        if (DBG) Log.d(TAG, "onHostEmulationDeactivated");
         synchronized (mLock) {
             sendDeactivateToActiveServiceLocked(HostNfcFService.DEACTIVATION_LINK_LOSS);
             mActiveService = null;
@@ -229,11 +231,11 @@ public class HostNfcFEmulationManager {
 
     void sendDataToServiceLocked(Messenger service, byte[] data) {
         if (DBG) Log.d(TAG, "sendDataToServiceLocked");
-        if (DBG) {
-            Log.d(TAG, "service: " +
-                    (service != null ? service.toString() : "null"));
-            Log.d(TAG, "mActiveService: " +
-                    (mActiveService != null ? mActiveService.toString() : "null"));
+        if (DBG)  {
+            Log.d(TAG, "sendDataToServiceLocked: service: "
+                    + (service != null ? service.toString() : "null"));
+            Log.d(TAG, "sendDataToServiceLocked: mActiveService: "
+                    + (mActiveService != null ? mActiveService.toString() : "null"));
         }
         if (service != mActiveService) {
             sendDeactivateToActiveServiceLocked(HostNfcFService.DEACTIVATION_LINK_LOSS);
@@ -246,11 +248,11 @@ public class HostNfcFEmulationManager {
         msg.setData(dataBundle);
         msg.replyTo = mMessenger;
         try {
-            Log.d(TAG, "Sending data to service");
-            if (DBG) Log.d(TAG, "data: " + getByteDump(data));
+            Log.d(TAG, "sendDataToServiceLocked: Sending data to service");
+            if (DBG) Log.d(TAG, "sendDataToServiceLocked: data: " + getByteDump(data));
             mActiveService.send(msg);
         } catch (RemoteException e) {
-            Log.e(TAG, "Remote service has died, dropping packet");
+            Log.e(TAG, "sendDataToServiceLocked: Remote service has died, dropping packet");
         }
     }
 
@@ -269,10 +271,10 @@ public class HostNfcFEmulationManager {
     Messenger bindServiceIfNeededLocked(int userId, ComponentName service) {
         if (DBG) Log.d(TAG, "bindServiceIfNeededLocked");
         if (mServiceBound && mServiceName.equals(service) && mServiceUserId == userId) {
-            Log.d(TAG, "Service already bound.");
+            Log.d(TAG, "bindServiceIfNeededLocked: Service already bound");
             return mService;
         } else {
-            Log.d(TAG, "Binding to service " + service);
+            Log.d(TAG, "bindServiceIfNeededLocked: service " + service);
             if (mStatsdUtils != null) {
                 mStatsdUtils.notifyCardEmulationEventWaitingForService();
             }
@@ -283,12 +285,13 @@ public class HostNfcFEmulationManager {
                 mServiceBound = mContext.bindServiceAsUser(bindIntent, mConnection,
                         Context.BIND_AUTO_CREATE, UserHandle.of(userId));
                 if (!mServiceBound) {
-                    Log.e(TAG, "Could not bind service.");
+                    Log.e(TAG, "bindServiceIfNeededLocked: Could not bind service");
                 } else {
                     mServiceUserId = userId;
                 }
             } catch (SecurityException e) {
-                Log.e(TAG, "Could not bind service due to security exception.");
+                Log.e(TAG, "bindServiceIfNeededLocked: Could not bind service due "
+                        + "to security exception");
             }
             return null;
         }
@@ -297,7 +300,7 @@ public class HostNfcFEmulationManager {
     void unbindServiceIfNeededLocked() {
         if (DBG) Log.d(TAG, "unbindServiceIfNeededLocked");
         if (mServiceBound) {
-            Log.d(TAG, "Unbinding from service " + mServiceName);
+            Log.d(TAG, "unbindServiceIfNeededLocked: service " + mServiceName);
             mContext.unbindService(mConnection);
             mServiceBound = false;
             mService = null;
@@ -309,7 +312,7 @@ public class HostNfcFEmulationManager {
     String findNfcid2(byte[] data) {
         if (DBG) Log.d(TAG, "findNfcid2");
         if (data == null || data.length < MINIMUM_NFCF_PACKET_LENGTH) {
-            if (DBG) Log.d(TAG, "Data size too small");
+            if (DBG) Log.d(TAG, "findNfcid2: Data size too small");
             return null;
         }
         int nfcid2Offset = 2;
@@ -323,7 +326,7 @@ public class HostNfcFEmulationManager {
                 mService = new Messenger(service);
                 mServiceBound = true;
                 mServiceName = name;
-                Log.d(TAG, "Service bound");
+                Log.d(TAG, "onServiceConnected: Service bound");
                 mState = STATE_XFER;
                 // Send pending packet
                 if (mPendingPacket != null) {
@@ -339,7 +342,7 @@ public class HostNfcFEmulationManager {
         @Override
         public void onServiceDisconnected(ComponentName name) {
             synchronized (mLock) {
-                Log.d(TAG, "Service unbound");
+                Log.d(TAG, "onServiceDisconnected");
                 mService = null;
                 mServiceBound = false;
                 mServiceName = null;
@@ -352,10 +355,12 @@ public class HostNfcFEmulationManager {
         public void handleMessage(Message msg) {
             synchronized(mLock) {
                 if (mActiveService == null) {
-                    Log.d(TAG, "Dropping service response message; service no longer active.");
+                    Log.d(TAG, "handleMessage: Dropping service response message; "
+                            + "service no longer active.");
                     return;
                 } else if (!msg.replyTo.getBinder().equals(mActiveService.getBinder())) {
-                    Log.d(TAG, "Dropping service response message; service no longer bound.");
+                    Log.d(TAG, "handleMessage: Dropping service response message; "
+                            + "service no longer bound.");
                     return;
                 }
             }
@@ -366,11 +371,11 @@ public class HostNfcFEmulationManager {
                 }
                 byte[] data = dataBundle.getByteArray("data");
                 if (data == null) {
-                    Log.e(TAG, "Data is null");
+                    Log.e(TAG, "handleMessage: Data is null");
                     return;
                 }
                 if (data.length != 0 && (data.length != (data[0] & 0xff))) {
-                    Log.e(TAG, "Invalid response packet");
+                    Log.e(TAG, "handleMessage: Invalid response packet");
                     return;
                 }
                 int state;
@@ -378,14 +383,15 @@ public class HostNfcFEmulationManager {
                     state = mState;
                 }
                 if (state == STATE_XFER) {
-                    Log.d(TAG, "Sending data");
-                    if (DBG) Log.d(TAG, "data:" + getByteDump(data));
+                    Log.d(TAG, "handleMessage: Sending data");
+                    if (DBG) Log.d(TAG, "handleMessage: data:" + getByteDump(data));
                     NfcService.getInstance().sendData(data);
                     if (mStatsdUtils != null) {
                         mStatsdUtils.notifyCardEmulationEventResponseReceived();
                     }
                 } else {
-                    Log.d(TAG, "Dropping data, wrong state " + Integer.toString(state));
+                    Log.d(TAG,
+                            "handleMessage: Dropping data, wrong state " + Integer.toString(state));
                 }
             }
         }

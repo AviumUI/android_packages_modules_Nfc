@@ -144,16 +144,16 @@ static bool rw_t4t_send_to_lower(NFC_HDR* p_c_apdu) {
       GKI_get_pool_bufsize(NFC_RW_POOL_ID) >= msg_size) {
     memcpy(rw_cb.tcb.t4t.p_retry_cmd, p_c_apdu, msg_size);
   } else {
-    LOG(ERROR) << StringPrintf("Memory allocation error");
+    LOG(ERROR) << StringPrintf("%s: Memory allocation error", __func__);
     return false;
   }
   if (NFA_T4tNfcEeIsProcessing()) {
     conn_id = nfa_t4tnfcee_cb.connId;
   }
-  LOG(DEBUG) << StringPrintf("%s - conn_id sent to lower : %d", __func__,
+  LOG(DEBUG) << StringPrintf("%s: conn_id sent to lower =%d", __func__,
                              conn_id);
   if (NFC_SendData(conn_id, p_c_apdu) != NFC_STATUS_OK) {
-    LOG(ERROR) << StringPrintf("failed");
+    LOG(ERROR) << StringPrintf("%s: failed", __func__);
     return false;
   }
 
@@ -198,7 +198,7 @@ static bool rw_t4t_set_ber_tlv(NFC_HDR* p_c_apdu, uint8_t* p, uint32_t length) {
       /* Extended Field Coding can be used */
       if (length <= 0xFF) {
         LOG(VERBOSE) << StringPrintf(
-            "%s - Extended Field Coding used, 2-byte coding "
+            "%s: Extended Field Coding used, 2-byte coding "
             "for BER-TLV",
             __func__);
         /* BER-TLV length coded on two bytes still possible */
@@ -206,7 +206,7 @@ static bool rw_t4t_set_ber_tlv(NFC_HDR* p_c_apdu, uint8_t* p, uint32_t length) {
 
       } else {
         LOG(VERBOSE) << StringPrintf(
-            "%s - Extended Field Coding used, 3-byte coding "
+            "%s: Extended Field Coding used, 3-byte coding "
             "for BER-TLV",
             __func__);
         /* BER-TLV length coded on three bytes:
@@ -214,7 +214,7 @@ static bool rw_t4t_set_ber_tlv(NFC_HDR* p_c_apdu, uint8_t* p, uint32_t length) {
         length_size = RW_T4T_BER_TLV_LENGTH_3_BYTES;
       }
     } else {
-      LOG(VERBOSE) << StringPrintf("%s - Short Field Coding used", __func__);
+      LOG(VERBOSE) << StringPrintf("%s: Short Field Coding used", __func__);
       /* Only Short Field Coding can be used */
       /* Write a max of 255 bytes in data field,
        * as Lc=00 is reserved for Extended Field coding */
@@ -294,7 +294,7 @@ static bool rw_t4t_set_ber_tlv(NFC_HDR* p_c_apdu, uint8_t* p, uint32_t length) {
     p_c_apdu->len += 3;
   } else {
     LOG(ERROR) << StringPrintf(
-        "%s - Data to be written to MV3.0 tag exceeds 0xFFFF", __func__);
+        "%s: Data to be written to MV3.0 tag exceeds 0xFFFF", __func__);
     return false;
   }
 
@@ -333,7 +333,7 @@ static void rw_t4t_format_short_field_coding(void) {
   uint16_t old_Le_field;
 
   LOG(ERROR) << StringPrintf(
-      "%s; empty payload received, retry C-APDU with "
+      "%s:  empty payload received, retry C-APDU with "
       "Le in Short Field coding",
       __func__);
 
@@ -352,11 +352,11 @@ static void rw_t4t_format_short_field_coding(void) {
     old_Le_field |= (uint16_t)*(p_old_c_apdu + 6);
 
     LOG(DEBUG) << StringPrintf(
-        "%s; Reformat C-APDU with Le Short Field coded on one byte", __func__);
+        "%s:  Reformat C-APDU with Le Short Field coded on one byte", __func__);
     p_new_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
     if (p_new_c_apdu == nullptr) {
-      LOG(ERROR) << StringPrintf("%s; Cannot allocate buffer", __func__);
+      LOG(ERROR) << StringPrintf("%s:  Cannot allocate buffer", __func__);
       return;
     }
 
@@ -377,7 +377,7 @@ static void rw_t4t_format_short_field_coding(void) {
     p_new_c_apdu->len = T4T_CMD_MAX_HDR_SIZE;
 
     if (!rw_t4t_send_to_lower(p_new_c_apdu)) {
-      LOG(ERROR) << StringPrintf("%s; Error calling rw_t4t_send_to_lower()",
+      LOG(ERROR) << StringPrintf("%s:  Error calling rw_t4t_send_to_lower()",
                                  __func__);
     }
   }
@@ -399,7 +399,7 @@ static bool rw_t4t_get_hw_version(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -436,7 +436,7 @@ static bool rw_t4t_get_sw_version(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -472,7 +472,7 @@ static bool rw_t4t_update_version_details(NFC_HDR* p_r_apdu) {
   uint16_t major_version, minor_version;
 
   if (p_r_apdu->len < T4T_DES_GET_VERSION_LEN) {
-    LOG(ERROR) << StringPrintf("%s incorrect p_r_apdu length", __func__);
+    LOG(ERROR) << StringPrintf("%s: incorrect p_r_apdu length", __func__);
     android_errorWriteLog(0x534e4554, "120865977");
     return false;
   }
@@ -522,7 +522,7 @@ static bool rw_t4t_get_uid_details(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -561,7 +561,7 @@ static bool rw_t4t_create_app(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -611,7 +611,7 @@ static bool rw_t4t_select_app(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -656,7 +656,7 @@ static bool rw_t4t_create_ccfile(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -706,7 +706,7 @@ static bool rw_t4t_create_ndef(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -759,7 +759,7 @@ static bool rw_t4t_write_cc(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -810,7 +810,7 @@ static bool rw_t4t_write_ndef(void) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("Cannot allocate buffer");
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -854,12 +854,12 @@ static bool rw_t4t_select_file(uint16_t file_id) {
   NFC_HDR* p_c_apdu;
   uint8_t* p;
 
-  LOG(VERBOSE) << StringPrintf("%s - File ID:0x%04X", __func__, file_id);
+  LOG(VERBOSE) << StringPrintf("%s: File ID=0x%04X", __func__, file_id);
 
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("%s - Cannot allocate buffer", __func__);
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -907,13 +907,13 @@ static bool rw_t4t_read_file(uint32_t offset, uint32_t length,
   uint8_t* p;
   uint32_t tmp_offset;
 
-  LOG(VERBOSE) << StringPrintf("%s - offset:%d, length:%d, is_continue:%d, ",
-                             __func__, offset, length, is_continue);
+  LOG(VERBOSE) << StringPrintf("%s: offset=%d, length=%d, is_continue=%d, ",
+                               __func__, offset, length, is_continue);
 
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("%s - Cannot allocate buffer", __func__);
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -940,7 +940,7 @@ static bool rw_t4t_read_file(uint32_t offset, uint32_t length,
     if (p_t4t->cc_file.version >= T4T_VERSION_3_0) {
       /* MV 3.0 tag */
       LOG(VERBOSE) << StringPrintf(
-          "%s - Read above 0x7FFF address offset detected", __func__);
+          "%s: Read above 0x7FFF address offset detected", __func__);
 
       p_c_apdu->len = T4T_CMD_MIN_EXT_HDR_SIZE;
 
@@ -989,15 +989,15 @@ static bool rw_t4t_read_file(uint32_t offset, uint32_t length,
         UINT8_TO_BE_STREAM(p, length);
       }
     } else {
-      LOG(ERROR) << StringPrintf("%s - Cannot read above 0x7FFF for MV2.0",
+      LOG(ERROR) << StringPrintf("%s: Cannot read above 0x7FFF for MV2.0",
                                  __func__);
       GKI_freebuf(p_c_apdu);
       return false;
     }
   } else {
     /* MV 2.0 tag or MV 3.0 tag read below 32kB */
-    LOG(VERBOSE) << StringPrintf("%s - Read below 0x8000 address offset detected",
-                               __func__);
+    LOG(VERBOSE) << StringPrintf(
+        "%s: Read below 0x8000 address offset detected", __func__);
 
     UINT8_TO_BE_STREAM(p, T4T_CMD_INS_READ_BINARY);
     /* Lc and Data fields absent */
@@ -1042,12 +1042,12 @@ static bool rw_t4t_update_nlen(uint32_t ndef_len) {
   NFC_HDR* p_c_apdu;
   uint8_t* p;
 
-  LOG(VERBOSE) << StringPrintf("%s - NLEN:%d", __func__, ndef_len);
+  LOG(VERBOSE) << StringPrintf("%s: NLEN=%d", __func__, ndef_len);
 
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("%s - Cannot allocate buffer", __func__);
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -1088,13 +1088,13 @@ static bool rw_t4t_update_file(void) {
   uint8_t* p;
   uint32_t length;
 
-  LOG(VERBOSE) << StringPrintf("%s - rw_offset:%d, rw_length:%d", __func__,
-                             p_t4t->rw_offset, p_t4t->rw_length);
+  LOG(VERBOSE) << StringPrintf("%s: rw_offset=%d, rw_length=%d", __func__,
+                               p_t4t->rw_offset, p_t4t->rw_length);
 
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("%s - Cannot allocate buffer", __func__);
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -1102,8 +1102,7 @@ static bool rw_t4t_update_file(void) {
   length = p_t4t->rw_length;
 
   if (length == 0) {
-    LOG(ERROR) << StringPrintf("%s - Length to write can not be null",
-                               __func__);
+    LOG(ERROR) << StringPrintf("%s: Length to write can not be null", __func__);
     GKI_freebuf(p_c_apdu);
     return false;
   }
@@ -1122,12 +1121,12 @@ static bool rw_t4t_update_file(void) {
     if (p_t4t->cc_file.version >= T4T_VERSION_3_0) {
       /* MV 3.0 tag */
       LOG(VERBOSE) << StringPrintf(
-          "%s - MV 3.0 detected, update NDEF Message size > 0x7FFF", __func__);
+          "%s: MV 3.0 detected, update NDEF Message size > 0x7FFF", __func__);
 
       return rw_t4t_set_ber_tlv(p_c_apdu, p, length);
 
     } else {
-      LOG(ERROR) << StringPrintf("%s - Cannot write above 0x7FFF for MV2.0",
+      LOG(ERROR) << StringPrintf("%s: Cannot write above 0x7FFF for MV2.0",
                                  __func__);
       GKI_freebuf(p_c_apdu);
       return false;
@@ -1136,7 +1135,7 @@ static bool rw_t4t_update_file(void) {
     /* MV 2.0 or MV 3.0 tag */
     /* ReadBinary with Standard Data structure used */
     LOG(VERBOSE) << StringPrintf(
-        "%s - NDEF Message to write < 0x8000, MV2.0 or MV3.0 tag", __func__);
+        "%s: NDEF Message to write < 0x8000, MV2.0 or MV3.0 tag", __func__);
 
     UINT8_TO_BE_STREAM(p, T4T_CMD_CLASS);
     UINT8_TO_BE_STREAM(p, T4T_CMD_INS_UPDATE_BINARY);
@@ -1180,12 +1179,12 @@ static bool rw_t4t_update_cc_to_readonly(void) {
   NFC_HDR* p_c_apdu;
   uint8_t* p;
 
-  LOG(VERBOSE) << StringPrintf("%s - Remove Write access from CC", __func__);
+  LOG(VERBOSE) << StringPrintf("%s: Remove Write access from CC", __func__);
 
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("%s - Cannot allocate buffer", __func__);
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -1234,12 +1233,12 @@ static bool rw_t4t_select_application(uint8_t version) {
   NFC_HDR* p_c_apdu;
   uint8_t* p;
 
-  LOG(VERBOSE) << StringPrintf("%s - version:0x%X", __func__, version);
+  LOG(VERBOSE) << StringPrintf("%s: version=0x%X", __func__, version);
 
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("%s - Cannot allocate buffer", __func__);
+    LOG(ERROR) << StringPrintf("%s: Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -1296,7 +1295,7 @@ static bool rw_t4t_validate_cc_file(void) {
   LOG(VERBOSE) << __func__;
 
   if (p_t4t->cc_file.cclen < T4T_CC_FILE_MIN_LEN) {
-    LOG(ERROR) << StringPrintf("%s - CCLEN (%d) is too short", __func__,
+    LOG(ERROR) << StringPrintf("%s: CCLEN (%d) is too short", __func__,
                                p_t4t->cc_file.cclen);
     return false;
   }
@@ -1304,7 +1303,7 @@ static bool rw_t4t_validate_cc_file(void) {
   if (T4T_GET_MAJOR_VERSION(p_t4t->cc_file.version) >
       T4T_GET_MAJOR_VERSION(p_t4t->version)) {
     LOG(ERROR) << StringPrintf(
-        "%s - Peer version (0x%02X) mismatched to ours "
+        "%s: Peer version (0x%02X) mismatched to ours "
         "(0x%02X)",
         __func__, p_t4t->cc_file.version, p_t4t->version);
 
@@ -1312,14 +1311,14 @@ static bool rw_t4t_validate_cc_file(void) {
   }
 
   if (p_t4t->cc_file.max_le < 0x000F) {
-    LOG(ERROR) << StringPrintf("%s - MaxLe (%d) is too small", __func__,
+    LOG(ERROR) << StringPrintf("%s: MaxLe (%d) is too small", __func__,
                                p_t4t->cc_file.max_le);
     return false;
   }
 
   if (p_t4t->cc_file.max_lc < 0x0001 ||
       ((p_t4t->cc_file.max_lc < 0x000D) && appl_dta_mode_flag)) {
-    LOG(ERROR) << StringPrintf("%s - MaxLc (%d) is too small", __func__,
+    LOG(ERROR) << StringPrintf("%s: MaxLc (%d) is too small", __func__,
                                p_t4t->cc_file.max_lc);
     return false;
   }
@@ -1332,7 +1331,7 @@ static bool rw_t4t_validate_cc_file(void) {
       (p_t4t->cc_file.ndef_fc.file_id == 0x3F00) ||
       (p_t4t->cc_file.ndef_fc.file_id == 0x3FFF) ||
       (p_t4t->cc_file.ndef_fc.file_id == 0xFFFF)) {
-    LOG(ERROR) << StringPrintf("%s - File ID (0x%04X) is invalid", __func__,
+    LOG(ERROR) << StringPrintf("%s: File ID (0x%04X) is invalid", __func__,
                                p_t4t->cc_file.ndef_fc.file_id);
     return false;
   }
@@ -1343,7 +1342,7 @@ static bool rw_t4t_validate_cc_file(void) {
       ((p_t4t->cc_file.version == 0x30) &&
        ((p_t4t->cc_file.ndef_fc.max_file_size < 0x00000007) ||
         (p_t4t->cc_file.ndef_fc.max_file_size == 0xFFFFFFFF)))) {
-    LOG(ERROR) << StringPrintf("%s - max_file_size (%d) is reserved", __func__,
+    LOG(ERROR) << StringPrintf("%s: max_file_size (%d) is reserved", __func__,
                                p_t4t->cc_file.ndef_fc.max_file_size);
     return false;
   }
@@ -1351,7 +1350,7 @@ static bool rw_t4t_validate_cc_file(void) {
   if (((p_t4t->cc_file.ndef_fc.read_access > T4T_FC_READ_ACCESS) &&
        (p_t4t->cc_file.ndef_fc.read_access < T4T_FC_READ_ACCESS_PROP_START)) ||
       (p_t4t->cc_file.ndef_fc.read_access == T4T_FC_NO_READ_ACCESS)) {
-    LOG(ERROR) << StringPrintf("%s - Read Access (0x%02X) is invalid", __func__,
+    LOG(ERROR) << StringPrintf("%s: Read Access (0x%02X) is invalid", __func__,
                                p_t4t->cc_file.ndef_fc.read_access);
     return false;
   }
@@ -1359,8 +1358,8 @@ static bool rw_t4t_validate_cc_file(void) {
   if (((p_t4t->cc_file.ndef_fc.write_access > T4T_FC_WRITE_ACCESS) &&
        (p_t4t->cc_file.ndef_fc.write_access <
         T4T_FC_WRITE_ACCESS_PROP_START))) {
-    LOG(ERROR) << StringPrintf("%s - Write Access (0x%02X) is invalid",
-                               __func__, p_t4t->cc_file.ndef_fc.write_access);
+    LOG(ERROR) << StringPrintf("%s: Write Access (0x%02X) is invalid", __func__,
+                               p_t4t->cc_file.ndef_fc.write_access);
     return false;
   }
 
@@ -1382,8 +1381,8 @@ static void rw_t4t_handle_error(tNFC_STATUS status, uint8_t sw1, uint8_t sw2) {
   tRW_EVENT event;
 
   LOG(VERBOSE) << StringPrintf(
-      "%s - status:0x%02X, sw1:0x%02X, sw2:0x%02X, "
-      "state:0x%X",
+      "%s: status=0x%02X, sw1=0x%02X, sw2=0x%02X, "
+      "state=0x%X",
       __func__, status, sw1, sw2, p_t4t->state);
 
   nfc_stop_quick_timer(&p_t4t->timer);
@@ -1455,7 +1454,7 @@ static void rw_t4t_sm_ndef_format(NFC_HDR* p_r_apdu) {
   tRW_DATA rw_data;
 
   LOG(VERBOSE) << StringPrintf(
-      "sub_state:%s (%d)", rw_t4t_get_sub_state_name(p_t4t->sub_state).c_str(),
+      "sub_state=%s (%d)", rw_t4t_get_sub_state_name(p_t4t->sub_state).c_str(),
       p_t4t->sub_state);
 
   /* get status words */
@@ -1606,13 +1605,15 @@ static void rw_t4t_sm_ndef_format(NFC_HDR* p_r_apdu) {
 
           (*(rw_cb.p_cback))(RW_T4T_NDEF_FORMAT_CPLT_EVT, &rw_data);
 
-          LOG(VERBOSE) << StringPrintf("Sent RW_T4T_NDEF_FORMAT_CPLT_EVT");
+          LOG(VERBOSE) << StringPrintf("%s: Sent RW_T4T_NDEF_FORMAT_CPLT_EVT",
+                                       __func__);
         }
       }
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("unknown sub_state=%d", p_t4t->sub_state);
+      LOG(ERROR) << StringPrintf("%s: unknown sub_state=%d", __func__,
+                                 p_t4t->sub_state);
       rw_t4t_handle_error(NFC_STATUS_FAILED, 0, 0);
       break;
   }
@@ -1637,7 +1638,7 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
   tRW_DATA rw_data;
 
   LOG(VERBOSE) << StringPrintf(
-      "%s - sub_state:%s (%d)", __func__,
+      "%s: sub_state=%s (%d)", __func__,
       rw_t4t_get_sub_state_name(p_t4t->sub_state).c_str(), p_t4t->sub_state);
 
   /* get status words */
@@ -1652,8 +1653,8 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
          (p_t4t->version == T4T_VERSION_3_0))) {
       p_t4t->version = T4T_VERSION_1_0;
 
-      LOG(VERBOSE) << StringPrintf("%s - retry with version=0x%02X", __func__,
-                                 p_t4t->version);
+      LOG(VERBOSE) << StringPrintf("%s: retry with version=0x%02X", __func__,
+                                   p_t4t->version);
 
       if (!rw_t4t_select_application(T4T_VERSION_1_0)) {
         rw_t4t_handle_error(NFC_STATUS_FAILED, 0, 0);
@@ -1709,25 +1710,25 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
           BE_STREAM_TO_UINT8(p_t4t->cc_file.ndef_fc.read_access, p);
           BE_STREAM_TO_UINT8(p_t4t->cc_file.ndef_fc.write_access, p);
 
-          LOG(VERBOSE) << StringPrintf("%s - Capability Container (CC) file",
-                                     __func__);
-          LOG(VERBOSE) << StringPrintf("%s -   CCLEN:  0x%04X", __func__,
-                                     p_t4t->cc_file.cclen);
-          LOG(VERBOSE) << StringPrintf("%s -   Version:0x%02X", __func__,
-                                     p_t4t->cc_file.version);
-          LOG(VERBOSE) << StringPrintf("%s -  MaxLe:  0x%04X", __func__,
-                                     p_t4t->cc_file.max_le);
-          LOG(VERBOSE) << StringPrintf("%s -   MaxLc:  0x%04X", __func__,
-                                     p_t4t->cc_file.max_lc);
-          LOG(VERBOSE) << StringPrintf("%s -  NDEF File Control TLV", __func__);
-          LOG(VERBOSE) << StringPrintf("%s -    FileID:      0x%04X", __func__,
-                                     p_t4t->cc_file.ndef_fc.file_id);
-          LOG(VERBOSE) << StringPrintf("%s -    MaxFileSize: 0x%04X", __func__,
-                                     p_t4t->cc_file.ndef_fc.max_file_size);
-          LOG(VERBOSE) << StringPrintf("%s -     ReadAccess:  0x%02X", __func__,
-                                     p_t4t->cc_file.ndef_fc.read_access);
-          LOG(VERBOSE) << StringPrintf("%s -    WriteAccess: 0x%02X", __func__,
-                                     p_t4t->cc_file.ndef_fc.write_access);
+          LOG(VERBOSE) << StringPrintf("%s: Capability Container (CC) file",
+                                       __func__);
+          LOG(VERBOSE) << StringPrintf("%s:   CCLEN:  0x%04X", __func__,
+                                       p_t4t->cc_file.cclen);
+          LOG(VERBOSE) << StringPrintf("%s:   Version=0x%02X", __func__,
+                                       p_t4t->cc_file.version);
+          LOG(VERBOSE) << StringPrintf("%s:  MaxLe:  0x%04X", __func__,
+                                       p_t4t->cc_file.max_le);
+          LOG(VERBOSE) << StringPrintf("%s:   MaxLc:  0x%04X", __func__,
+                                       p_t4t->cc_file.max_lc);
+          LOG(VERBOSE) << StringPrintf("%s:  NDEF File Control TLV", __func__);
+          LOG(VERBOSE) << StringPrintf("%s:    FileID:      0x%04X", __func__,
+                                       p_t4t->cc_file.ndef_fc.file_id);
+          LOG(VERBOSE) << StringPrintf("%s:    MaxFileSize=0x%04X", __func__,
+                                       p_t4t->cc_file.ndef_fc.max_file_size);
+          LOG(VERBOSE) << StringPrintf("%s:     ReadAccess:  0x%02X", __func__,
+                                       p_t4t->cc_file.ndef_fc.read_access);
+          LOG(VERBOSE) << StringPrintf("%s:    WriteAccess=0x%02X", __func__,
+                                       p_t4t->cc_file.ndef_fc.write_access);
 
           if (rw_t4t_validate_cc_file()) {
             if (!rw_t4t_select_file(p_t4t->cc_file.ndef_fc.file_id)) {
@@ -1740,16 +1741,16 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
           }
         } else if ((type == T4T_ENDEF_FILE_CONTROL_TYPE) &&
                    (length == T4T_ENDEF_FILE_CONTROL_LENGTH)) {
-          LOG(VERBOSE) << StringPrintf("%s - Capability Container (CC) file",
-                                     __func__);
-          LOG(VERBOSE) << StringPrintf("%s -   CCLEN:  0x%04X", __func__,
-                                     p_t4t->cc_file.cclen);
-          LOG(VERBOSE) << StringPrintf("%s -   Version:0x%02X", __func__,
-                                     p_t4t->cc_file.version);
-          LOG(VERBOSE) << StringPrintf("%s -   MaxLe:  0x%04X", __func__,
-                                     p_t4t->cc_file.max_le);
-          LOG(VERBOSE) << StringPrintf("%s -   MaxLc:  0x%04X", __func__,
-                                     p_t4t->cc_file.max_lc);
+          LOG(VERBOSE) << StringPrintf("%s: Capability Container (CC) file",
+                                       __func__);
+          LOG(VERBOSE) << StringPrintf("%s:   CCLEN:  0x%04X", __func__,
+                                       p_t4t->cc_file.cclen);
+          LOG(VERBOSE) << StringPrintf("%s:   Version=0x%02X", __func__,
+                                       p_t4t->cc_file.version);
+          LOG(VERBOSE) << StringPrintf("%s:   MaxLe:  0x%04X", __func__,
+                                       p_t4t->cc_file.max_le);
+          LOG(VERBOSE) << StringPrintf("%s:   MaxLc:  0x%04X", __func__,
+                                       p_t4t->cc_file.max_lc);
 
           cc_file_offset = T4T_ENDEF_FC_V_FIELD_OFFSET;
           cc_file_rsp_len = T4T_ENDEF_FILE_CONTROL_TLV_SIZE - 2;
@@ -1783,15 +1784,15 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
         BE_STREAM_TO_UINT8(p_t4t->cc_file.ndef_fc.read_access, p);
         BE_STREAM_TO_UINT8(p_t4t->cc_file.ndef_fc.write_access, p);
 
-        LOG(VERBOSE) << StringPrintf("%s -  ENDEF File Control TLV", __func__);
-        LOG(VERBOSE) << StringPrintf("%s -    FileID:      0x%04X", __func__,
-                                   p_t4t->cc_file.ndef_fc.file_id);
-        LOG(VERBOSE) << StringPrintf("%s -    MaxFileSize: 0x%08X", __func__,
-                                   p_t4t->cc_file.ndef_fc.max_file_size);
-        LOG(VERBOSE) << StringPrintf("%s -    ReadAccess:  0x%02X", __func__,
-                                   p_t4t->cc_file.ndef_fc.read_access);
-        LOG(VERBOSE) << StringPrintf("%s -    WriteAccess: 0x%02X", __func__,
-                                   p_t4t->cc_file.ndef_fc.write_access);
+        LOG(VERBOSE) << StringPrintf("%s:  ENDEF File Control TLV", __func__);
+        LOG(VERBOSE) << StringPrintf("%s:    FileID:      0x%04X", __func__,
+                                     p_t4t->cc_file.ndef_fc.file_id);
+        LOG(VERBOSE) << StringPrintf("%s:    MaxFileSize=0x%08X", __func__,
+                                     p_t4t->cc_file.ndef_fc.max_file_size);
+        LOG(VERBOSE) << StringPrintf("%s:    ReadAccess:  0x%02X", __func__,
+                                     p_t4t->cc_file.ndef_fc.read_access);
+        LOG(VERBOSE) << StringPrintf("%s:    WriteAccess=0x%02X", __func__,
+                                     p_t4t->cc_file.ndef_fc.write_access);
 
         if (rw_t4t_validate_cc_file()) {
           if (!rw_t4t_select_file(p_t4t->cc_file.ndef_fc.file_id)) {
@@ -1847,8 +1848,8 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
             p_t4t->max_read_size = p_t4t->cc_file.max_le;
           }
 
-          LOG(VERBOSE) << StringPrintf("%s -    max_read_size:      0x%04X",
-                                     __func__, p_t4t->max_read_size);
+          LOG(VERBOSE) << StringPrintf("%s:    max_read_size:      0x%04X",
+                                       __func__, p_t4t->max_read_size);
 
           /* Le: valid range is 0x0001 to 0xFFFF */
           if (p_t4t->max_read_size > T4T_MAX_LENGTH_LE + 1) {
@@ -1886,13 +1887,13 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
 
             (*(rw_cb.p_cback))(RW_T4T_NDEF_DETECT_EVT, &rw_data);
 
-            LOG(VERBOSE) << StringPrintf("%s - Sent RW_T4T_NDEF_DETECT_EVT",
-                                       __func__);
+            LOG(VERBOSE) << StringPrintf("%s: Sent RW_T4T_NDEF_DETECT_EVT",
+                                         __func__);
           }
         } else {
           /* NLEN should be less than max file size */
           LOG(ERROR) << StringPrintf(
-              "%s - NLEN (%d) + 2 must be <= max file "
+              "%s: NLEN (%d) + 2 must be <= max file "
               "size (%d)",
               __func__, nlen, p_t4t->cc_file.ndef_fc.max_file_size);
 
@@ -1902,7 +1903,7 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
       } else {
         /* response payload size should be T4T_(E)FILE_LENGTH_SIZE */
         LOG(ERROR) << StringPrintf(
-            "%s - Length (%d) of R-APDU must be %d", __func__, p_r_apdu->len,
+            "%s: Length (%d) of R-APDU must be %d", __func__, p_r_apdu->len,
             p_t4t->cc_file.ndef_fc.nlen_size + T4T_RSP_STATUS_WORDS_SIZE);
 
         p_t4t->ndef_status &= ~(RW_T4T_NDEF_STATUS_NDEF_DETECTED);
@@ -1911,7 +1912,7 @@ static void rw_t4t_sm_detect_ndef(NFC_HDR* p_r_apdu) {
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("%s - unknown sub_state=%d", __func__,
+      LOG(ERROR) << StringPrintf("%s: unknown sub_state=%d", __func__,
                                  p_t4t->sub_state);
       rw_t4t_handle_error(NFC_STATUS_FAILED, 0, 0);
       break;
@@ -1935,11 +1936,11 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
   tRW_DATA rw_data;
 
   if (p_r_apdu == nullptr) {
-    LOG(ERROR) << StringPrintf("%s; p_r_apdu is null, exiting", __func__);
+    LOG(ERROR) << StringPrintf("%s:  p_r_apdu is null, exiting", __func__);
     return;
   }
   LOG(VERBOSE) << StringPrintf(
-      "%s - sub_state:%s (%d)", __func__,
+      "%s: sub_state=%s (%d)", __func__,
       rw_t4t_get_sub_state_name(p_t4t->sub_state).c_str(), p_t4t->sub_state);
 
   /* get status words */
@@ -1969,7 +1970,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
             /* Content read length coded over 1 byte in 1st byte
              * of BER-TLV length field */
             LOG(VERBOSE) << StringPrintf(
-                "%s - Content read length expected: 0x%02X, returned: 0x%02X",
+                "%s: Content read length expected=0x%02X, returned=0x%02X",
                 __func__, *(p + 1), p_r_apdu->len);
             if (*(p + 1) == p_r_apdu->len) {
               if ((p_r_apdu->len > 0) && (p_r_apdu->len <= p_t4t->rw_length)) {
@@ -1978,7 +1979,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
               }
             } else {
               LOG(ERROR) << StringPrintf(
-                  "%s - invalid payload length (%d), rw_length (%d)", __func__,
+                  "%s: invalid payload length (%d), rw_length (%d)", __func__,
                   p_r_apdu->len, p_t4t->rw_length);
               rw_t4t_handle_error(NFC_STATUS_BAD_RESP, 0, 0);
               break;
@@ -1990,7 +1991,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
               /* Content read length coded over 1 byte in 2nd byte
                * of BER-TLV length field */
               LOG(VERBOSE) << StringPrintf(
-                  "%s - Content read length expected: 0x%02X, returned: 0x%02X",
+                  "%s: Content read length expected=0x%02X, returned=0x%02X",
                   __func__, *(p + 2), p_r_apdu->len);
               if (*(p + 2) == p_r_apdu->len) {
                 if ((p_r_apdu->len > 0) &&
@@ -2000,7 +2001,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
                 }
               } else {
                 LOG(ERROR) << StringPrintf(
-                    "%s - invalid payload length (%d), rw_length "
+                    "%s: invalid payload length (%d), rw_length "
                     "(%d)",
                     __func__, p_r_apdu->len, p_t4t->rw_length);
                 rw_t4t_handle_error(NFC_STATUS_BAD_RESP, 0, 0);
@@ -2008,7 +2009,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
               }
             } else {
               LOG(ERROR) << StringPrintf(
-                  "%s - invalid DDO length content length received (1)",
+                  "%s: invalid DDO length content length received (1)",
                   __func__);
               rw_t4t_handle_error(NFC_STATUS_BAD_RESP, 0, 0);
               break;
@@ -2022,7 +2023,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
               p_r_apdu->len -= 4;
               p_r_apdu->offset += 4;
               LOG(VERBOSE) << StringPrintf(
-                  "%s - Content read length expected: 0x%02X%02X, returned: "
+                  "%s: Content read length expected=0x%02X%02X, returned: "
                   "0x%02X%02X ",
                   __func__, *(p + 3), *(p + 2), (uint8_t)(p_r_apdu->len >> 8),
                   (uint8_t)p_r_apdu->len);
@@ -2034,7 +2035,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
                 }
               } else {
                 LOG(ERROR) << StringPrintf(
-                    "%s - invalid payload length (%d), rw_length "
+                    "%s: invalid payload length (%d), rw_length "
                     "(%d)",
                     __func__, p_r_apdu->len, p_t4t->rw_length);
                 rw_t4t_handle_error(NFC_STATUS_BAD_RESP, 0, 0);
@@ -2043,13 +2044,12 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
             }
           } else {
             LOG(ERROR) << StringPrintf(
-                "%s - invalid DDO length content length received (2)",
-                __func__);
+                "%s: invalid DDO length content length received (2)", __func__);
             rw_t4t_handle_error(NFC_STATUS_BAD_RESP, 0, 0);
             break;
           }
         } else {
-          LOG(ERROR) << StringPrintf("%s - invalid DDO tag", __func__);
+          LOG(ERROR) << StringPrintf("%s: invalid DDO tag", __func__);
           rw_t4t_handle_error(NFC_STATUS_BAD_RESP, 0, 0);
           break;
         }
@@ -2076,7 +2076,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
           }
         }
         LOG(ERROR) << StringPrintf(
-            "%s - invalid payload length (%d), rw_length (%d)", __func__,
+            "%s: invalid payload length (%d), rw_length (%d)", __func__,
             p_r_apdu->len, p_t4t->rw_length);
         rw_t4t_handle_error(NFC_STATUS_BAD_RESP, 0, 0);
         break;
@@ -2097,8 +2097,8 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
 
           (*(rw_cb.p_cback))(RW_T4T_NDEF_READ_CPLT_EVT, &rw_data);
 
-          LOG(VERBOSE) << StringPrintf("%s - Sent RW_T4T_NDEF_READ_CPLT_EVT",
-                                     __func__);
+          LOG(VERBOSE) << StringPrintf("%s: Sent RW_T4T_NDEF_READ_CPLT_EVT",
+                                       __func__);
         }
 
         p_r_apdu = nullptr;
@@ -2109,7 +2109,7 @@ static void rw_t4t_sm_read_ndef(NFC_HDR* p_r_apdu) {
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("%s - unknown sub_state = %d", __func__,
+      LOG(ERROR) << StringPrintf("%s: unknown sub_state = %d", __func__,
                                  p_t4t->sub_state);
       rw_t4t_handle_error(NFC_STATUS_FAILED, 0, 0);
       break;
@@ -2134,7 +2134,7 @@ static void rw_t4t_sm_update_ndef(NFC_HDR* p_r_apdu) {
   tRW_DATA rw_data;
 
   LOG(VERBOSE) << StringPrintf(
-      "%s - sub_state:%s (%d)", __func__,
+      "%s: sub_state=%s (%d)", __func__,
       rw_t4t_get_sub_state_name(p_t4t->sub_state).c_str(), p_t4t->sub_state);
 
   /* Get status words */
@@ -2167,8 +2167,8 @@ static void rw_t4t_sm_update_ndef(NFC_HDR* p_r_apdu) {
           rw_data.status = NFC_STATUS_OK;
 
           (*(rw_cb.p_cback))(RW_T4T_NDEF_UPDATE_CPLT_EVT, &rw_data);
-          LOG(VERBOSE) << StringPrintf("%s - Sent RW_T4T_NDEF_UPDATE_CPLT_EVT",
-                                     __func__);
+          LOG(VERBOSE) << StringPrintf("%s: Sent RW_T4T_NDEF_UPDATE_CPLT_EVT",
+                                       __func__);
         }
       }
       break;
@@ -2194,7 +2194,7 @@ static void rw_t4t_sm_update_ndef(NFC_HDR* p_r_apdu) {
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("%s - unknown sub_state = %d", __func__,
+      LOG(ERROR) << StringPrintf("%s: unknown sub_state = %d", __func__,
                                  p_t4t->sub_state);
       rw_t4t_handle_error(NFC_STATUS_FAILED, 0, 0);
       break;
@@ -2217,7 +2217,7 @@ static void rw_t4t_sm_set_readonly(NFC_HDR* p_r_apdu) {
   tRW_DATA rw_data;
 
   LOG(VERBOSE) << StringPrintf(
-      "%s - sub_state:%s (%d)", __func__,
+      "%s: sub_state=%s (%d)", __func__,
       rw_t4t_get_sub_state_name(p_t4t->sub_state).c_str(), p_t4t->sub_state);
 
   /* Get status words */
@@ -2261,13 +2261,13 @@ static void rw_t4t_sm_set_readonly(NFC_HDR* p_r_apdu) {
       if (rw_cb.p_cback) {
         rw_data.status = NFC_STATUS_OK;
 
-        LOG(VERBOSE) << StringPrintf("%s - Sent RW_T4T_SET_TO_RO_EVT", __func__);
+        LOG(VERBOSE) << StringPrintf("%s: Sent RW_T4T_SET_TO_RO_EVT", __func__);
         (*(rw_cb.p_cback))(RW_T4T_SET_TO_RO_EVT, &rw_data);
       }
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("%s - unknown sub_state = %d", __func__,
+      LOG(ERROR) << StringPrintf("%s: unknown sub_state = %d", __func__,
                                  p_t4t->sub_state);
       rw_t4t_handle_error(NFC_STATUS_FAILED, 0, 0);
       break;
@@ -2284,12 +2284,12 @@ static void rw_t4t_sm_set_readonly(NFC_HDR* p_r_apdu) {
 **
 *******************************************************************************/
 void rw_t4t_process_timeout(TIMER_LIST_ENT* p_tle) {
-  LOG(VERBOSE) << StringPrintf("event=%d", p_tle->event);
+  LOG(VERBOSE) << StringPrintf("%s: event=%d", __func__, p_tle->event);
 
   if (p_tle->event == NFC_TTYPE_RW_T4T_RESPONSE) {
     rw_t4t_handle_error(NFC_STATUS_TIMEOUT, 0, 0);
   } else {
-    LOG(ERROR) << StringPrintf("unknown event=%d", p_tle->event);
+    LOG(ERROR) << StringPrintf("%s: unknown event=%d", __func__, p_tle->event);
   }
 }
 
@@ -2305,7 +2305,7 @@ void rw_t4t_process_timeout(TIMER_LIST_ENT* p_tle) {
 void rw_t4t_handle_isodep_nak_rsp(uint8_t status, bool is_ntf) {
   tRW_DATA rw_data;
   tRW_T4T_CB* p_t4t = &rw_cb.tcb.t4t;
-  LOG(VERBOSE) << StringPrintf("rw_t4t_handle_isodep_nak_rsp %d", status);
+  LOG(VERBOSE) << StringPrintf("%s: status=%d", __func__, status);
   if (is_ntf || (status != NFC_STATUS_OK)) {
     rw_data.status = status;
     nfc_stop_quick_timer(&p_t4t->timer);
@@ -2326,7 +2326,7 @@ void rw_t4t_handle_isodep_nak_rsp(uint8_t status, bool is_ntf) {
 *******************************************************************************/
 void rw_t4t_handle_isodep_nak_fallback() {
   tRW_T4T_CB* p_t4t = &rw_cb.tcb.t4t;
-  LOG(VERBOSE) << StringPrintf("rw_t4t_handle_isodep_nak_fallback");
+  LOG(VERBOSE) << __func__;
   p_t4t->state = RW_T4T_STATE_IDLE;
 }
 
@@ -2347,7 +2347,7 @@ static void rw_t4t_data_cback(__attribute__((unused)) uint8_t conn_id,
 
   uint8_t begin_state = p_t4t->state;
 
-  LOG(VERBOSE) << StringPrintf("%s - event = 0x%X", __func__, event);
+  LOG(VERBOSE) << StringPrintf("%s: event = 0x%X", __func__, event);
   nfc_stop_quick_timer(&p_t4t->timer);
 
   switch (event) {
@@ -2383,9 +2383,9 @@ static void rw_t4t_data_cback(__attribute__((unused)) uint8_t conn_id,
       return;
   }
 
-  LOG(VERBOSE) << StringPrintf("%s - RW T4T state: <%s (%d)>", __func__,
-                             rw_t4t_get_state_name(p_t4t->state).c_str(),
-                             p_t4t->state);
+  LOG(VERBOSE) << StringPrintf("%s: RW T4T state: <%s (%d)>", __func__,
+                               rw_t4t_get_state_name(p_t4t->state).c_str(),
+                               p_t4t->state);
 
   if (p_t4t->state != RW_T4T_STATE_IDLE &&
       p_t4t->state != RW_T4T_STATE_PRESENCE_CHECK &&
@@ -2402,7 +2402,7 @@ static void rw_t4t_data_cback(__attribute__((unused)) uint8_t conn_id,
       /* Unexpected R-APDU, it should be raw frame response */
       /* forward to upper layer without parsing */
       LOG(VERBOSE) << StringPrintf(
-          "%s - RW T4T Raw Frame: Len [0x%X] Status [%s]", __func__,
+          "%s: RW T4T Raw Frame: Len [0x%X] Status [%s]", __func__,
           p_r_apdu->len, NFC_GetStatusName(p_data->data.status).c_str());
       if (rw_cb.p_cback) {
         rw_data.raw_frame.status = p_data->data.status;
@@ -2441,17 +2441,17 @@ static void rw_t4t_data_cback(__attribute__((unused)) uint8_t conn_id,
       GKI_freebuf(p_r_apdu);
       break;
     default:
-      LOG(ERROR) << StringPrintf("%s - invalid state=%d", __func__,
+      LOG(ERROR) << StringPrintf("%s: invalid state=%d", __func__,
                                  p_t4t->state);
       GKI_freebuf(p_r_apdu);
       break;
   }
 
   if (begin_state != p_t4t->state) {
-    LOG(VERBOSE) << StringPrintf("%s - RW T4T state changed:<%s> -> <%s>",
-                               __func__,
-                               rw_t4t_get_state_name(begin_state).c_str(),
-                               rw_t4t_get_state_name(p_t4t->state).c_str());
+    LOG(VERBOSE) << StringPrintf("%s: RW T4T state changed:<%s> -> <%s>",
+                                 __func__,
+                                 rw_t4t_get_state_name(begin_state).c_str(),
+                                 rw_t4t_get_state_name(p_t4t->state).c_str());
   }
 }
 
@@ -2465,10 +2465,9 @@ static void rw_t4t_data_cback(__attribute__((unused)) uint8_t conn_id,
 **
 *******************************************************************************/
 tNFC_STATUS RW_T4tNfceeInitCb(void) {
-  LOG(DEBUG) << StringPrintf("%s Enter ", __func__);
   tRW_T4T_CB* p_t4t = &rw_cb.tcb.t4t;
 
-  LOG(DEBUG) << StringPrintf("rw_t4t_ndefee_select ()");
+  LOG(DEBUG) << __func__;
 
   NFC_SetStaticT4tNfceeCback(rw_t4t_data_cback, nfa_t4tnfcee_cb.connId);
 
@@ -2523,7 +2522,7 @@ void RW_T4tNfceeUpdateCC(uint8_t* ccInfo) {
   }
 
   LOG(DEBUG) << StringPrintf(
-      "%s le %d  lc: %d  max_read_size: %d max_update_size: %d", __func__,
+      "%s le %d  lc=%d  max_read_size=%d max_update_size=%d", __func__,
       p_t4t->cc_file.max_le, p_t4t->cc_file.max_lc, p_t4t->max_read_size,
       p_t4t->max_update_size);
 }
@@ -2590,7 +2589,7 @@ tNFC_STATUS RW_T4tNfceeReadDataLen() {
 *******************************************************************************/
 tNFC_STATUS RW_T4tNfceeReadFile(uint16_t offset, uint16_t Readlen) {
   // tNFC_STATUS status = NFC_STATUS_FAILED;
-  LOG(DEBUG) << StringPrintf("%s Enter : Readlen : 0x%x", __func__, Readlen);
+  LOG(DEBUG) << StringPrintf("%s Enter : Readlen=0x%x", __func__, Readlen);
   if (!rw_t4t_read_file(offset, Readlen, false)) {
     rw_t4t_handle_error(NFC_STATUS_FAILED, 0, 0);
     return NFC_STATUS_FAILED;
@@ -2712,8 +2711,8 @@ tNFC_STATUS RW_T4tFormatNDef(void) {
   LOG(VERBOSE) << __func__;
 
   if (rw_cb.tcb.t4t.state != RW_T4T_STATE_IDLE) {
-    LOG(ERROR) << StringPrintf("Unable to start command at state (0x%X)",
-                               rw_cb.tcb.t4t.state);
+    LOG(ERROR) << StringPrintf("%s: Unable to start command at state (0x%X)",
+                               __func__, rw_cb.tcb.t4t.state);
     return NFC_STATUS_FAILED;
   }
 
@@ -2774,7 +2773,7 @@ tNFC_STATUS RW_T4tDetectNDef(void) {
   LOG(VERBOSE) << __func__;
 
   if (rw_cb.tcb.t4t.state != RW_T4T_STATE_IDLE) {
-    LOG(ERROR) << StringPrintf("%s - Unable to start command at state (0x%X)",
+    LOG(ERROR) << StringPrintf("%s: Unable to start command at state (0x%X)",
                                __func__, rw_cb.tcb.t4t.state);
     return NFC_STATUS_FAILED;
   }
@@ -2819,7 +2818,7 @@ tNFC_STATUS RW_T4tReadNDef(void) {
   LOG(VERBOSE) << __func__;
 
   if (rw_cb.tcb.t4t.state != RW_T4T_STATE_IDLE) {
-    LOG(ERROR) << StringPrintf("%s - Unable to start command at state (0x%X)",
+    LOG(ERROR) << StringPrintf("%s: Unable to start command at state (0x%X)",
                                __func__, rw_cb.tcb.t4t.state);
     return NFC_STATUS_FAILED;
   }
@@ -2837,7 +2836,7 @@ tNFC_STATUS RW_T4tReadNDef(void) {
 
     return NFC_STATUS_OK;
   } else {
-    LOG(ERROR) << StringPrintf("%s - No NDEF detected", __func__);
+    LOG(ERROR) << StringPrintf("%s: No NDEF detected", __func__);
     return NFC_STATUS_FAILED;
   }
 }
@@ -2860,10 +2859,10 @@ tNFC_STATUS RW_T4tReadNDef(void) {
 **
 *******************************************************************************/
 tNFC_STATUS RW_T4tUpdateNDef(uint32_t length, uint8_t* p_data) {
-  LOG(VERBOSE) << StringPrintf("%s - length:%d", __func__, length);
+  LOG(VERBOSE) << StringPrintf("%s: length=%d", __func__, length);
 
   if (rw_cb.tcb.t4t.state != RW_T4T_STATE_IDLE) {
-    LOG(ERROR) << StringPrintf("%s - Unable to start command at state (0x%X)",
+    LOG(ERROR) << StringPrintf("%s: Unable to start command at state (0x%X)",
                                __func__, rw_cb.tcb.t4t.state);
     return NFC_STATUS_FAILED;
   }
@@ -2872,14 +2871,14 @@ tNFC_STATUS RW_T4tUpdateNDef(uint32_t length, uint8_t* p_data) {
   if (rw_cb.tcb.t4t.ndef_status & RW_T4T_NDEF_STATUS_NDEF_DETECTED) {
     /* if read-only */
     if (rw_cb.tcb.t4t.ndef_status & RW_T4T_NDEF_STATUS_NDEF_READ_ONLY) {
-      LOG(ERROR) << StringPrintf("%s - NDEF is read-only", __func__);
+      LOG(ERROR) << StringPrintf("%s: NDEF is read-only", __func__);
       return NFC_STATUS_FAILED;
     }
 
     if (rw_cb.tcb.t4t.cc_file.ndef_fc.max_file_size <
         length + rw_cb.tcb.t4t.cc_file.ndef_fc.nlen_size) {
       LOG(ERROR) << StringPrintf(
-          "%s - data (%d bytes) plus NLEN is more than max file "
+          "%s: data (%d bytes) plus NLEN is more than max file "
           "size (%d)",
           __func__, length, rw_cb.tcb.t4t.cc_file.ndef_fc.max_file_size);
       return NFC_STATUS_FAILED;
@@ -2902,7 +2901,7 @@ tNFC_STATUS RW_T4tUpdateNDef(uint32_t length, uint8_t* p_data) {
 
     return NFC_STATUS_OK;
   } else {
-    LOG(ERROR) << StringPrintf("%s - No NDEF detected", __func__);
+    LOG(ERROR) << StringPrintf("%s: No NDEF detected", __func__);
     return NFC_STATUS_FAILED;
   }
 }
@@ -2931,7 +2930,7 @@ tNFC_STATUS RW_T4tPresenceCheck(uint8_t option) {
   bool status;
   NFC_HDR* p_data;
 
-  LOG(VERBOSE) << StringPrintf("%s - %d", __func__, option);
+  LOG(VERBOSE) << StringPrintf("%s: option=%d", __func__, option);
 
   /* If RW_SelectTagType was not called (no conn_callback) return failure */
   if (!rw_cb.p_cback) {
@@ -2993,7 +2992,7 @@ tNFC_STATUS RW_T4tSetNDefReadOnly(void) {
   LOG(VERBOSE) << __func__;
 
   if (rw_cb.tcb.t4t.state != RW_T4T_STATE_IDLE) {
-    LOG(ERROR) << StringPrintf("%s - Unable to start command at state (0x%X)",
+    LOG(ERROR) << StringPrintf("%s: Unable to start command at state (0x%X)",
                                __func__, rw_cb.tcb.t4t.state);
     return NFC_STATUS_FAILED;
   }
@@ -3002,7 +3001,7 @@ tNFC_STATUS RW_T4tSetNDefReadOnly(void) {
   if (rw_cb.tcb.t4t.ndef_status & RW_T4T_NDEF_STATUS_NDEF_DETECTED) {
     /* if read-only */
     if (rw_cb.tcb.t4t.ndef_status & RW_T4T_NDEF_STATUS_NDEF_READ_ONLY) {
-      LOG(VERBOSE) << StringPrintf("%s - NDEF is already read-only", __func__);
+      LOG(VERBOSE) << StringPrintf("%s: NDEF is already read-only", __func__);
 
       evt_data.status = NFC_STATUS_OK;
       (*rw_cb.p_cback)(RW_T4T_SET_TO_RO_EVT, &evt_data);
@@ -3019,7 +3018,7 @@ tNFC_STATUS RW_T4tSetNDefReadOnly(void) {
 
     return NFC_STATUS_OK;
   } else {
-    LOG(ERROR) << StringPrintf("%s - No NDEF detected", __func__);
+    LOG(ERROR) << StringPrintf("%s: No NDEF detected", __func__);
     return NFC_STATUS_FAILED;
   }
   return (retval);

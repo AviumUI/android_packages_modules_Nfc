@@ -106,7 +106,7 @@ void nfa_wlc_event_notify(tNFA_WLC_EVT event, tNFA_WLC_EVT_DATA* p_data) {
   if (nfa_wlc_cb.p_wlc_cback) {
     (*nfa_wlc_cb.p_wlc_cback)(event, p_data);
   } else {
-    LOG(VERBOSE) << StringPrintf("%s; callback pointer null", __func__);
+    LOG(VERBOSE) << StringPrintf("%s:  callback pointer null", __func__);
   }
 }
 
@@ -122,16 +122,16 @@ void nfa_wlc_event_notify(tNFA_WLC_EVT event, tNFA_WLC_EVT_DATA* p_data) {
 bool nfa_wlc_handle_event(NFC_HDR* p_msg) {
   uint16_t act_idx;
 
-  LOG(VERBOSE) << StringPrintf("%s; event: %s (0x%02x), flags: %08x", __func__,
-                             nfa_wlc_evt_2_str(p_msg->event).c_str(),
-                             p_msg->event, nfa_wlc_cb.flags);
+  LOG(VERBOSE) << StringPrintf("%s:  event=%s (0x%02x), flags=%08x", __func__,
+                               nfa_wlc_evt_2_str(p_msg->event).c_str(),
+                               p_msg->event, nfa_wlc_cb.flags);
 
   /* Get NFA_WLC sub-event */
   act_idx = (p_msg->event & 0x00FF);
   if (act_idx < (NFA_WLC_ACTION_TBL_SIZE)) {
     return (*nfa_wlc_action_tbl[act_idx])((tNFA_WLC_MSG*)p_msg);
   } else {
-    LOG(ERROR) << StringPrintf("%s; unhandled event 0x%02X", __func__,
+    LOG(ERROR) << StringPrintf("%s:  unhandled event 0x%02X", __func__,
                                p_msg->event);
     return true;
   }

@@ -107,7 +107,8 @@ public class RegisteredT3tIdentifiersCache {
             NfcFServiceInfo resolveInfo;
             resolveInfo = mForegroundT3tIdentifiersCache.get(nfcid2);
             Log.d(TAG,
-                    "Resolved to: " + (resolveInfo == null ? "null" : resolveInfo.toString()));
+                    "resolveNfcid2: Resolved to: "
+                            + (resolveInfo == null ? "null" : resolveInfo.toString()));
             return resolveInfo;
         }
     }
@@ -140,13 +141,15 @@ public class RegisteredT3tIdentifiersCache {
             }
         }
 
-        if (DBG) {
-            Log.d(TAG, "mForegroundT3tIdentifiersCache: size=" +
-                    mForegroundT3tIdentifiersCache.size());
-            for (Map.Entry<String, NfcFServiceInfo> entry :
-                    mForegroundT3tIdentifiersCache.entrySet()) {
-                Log.d(TAG, "    " + entry.getKey() +
-                        "/" + entry.getValue().getComponent().toString());
+        if (DBG)  {
+            Log.d(TAG,
+                    "generateForegroundT3tIdentifiersCacheLocked: "
+                            + "mForegroundT3tIdentifiersCache: size="
+                            + mForegroundT3tIdentifiersCache.size());
+            for (Map.Entry<String, NfcFServiceInfo> entry : mForegroundT3tIdentifiersCache
+                    .entrySet()) {
+                Log.d(TAG, "generateForegroundT3tIdentifiersCacheLocked:    " + entry.getKey() + "/"
+                        + entry.getValue().getComponent().toString());
             }
         }
 
@@ -156,7 +159,7 @@ public class RegisteredT3tIdentifiersCache {
     void updateRoutingLocked(boolean force) {
         if (DBG) Log.d(TAG, "updateRoutingLocked");
         if (!mNfcEnabled) {
-            Log.d(TAG, "Not updating routing table because NFC is off.");
+            Log.d(TAG, "updateRoutingLocked: Not updating routing table because NFC is off");
             return;
         }
 
@@ -178,10 +181,10 @@ public class RegisteredT3tIdentifiersCache {
         mRoutingManager.configureRouting(t3tIdentifiers);
     }
 
-    public void onSecureNfcToggled() {
+    public void onTriggerRoutingTableUpdate() {
         synchronized(mLock) {
             updateRoutingLocked(true);
-      }
+        }
     }
 
     public void onServicesUpdated(int userId, List<NfcFServiceInfo> services) {
@@ -195,7 +198,7 @@ public class RegisteredT3tIdentifiersCache {
      * Enabled Foreground NfcF service changed
      */
     public void onEnabledForegroundNfcFServiceChanged(int userId, ComponentName component) {
-        if (DBG) Log.d(TAG, "Enabled foreground service changed.");
+        if (DBG) Log.d(TAG, "onEnabledForegroundNfcFServiceChanged");
         synchronized (mLock) {
             if (component != null) {
                 if (mEnabledForegroundService != null

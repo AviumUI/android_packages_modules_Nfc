@@ -61,6 +61,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
@@ -70,6 +71,8 @@ public final class NfcReaderConflictOccurredTest {
     private static final String TAG = NfcReaderConflictOccurredTest.class.getSimpleName();
     private NfcInjector mNfcInjector;
     AtomicBoolean mAtomicBoolean;
+    @Mock
+    DeviceConfigFacade mDeviceConfigFacade;
 
     private MockitoSession mStaticMockSession;
     private NfcDispatcher mNfcDispatcher;
@@ -80,7 +83,8 @@ public final class NfcReaderConflictOccurredTest {
                 .mockStatic(NfcStatsLog.class)
                 .strictness(Strictness.LENIENT)
                 .startMocking();
-	Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        MockitoAnnotations.initMocks(this);
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         PackageManager mockPackageManager = Mockito.mock(PackageManager.class);
         // multiple resolveInfos for Tag
         when(mockPackageManager.queryIntentActivitiesAsUser(
@@ -128,7 +132,8 @@ public final class NfcReaderConflictOccurredTest {
         when(mNfcInjector.createAtomicBoolean()).thenReturn(mAtomicBoolean);
         InstrumentationRegistry.getInstrumentation().runOnMainSync(
               () -> mNfcDispatcher = new NfcDispatcher(
-                      mockContext, new HandoverDataParser(), mNfcInjector, false));
+                      mockContext, new HandoverDataParser(), mNfcInjector, false,
+                      mDeviceConfigFacade));
         Assert.assertNotNull(mNfcDispatcher);
     }
 

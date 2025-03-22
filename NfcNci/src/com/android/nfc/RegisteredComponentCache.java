@@ -155,7 +155,7 @@ public class RegisteredComponentCache {
     @Override
     protected void finalize() throws Throwable {
         if (mReceiver.get() != null) {
-            Log.e(TAG, "RegisteredServicesCache finalized without being closed");
+            Log.e(TAG, "finalize: without being closed");
             close();
         }
         super.finalize();
@@ -174,7 +174,7 @@ public class RegisteredComponentCache {
             pm = mContext.createPackageContextAsUser("android", 0,
                     currentUser).getPackageManager();
         } catch (NameNotFoundException e) {
-            Log.e(TAG, "Could not create user package context");
+            Log.e(TAG, "generateComponentsList: Could not create user package context");
             return;
         }
         ArrayList<ComponentInfo> components = new ArrayList<ComponentInfo>();
@@ -186,9 +186,11 @@ public class RegisteredComponentCache {
             try {
                 parseComponentInfo(pm, resolveInfo, components);
             } catch (XmlPullParserException e) {
-                Log.w(TAG, "Unable to load component info " + resolveInfo.toString(), e);
+                Log.w(TAG, "generateComponentsList: Unable to load component info "
+                        + resolveInfo.toString(), e);
             } catch (IOException e) {
-                Log.w(TAG, "Unable to load component info " + resolveInfo.toString(), e);
+                Log.w(TAG, "generateComponentsList: Unable to load component info "
+                        + resolveInfo.toString(), e);
             }
         }
 
@@ -201,9 +203,9 @@ public class RegisteredComponentCache {
             newComponents.removeAll(mComponents);
             ArrayList<ComponentInfo> removedComponents = new ArrayList<>(mComponents);
             removedComponents.removeAll(components);
-            Log.i(TAG, "New Components => ");
+            Log.i(TAG, "generateComponentsList: New Components => ");
             dump(newComponents);
-            Log.i(TAG, "Removed Components => ");
+            Log.i(TAG, "generateComponentsList: Removed Components => ");
             dump(removedComponents);
         }
 

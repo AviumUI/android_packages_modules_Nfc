@@ -66,7 +66,7 @@ extern bool nfc_debug_enabled;
 *******************************************************************************/
 static bool rw_ci_send_to_lower(NFC_HDR* p_c_apdu) {
   if (NFC_SendData(NFC_RF_CONN_ID, p_c_apdu) != NFC_STATUS_OK) {
-    LOG(ERROR) << StringPrintf("%s; NFC_SendData () failed", __func__);
+    LOG(ERROR) << StringPrintf("%s:  NFC_SendData () failed", __func__);
     return false;
   }
 
@@ -91,8 +91,8 @@ static void rw_ci_handle_error(tNFC_STATUS status, uint8_t sw1, uint8_t sw2) {
   tRW_EVENT event = NFC_STATUS_OK;
 
   LOG(DEBUG) << StringPrintf(
-      "%s; status:0x%02X, sw1:0x%02X, sw2:0x%02X, "
-      "state:0x%X",
+      "%s:  status=0x%02X, sw1=0x%02X, sw2=0x%02X, "
+      "state=0x%X",
       __func__, status, sw1, sw2, p_ci->state);
 
   nfc_stop_quick_timer(&p_ci->timer);
@@ -154,12 +154,12 @@ static void rw_ci_handle_error(tNFC_STATUS status, uint8_t sw1, uint8_t sw2) {
 **
 *******************************************************************************/
 void rw_ci_process_timeout(TIMER_LIST_ENT* p_tle) {
-  LOG(DEBUG) << StringPrintf("%s; event=%d", __func__, p_tle->event);
+  LOG(DEBUG) << StringPrintf("%s:  event=%d", __func__, p_tle->event);
 
   if (p_tle->event == NFC_TTYPE_RW_CI_RESPONSE) {
     rw_ci_handle_error(NFC_STATUS_TIMEOUT, 0, 0);
   } else {
-    LOG(ERROR) << StringPrintf("%s; unknown event=%d", __func__, p_tle->event);
+    LOG(ERROR) << StringPrintf("%s:  unknown event=%d", __func__, p_tle->event);
   }
 }
 
@@ -184,7 +184,7 @@ static void rw_ci_data_cback(__attribute__((unused)) uint8_t conn_id,
   uint8_t begin_state = p_ci->state;
 #endif
 
-  LOG(DEBUG) << StringPrintf("%s; event = 0x%X", __func__, event);
+  LOG(DEBUG) << StringPrintf("%s:  event = 0x%X", __func__, event);
 
   // Case data is fragmented, do not stop time until complete frame received
   if (event != NFC_DATA_START_CEVT) {
@@ -224,10 +224,10 @@ static void rw_ci_data_cback(__attribute__((unused)) uint8_t conn_id,
   }
 
 #if (BT_TRACE_VERBOSE == true)
-  LOG(DEBUG) << StringPrintf("RW CI state: <%s (%d)>",
+  LOG(DEBUG) << StringPrintf("%s: RW CI state: <%s (%d)>", __func__,
                              rw_ci_get_state_name(p_ci->state), p_ci->state);
 #else
-  LOG(DEBUG) << StringPrintf("%s; RW CI state: %d", __func__, p_ci->state);
+  LOG(DEBUG) << StringPrintf("%s:  RW CI state=%d", __func__, p_ci->state);
 #endif
 
   switch (p_ci->state) {
@@ -235,12 +235,12 @@ static void rw_ci_data_cback(__attribute__((unused)) uint8_t conn_id,
       /* Unexpected R-APDU, it should be raw frame response */
       /* forward to upper layer without parsing */
 #if (BT_TRACE_VERBOSE == true)
-      LOG(DEBUG) << StringPrintf("%s; RW CI Raw Frame: Len [0x%X] Status [%s]",
+      LOG(DEBUG) << StringPrintf("%s:  RW CI Raw Frame: Len [0x%X] Status [%s]",
                                  __func__, p_r_apdu->len,
                                  NFC_GetStatusName(p_data->data.status));
 #else
       LOG(DEBUG) << StringPrintf(
-          "%s; RW CI Raw Frame: Len [0x%X] Status [0x%X]", __func__,
+          "%s:  RW CI Raw Frame: Len [0x%X] Status [0x%X]", __func__,
           p_r_apdu->len, p_data->data.status);
 #endif
       if (rw_cb.p_cback) {
@@ -290,15 +290,16 @@ static void rw_ci_data_cback(__attribute__((unused)) uint8_t conn_id,
       break;
 
     default:
-      LOG(ERROR) << StringPrintf("%s; invalid state=%d", __func__, p_ci->state);
+      LOG(ERROR) << StringPrintf("%s:  invalid state=%d", __func__,
+                                 p_ci->state);
       GKI_freebuf(p_r_apdu);
       break;
   }
 
 #if (BT_TRACE_VERBOSE == true)
   if (begin_state != p_ci->state) {
-    LOG(DEBUG) << StringPrintf("%s; RW CI state changed:<%s> -> <%s>", __func__,
-                               rw_ci_get_state_name(begin_state),
+    LOG(DEBUG) << StringPrintf("%s:  RW CI state changed:<%s> -> <%s>",
+                               __func__, rw_ci_get_state_name(begin_state),
                                rw_ci_get_state_name(p_ci->state));
   }
 #endif
@@ -403,7 +404,7 @@ tNFC_STATUS RW_CiSendAttrib(uint8_t* nfcid0) {
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("%s; Cannot allocate buffer", __func__);
+    LOG(ERROR) << StringPrintf("%s:  Cannot allocate buffer", __func__);
     return false;
   }
 
@@ -445,13 +446,13 @@ static void rw_ci_send_uid(void) {
   NFC_HDR* p_c_apdu;
   uint8_t* p;
 
-  LOG(DEBUG) << StringPrintf("%s; ATTRIB_RES = %02X", __func__,
+  LOG(DEBUG) << StringPrintf("%s:  ATTRIB_RES = %02X", __func__,
                              rw_cb.tcb.ci.attrib_res[0]);
 
   p_c_apdu = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
 
   if (!p_c_apdu) {
-    LOG(ERROR) << StringPrintf("%s; Cannot allocate buffer", __func__);
+    LOG(ERROR) << StringPrintf("%s:  Cannot allocate buffer", __func__);
     return;
   }
 

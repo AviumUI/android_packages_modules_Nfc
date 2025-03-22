@@ -115,7 +115,7 @@ public class HostEmulationManagerTest {
     @Mock private NfcService mNfcService;
     @Mock private NfcInjector mNfcInjector;
     @Mock private NfcEventLog mNfcEventLog;
-    @Mock private StatsdUtils mStatsUtils;
+    @Mock private StatsdUtils mStatsdUtils;
     @Mock private DeviceConfigFacade mDeviceConfigFacade;
     @Captor private ArgumentCaptor<Intent> mIntentArgumentCaptor;
     @Captor private ArgumentCaptor<ServiceConnection> mServiceConnectionArgumentCaptor;
@@ -158,7 +158,7 @@ public class HostEmulationManagerTest {
         when(mDeviceConfigFacade.getSlowTapThresholdMillis()).thenReturn(5);
         mHostEmulationManager =
                 new HostEmulationManager(
-                        mContext, mTestableLooper.getLooper(), mRegisteredAidCache, mStatsUtils,
+                        mContext, mTestableLooper.getLooper(), mRegisteredAidCache, mStatsdUtils,
                         mNfcInjector);
     }
 
@@ -326,6 +326,9 @@ public class HostEmulationManagerTest {
         assertTrue(mHostEmulationManager.mEnableObserveModeAfterTransaction);
         assertTrue(frame1.getTriggeredAutoTransact());
         assertEquals(HostEmulationManager.STATE_POLLING_LOOP, mHostEmulationManager.mState);
+        verify(mStatsdUtils).logAutoTransactReported(StatsdUtils.PROCESSOR_HOST, data.getBytes());
+        verify(mStatsdUtils).setNextObserveModeTriggerSource(
+                StatsdUtils.TRIGGER_SOURCE_AUTO_TRANSACT);
     }
 
     @Test
@@ -583,9 +586,9 @@ public class HostEmulationManagerTest {
         mHostEmulationManager.onHostEmulationData(mockAidData);
 
         verify(apduServiceInfo, times(2)).getUid();
-        verify(mStatsUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
-        verify(mStatsUtils).setCardEmulationEventUid(eq(USER_ID));
-        verify(mStatsUtils).logCardEmulationWrongSettingEvent();
+        verify(mStatsdUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
+        verify(mStatsdUtils).setCardEmulationEventUid(eq(USER_ID));
+        verify(mStatsdUtils).logCardEmulationWrongSettingEvent();
         verify(mRegisteredAidCache).resolveAid(eq(MOCK_AID));
         verify(mNfcService).sendRequireUnlockIntent();
         verify(mNfcService).sendData(eq(HostEmulationManager.AID_NOT_FOUND));
@@ -613,9 +616,9 @@ public class HostEmulationManagerTest {
         mHostEmulationManager.onHostEmulationData(mockAidData);
 
         verify(apduServiceInfo, times(2)).getUid();
-        verify(mStatsUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
-        verify(mStatsUtils).setCardEmulationEventUid(eq(USER_ID));
-        verify(mStatsUtils).logCardEmulationWrongSettingEvent();
+        verify(mStatsdUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
+        verify(mStatsdUtils).setCardEmulationEventUid(eq(USER_ID));
+        verify(mStatsdUtils).logCardEmulationWrongSettingEvent();
         verify(mRegisteredAidCache).resolveAid(eq(MOCK_AID));
         verify(mNfcService).sendRequireUnlockIntent();
         verify(mNfcService).sendData(eq(HostEmulationManager.AID_NOT_FOUND));
@@ -645,9 +648,9 @@ public class HostEmulationManagerTest {
         mHostEmulationManager.onHostEmulationData(mockAidData);
 
         verify(apduServiceInfo).getUid();
-        verify(mStatsUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
-        verify(mStatsUtils).setCardEmulationEventUid(eq(USER_ID));
-        verify(mStatsUtils).logCardEmulationWrongSettingEvent();
+        verify(mStatsdUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
+        verify(mStatsdUtils).setCardEmulationEventUid(eq(USER_ID));
+        verify(mStatsdUtils).logCardEmulationWrongSettingEvent();
         verify(mRegisteredAidCache).resolveAid(eq(MOCK_AID));
         verify(mNfcService).sendData(eq(HostEmulationManager.AID_NOT_FOUND));
         verify(mContext).getSystemService(eq(PowerManager.class));
@@ -676,9 +679,9 @@ public class HostEmulationManagerTest {
         mHostEmulationManager.onHostEmulationData(mockAidData);
 
         verify(apduServiceInfo).getUid();
-        verify(mStatsUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
-        verify(mStatsUtils).setCardEmulationEventUid(eq(USER_ID));
-        verify(mStatsUtils).logCardEmulationNoRoutingEvent();
+        verify(mStatsdUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
+        verify(mStatsdUtils).setCardEmulationEventUid(eq(USER_ID));
+        verify(mStatsdUtils).logCardEmulationNoRoutingEvent();
         verify(mRegisteredAidCache).resolveAid(eq(MOCK_AID));
         verify(mNfcService).sendData(eq(HostEmulationManager.AID_NOT_FOUND));
         verify(mContext).getSystemService(eq(PowerManager.class));
@@ -704,8 +707,8 @@ public class HostEmulationManagerTest {
                 () -> {
                     NfcStatsLog.write(NfcStatsLog.NFC_AID_CONFLICT_OCCURRED, MOCK_AID);
                 });
-        verify(mStatsUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_OTHER));
-        verify(mStatsUtils).logCardEmulationWrongSettingEvent();
+        verify(mStatsdUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_OTHER));
+        verify(mStatsdUtils).logCardEmulationWrongSettingEvent();
         assertEquals(HostEmulationManager.STATE_W4_DEACTIVATE, mHostEmulationManager.getState());
         verify(mRegisteredAidCache).resolveAid(eq(MOCK_AID));
         verify(mContext).getSystemService(eq(PowerManager.class));
@@ -745,9 +748,9 @@ public class HostEmulationManagerTest {
 
         assertEquals(HostEmulationManager.STATE_XFER, mHostEmulationManager.getState());
         verify(apduServiceInfo).getUid();
-        verify(mStatsUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
-        verify(mStatsUtils).setCardEmulationEventUid(eq(USER_ID));
-        verify(mStatsUtils).notifyCardEmulationEventWaitingForResponse();
+        verify(mStatsdUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
+        verify(mStatsdUtils).setCardEmulationEventUid(eq(USER_ID));
+        verify(mStatsdUtils).notifyCardEmulationEventWaitingForResponse();
         verify(mRegisteredAidCache).resolveAid(eq(MOCK_AID));
         verify(mContext).getSystemService(eq(PowerManager.class));
         verify(mContext).getSystemService(eq(KeyguardManager.class));
@@ -789,9 +792,9 @@ public class HostEmulationManagerTest {
         assertEquals(HostEmulationManager.STATE_W4_SERVICE, mHostEmulationManager.getState());
         assertEquals(mockAidData, mHostEmulationManager.mSelectApdu);
         verify(apduServiceInfo, atLeastOnce()).getUid();
-        verify(mStatsUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
-        verify(mStatsUtils).setCardEmulationEventUid(eq(USER_ID));
-        verify(mStatsUtils).notifyCardEmulationEventWaitingForResponse();
+        verify(mStatsdUtils).setCardEmulationEventCategory(eq(CardEmulation.CATEGORY_PAYMENT));
+        verify(mStatsdUtils).setCardEmulationEventUid(eq(USER_ID));
+        verify(mStatsdUtils).notifyCardEmulationEventWaitingForResponse();
         verify(mRegisteredAidCache).resolveAid(eq(MOCK_AID));
         verify(mContext).getSystemService(eq(PowerManager.class));
         verify(mContext).getSystemService(eq(KeyguardManager.class));
@@ -997,7 +1000,7 @@ public class HostEmulationManagerTest {
         assertEquals(
                 mHostEmulationManager.getServiceConnection(),
                 mServiceConnectionArgumentCaptor.getValue());
-        verify(mStatsUtils).logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationDeactivatedEvent();
 
         mTestableLooper.moveTimeForward(5000);
         mTestableLooper.processAllMessages();
@@ -1031,7 +1034,7 @@ public class HostEmulationManagerTest {
         verifyNoMoreInteractions(mMessenger);
         verifyNoMoreInteractions(mMessenger);
         verifyNoMoreInteractions(mContext);
-        verify(mStatsUtils).logCardEmulationDeactivatedEvent();
+        verify(mStatsdUtils).logCardEmulationDeactivatedEvent();
     }
 
     @Test
@@ -1121,7 +1124,7 @@ public class HostEmulationManagerTest {
         assertEquals(WALLET_PAYMENT_SERVICE, mHostEmulationManager.mServiceName);
         assertNotNull(mHostEmulationManager.mService);
         assertTrue(mHostEmulationManager.mServiceBound);
-        verify(mStatsUtils).notifyCardEmulationEventServiceBound();
+        verify(mStatsdUtils).notifyCardEmulationEventServiceBound();
         assertEquals(HostEmulationManager.STATE_XFER, mHostEmulationManager.getState());
         assertNull(mHostEmulationManager.mSelectApdu);
         verify(service).transact(eq(1), any(), eq(null), eq(1));

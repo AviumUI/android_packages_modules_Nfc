@@ -22,6 +22,9 @@
     <option name="config-descriptor:metadata" key="parameter" value="secondary_user" />
 
     <device name="AndroidDevice">
+        <target_preparer class="AndroidDeviceFeaturesCheckDecorator">
+            <option name="required_feature" value="android.hardware.nfc.hce" />
+        </target_preparer>
         <target_preparer class="AndroidMinSdkVersionCheckDecorator">
             <option name="min_sdk_version" value="36" />
         </target_preparer>
