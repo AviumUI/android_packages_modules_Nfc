@@ -54,6 +54,7 @@ class RoutingManager {
   void notifyEeProtocolSelected(uint8_t protocol, tNFA_HANDLE ee_handle);
   void notifyEeTechSelected(uint8_t tech, tNFA_HANDLE ee_handle);
   bool getNameOfEe(tNFA_HANDLE ee_handle, std::string& eeName);
+  void setEeInfoChangedFlag();
 
   static const int CLEAR_AID_ENTRIES = 0x01;
   static const int CLEAR_PROTOCOL_ENTRIES = 0x02;

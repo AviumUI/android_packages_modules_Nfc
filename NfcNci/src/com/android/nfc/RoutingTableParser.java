@@ -131,7 +131,7 @@ public class RoutingTableParser {
         if ((mask & 0x20) != 0) {
             prefix_subset_str += "Subset";
         }
-        if (prefix_subset_str.equals("")){
+        if (prefix_subset_str.equals("")) {
             return "Exact";
         }
         return prefix_subset_str;
@@ -270,12 +270,13 @@ public class RoutingTableParser {
             byte type = (byte) (rt[offset] & 0x0F);
             if (type >= TYPE_UNSUPPORTED) {
                 // Unrecognizable entry type
-                Log.e(TAG, String.format("Unrecognizable entry type: 0x%02X, stop parsing", type));
+                Log.e(TAG, String.format("parse: Unrecognizable entry type=0x%02X, stop parsing",
+                        type));
                 return;
             }
             if (offset + 1 >= rt.length) {
                 // Buffer overflow
-                Log.e(TAG, String.format("Wrong tlv length, stop parsing"));
+                Log.e(TAG, String.format("parse: Wrong tlv length, stop parsing"));
                 return;
             }
             // Qualifier-Type(1 byte) + Length(1 byte) + Value(valueLength bytes)
@@ -304,7 +305,7 @@ public class RoutingTableParser {
         update(dh);
 
         pw.println("--- dumpRoutingTable: start ---");
-        pw.println(String.format(Locale.US, "RoutingTableSize: %d/%d",
+        pw.println(String.format(Locale.US, "RoutingTableSize=%d/%d",
                 sRoutingTableSize, sRoutingTableMaxSize));
         pw.println(formatRow("Entry", "NFCEE_ID", "Power State", "Block Ctrl", "Extra Info"));
 
@@ -322,8 +323,8 @@ public class RoutingTableParser {
         for (byte b : lmrt_cmd) {
             lmrt_str += String.format("%02X ", b);
         }
-        Log.i(TAG, String.format("RoutingTableSize: %d", lmrt_cmd.length));
-        Log.i(TAG, String.format("RoutingTable: %s", lmrt_str));
+        Log.i(TAG, String.format("logRoutingTableRawData: RoutingTableSize=%d", lmrt_cmd.length));
+        Log.i(TAG, String.format("logRoutingTableRawData: RoutingTable=%s", lmrt_str));
     }
 
     public List<Entry> getRoutingTableEntryList(DeviceHost dh) {

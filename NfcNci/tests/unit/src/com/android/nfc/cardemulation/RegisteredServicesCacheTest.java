@@ -546,7 +546,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertFalse(mRegisteredServicesCache.setOffHostSecureElement(USER_ID,
                 SERVICE_UID, wrongComponentName, "offhostse1"));
@@ -631,7 +631,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertFalse(mRegisteredServicesCache.resetOffHostSecureElement(USER_ID,
                 SERVICE_UID, wrongComponentName));
@@ -717,7 +717,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertFalse(mRegisteredServicesCache.setShouldDefaultToObserveModeForService(USER_ID,
                 SERVICE_UID, wrongComponentName, true));
@@ -759,7 +759,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertFalse(mRegisteredServicesCache.registerPollingLoopFilterForService(USER_ID,
                 SERVICE_UID, wrongComponentName, "empty", true));
@@ -807,7 +807,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertFalse(mRegisteredServicesCache.removePollingLoopFilterForService(USER_ID,
                 SERVICE_UID, wrongComponentName, "empty"));
@@ -848,7 +848,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertFalse(mRegisteredServicesCache.registerPollingLoopPatternFilterForService(
                 USER_ID, SERVICE_UID, wrongComponentName, "empty",
@@ -896,7 +896,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertFalse(mRegisteredServicesCache.removePollingLoopPatternFilterForService(
                 USER_ID, SERVICE_UID, wrongComponentName, "empty"));
@@ -937,7 +937,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
         AidGroup aidGroup = createAidGroup(CardEmulation.CATEGORY_PAYMENT);
 
         assertFalse(mRegisteredServicesCache.registerAidGroupForService(
@@ -1013,7 +1013,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertNull(mRegisteredServicesCache.getAidGroupForService(
                 USER_ID, SERVICE_UID, wrongComponentName, CardEmulation.CATEGORY_PAYMENT));
@@ -1050,7 +1050,7 @@ public class RegisteredServicesCacheTest {
         mRegisteredServicesCache = new RegisteredServicesCache(mContext, mCallback,
                 mDynamicSettingsFile, mOtherSettingsFile, mServiceParser, mRoutingOptionManager);
         mRegisteredServicesCache.initialize();
-        ComponentName wrongComponentName = new ComponentName("test","com.wrong.class");
+        ComponentName wrongComponentName = new ComponentName("test", "com.wrong.class");
 
         assertFalse(mRegisteredServicesCache.removeAidGroupForService(
                 USER_ID, SERVICE_UID, wrongComponentName, CardEmulation.CATEGORY_PAYMENT));

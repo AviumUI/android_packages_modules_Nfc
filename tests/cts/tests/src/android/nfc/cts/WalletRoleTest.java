@@ -23,6 +23,9 @@ import static android.nfc.cts.WalletRoleTestUtils.canAssignRoleToPackage;
 import static android.nfc.cts.WalletRoleTestUtils.clearRoleHolders;
 import static android.nfc.cts.WalletRoleTestUtils.getDefaultWalletRoleHolder;
 import static android.nfc.cts.WalletRoleTestUtils.getOverLayDefaultHolder;
+import static org.junit.Assume.assumeNotNull;
+import static org.junit.Assume.assumeTrue;
+import static org.testng.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -53,7 +56,7 @@ public class WalletRoleTest {
     @Before
     public void setUp() {
         mContext = InstrumentationRegistry.getContext();
-        Assume.assumeTrue(supportsHardware());
+        assumeTrue(supportsHardware());
     }
 
     private boolean supportsHardware() {
@@ -64,15 +67,15 @@ public class WalletRoleTest {
     @Test
     public void testMigrationFromOverlay() {
         String overlayConfig = getOverLayDefaultHolder(mContext);
-        Assume.assumeNotNull(overlayConfig);
-        Assume.assumeTrue(canAssignRoleToPackage(mContext, overlayConfig));
+        assumeNotNull(overlayConfig);
+        assumeTrue(canAssignRoleToPackage(mContext, overlayConfig));
         runWithDefaultPaymentSetting(mContext,
                 null,
                 () -> {
                     clearRoleHolders(mContext);
                     String currentHolder = getDefaultWalletRoleHolder(mContext);
 
-                    Assert.assertEquals(currentHolder, overlayConfig);
+                    assertEquals(currentHolder, overlayConfig);
                 });
     }
 
@@ -84,7 +87,7 @@ public class WalletRoleTest {
                     clearRoleHolders(mContext);
                     String currentHolder = getDefaultWalletRoleHolder(mContext);
 
-                    Assert.assertEquals(currentHolder, CTS_PACKAGE_NAME);
+                    assertEquals(currentHolder, CTS_PACKAGE_NAME);
                 });
     }
 

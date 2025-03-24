@@ -1,5 +1,7 @@
 package android.nfc.cts;
 
+import static org.junit.Assert.assertTrue;
+
 import android.nfc.TagLostException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -11,13 +13,13 @@ public class TagLostExceptionTest {
     try {
       throw new TagLostException();
     } catch (TagLostException e) {
-      Assert.assertTrue("TagLostException message is null", e.getMessage() == null);
+      assertTrue("TagLostException message is null", e.getMessage() == null);
     }
     String s = new String("testTagLostException");
     try {
       throw new TagLostException(s);
     } catch (TagLostException e) {
-      Assert.assertTrue("TagLostException message is not correct", e.getMessage().equals(s));
+      assertTrue("TagLostException message is not correct", e.getMessage().equals(s));
     }
   }
 }

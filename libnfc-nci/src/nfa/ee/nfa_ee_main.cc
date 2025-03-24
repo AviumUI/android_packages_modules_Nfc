@@ -131,8 +131,8 @@ void nfa_ee_sys_enable(void) {
     unsigned retlen = NfcConfig::getUnsigned(NAME_NFA_AID_BLOCK_ROUTE);
     if ((retlen == 0x01) && (NFC_GetNCIVersion() >= NCI_VERSION_2_0)) {
       nfa_ee_cb.route_block_control = NCI_ROUTE_QUAL_BLOCK_ROUTE;
-      LOG(VERBOSE) << StringPrintf("nfa_ee_cb.route_block_control=0x%x",
-                                 nfa_ee_cb.route_block_control);
+      LOG(VERBOSE) << StringPrintf("%s: nfa_ee_cb.route_block_control=0x%x",
+                                   __func__, nfa_ee_cb.route_block_control);
     }
   }
 
@@ -141,7 +141,7 @@ void nfa_ee_sys_enable(void) {
   int max_aid_entries = max_aid_cfg_length / NFA_MIN_AID_LEN + 1;
 
   LOG(DEBUG) << StringPrintf(
-      "%s; max_aid_cfg_length: %d and max_aid_entries: %d", __func__,
+      "%s:  max_aid_cfg_length=%d and max_aid_entries=%d", __func__,
       max_aid_cfg_length, max_aid_entries);
 
   for (xx = 0; xx < NFA_EE_NUM_ECBS; xx++) {
@@ -160,7 +160,7 @@ void nfa_ee_sys_enable(void) {
       memset(nfa_ee_cb.ecb[xx].aid_info, 0, max_aid_entries);
       memset(nfa_ee_cb.ecb[xx].aid_cfg, 0, max_aid_cfg_length);
     } else {
-      LOG(ERROR) << StringPrintf("%s; GKI_getbuf allocation for ECB failed !",
+      LOG(ERROR) << StringPrintf("%s:  GKI_getbuf allocation for ECB failed !",
                                  __func__);
     }
   }
@@ -192,9 +192,10 @@ void nfa_ee_restore_one_ecb(tNFA_EE_ECB* p_cb) {
   tNFA_EE_NCI_MODE_SET ee_msg;
 
   LOG(VERBOSE) << StringPrintf(
-      "nfcee_id:0x%x, ecb_flags:0x%x ee_status:0x%x "
-      "ee_old_status: 0x%x",
-      p_cb->nfcee_id, p_cb->ecb_flags, p_cb->ee_status, p_cb->ee_old_status);
+      "%s: nfcee_id=0x%x, ecb_flags=0x%x ee_status=0x%x "
+      "ee_old_status=0x%x",
+      __func__, p_cb->nfcee_id, p_cb->ecb_flags, p_cb->ee_status,
+      p_cb->ee_old_status);
   if ((p_cb->nfcee_id != NFA_EE_INVALID) &&
       (p_cb->ee_status & NFA_EE_STATUS_RESTORING) == 0 &&
       (p_cb->ee_old_status & NFA_EE_STATUS_RESTORING) != 0) {
@@ -252,7 +253,8 @@ void nfa_ee_proc_nfcc_power_mode(uint8_t nfcc_power_mode) {
   tNFA_EE_ECB* p_cb;
   bool proc_complete = true;
 
-  LOG(VERBOSE) << StringPrintf("nfcc_power_mode=%d", nfcc_power_mode);
+  LOG(VERBOSE) << StringPrintf("%s: nfcc_power_mode=%d", __func__,
+                               nfcc_power_mode);
   /* if NFCC power state is change to full power */
   if (nfcc_power_mode == NFA_DM_PWR_MODE_FULL) {
     if (nfa_ee_max_ee_cfg) {
@@ -389,8 +391,8 @@ void nfa_ee_proc_evt(tNFC_RESPONSE_EVT event, void* p_data) {
       break;
   }
 
-  LOG(VERBOSE) << StringPrintf("nfa_ee_proc_evt: event=0x%02x int_event:0x%x",
-                             event, int_event);
+  LOG(VERBOSE) << StringPrintf("%s: event=0x%02x int_event=0x%x", __func__,
+                               event, int_event);
   if (int_event) {
     cbk.hdr.event = int_event;
     cbk.p_data = p_data;
@@ -433,7 +435,6 @@ uint8_t nfa_ee_ecb_to_mask(tNFA_EE_ECB* p_cb) {
 tNFA_EE_ECB* nfa_ee_find_ecb(uint8_t nfcee_id) {
   uint32_t xx;
   tNFA_EE_ECB *p_ret = nullptr, *p_cb;
-  LOG(VERBOSE) << __func__;
 
   if (nfcee_id == NFC_DH_ID) {
     p_ret = &nfa_ee_cb.ecb[NFA_EE_CB_4_DH];
@@ -441,6 +442,9 @@ tNFA_EE_ECB* nfa_ee_find_ecb(uint8_t nfcee_id) {
     p_cb = nfa_ee_cb.ecb;
     for (xx = 0; xx < NFA_EE_MAX_EE_SUPPORTED; xx++, p_cb++) {
       if (nfcee_id == p_cb->nfcee_id) {
+        LOG(VERBOSE) << StringPrintf(
+            "%s: nfcee_id=0x%02x, found entry at idx %d", __func__, nfcee_id,
+            xx);
         p_ret = p_cb;
         break;
       }
@@ -467,8 +471,8 @@ tNFA_EE_ECB* nfa_ee_add_mep_ecb(uint8_t nfcee_id) {
     if (nfa_ee_cb.ecb[i].nfcee_id == nfcee_id) {
       // If already stored, this is a physical UICC
       // Structure filled with NFCEE_DISCOVER_NTF info
-      LOG(DEBUG) << StringPrintf("%s; nfceeId 0x%x already in list", __func__,
-                                 nfcee_id);
+      LOG(VERBOSE) << StringPrintf("%s:  nfceeId 0x%x already in list",
+                                   __func__, nfcee_id);
       return &nfa_ee_cb.ecb[i];
     }
   }
@@ -476,8 +480,10 @@ tNFA_EE_ECB* nfa_ee_add_mep_ecb(uint8_t nfcee_id) {
   if (nfa_ee_cb.cur_ee < NFA_EE_MAX_EE_SUPPORTED) {
     /* the cb can collect up to NFA_EE_MAX_EE_SUPPORTED ee_info */
     p_cb = &nfa_ee_cb.ecb[nfa_ee_cb.cur_ee++];
+    LOG(VERBOSE) << StringPrintf("%s; Found new entry for MEP nfceeId 0x%x",
+                                 __func__, nfcee_id);
   } else {
-    LOG(ERROR) << StringPrintf("%s; Too many EE", __func__);
+    LOG(ERROR) << StringPrintf("%s:  Too many EE", __func__);
     return nullptr;
   }
   // Store info and indicate MEP NFCEE
@@ -722,7 +728,7 @@ bool nfa_ee_evt_hdlr(NFC_HDR* p_msg) {
   bool act = false;
 
   LOG(VERBOSE) << StringPrintf(
-      "Event %s(0x%02x), State: %s(%d)",
+      "%s: Event %s(0x%02x), State=%s(%d)", __func__,
       nfa_ee_sm_evt_2_str(p_msg->event).c_str(), p_msg->event,
       nfa_ee_sm_st_2_str(nfa_ee_cb.em_state).c_str(), nfa_ee_cb.em_state);
 

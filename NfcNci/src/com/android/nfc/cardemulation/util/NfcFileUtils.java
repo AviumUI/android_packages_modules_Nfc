@@ -46,14 +46,14 @@ public class NfcFileUtils {
         int res = 0;
         for (File sourceFile : sourceFiles) {
             final File targetFile = new File(targetDir, sourceFile.getName());
-            Log.d(TAG, "Migrating " + sourceFile + " to " + targetFile);
+            Log.d(TAG, "moveFiles: Migrating " + sourceFile + " to " + targetFile);
             try {
                 Files.move(sourceFile.toPath(), targetFile.toPath(), REPLACE_EXISTING);
                 if (res != -1) {
                     res++;
                 }
             } catch (IOException e) {
-                Log.w(TAG, "Failed to migrate " + sourceFile + ": " + e);
+                Log.w(TAG, "moveFiles: Failed to migrate " + sourceFile + ": " + e);
                 res = -1;
             }
         }

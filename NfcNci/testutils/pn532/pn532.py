@@ -400,7 +400,12 @@ class PN532(Reader):
             },
         )
         self.log.debug("Serial port: %s", path)
-        self.device = serial.Serial(path, 115200, timeout=0.5)
+
+        try:
+            self.device = serial.Serial(path, 115200, timeout=0.5)
+        except Exception as e:
+            self.log.debug("Failed to connect to serial port %s", path)
+            return False
 
         self.device.flush()
         self._send_ack_frame()

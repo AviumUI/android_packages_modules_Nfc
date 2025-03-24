@@ -19,9 +19,9 @@ import android.content.ComponentName;
 import android.nfc.cardemulation.CardEmulation;
 import android.os.Bundle;
 
-import com.android.nfc.utils.HceUtils;
 import com.android.nfc.service.PrefixTransportService1;
 import com.android.nfc.service.PrefixTransportService2;
+import com.android.nfc.utils.HceUtils;
 
 import java.util.ArrayList;
 
@@ -79,7 +79,7 @@ public class ConflictingNonPaymentPrefixEmulatorActivity extends BaseEmulatorAct
     }
 
     @Override
-    public ComponentName getPreferredServiceComponent(){
+    public ComponentName getPreferredServiceComponent() {
         return PrefixTransportService2.COMPONENT;
     }
 }

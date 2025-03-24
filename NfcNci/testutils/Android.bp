@@ -23,6 +23,35 @@ android_library {
     ],
 }
 
+android_app {
+    name: "NfcEmulatorApduAppNonTest",
+    sdk_version: "test_current",
+    min_sdk_version: "35",
+    srcs: [
+        "src/com/android/nfc/emulatorapp/**/*.kt",
+    ],
+    assets: ["src/com/android/nfc/emulatorapp/parsed_files/**/*.txt"],
+    resource_dirs: ["src/com/android/nfc/emulatorapp/res"],
+    manifest: "src/com/android/nfc/emulatorapp/AndroidManifest.xml",
+    static_libs: [
+        "guava",
+        "androidx.appcompat_appcompat",
+        "kotlinx-coroutines-android",
+        "androidx.annotation_annotation",
+        "androidx.compose.ui_ui",
+        "com.google.android.material_material",
+        "kotlinx_serialization_core",
+        "kotlinx_serialization_json",
+        "nfc-multidevice-utils",
+    ],
+    visibility: [
+        "//cts:__subpackages__",
+        "//packages/modules/Nfc/NfcNci:__subpackages__",
+        "//packages/modules/Nfc:__subpackages__",
+        "//vendor:__subpackages__",
+    ],
+}
+
 android_test {
     name: "NfcEmulatorApduApp",
     sdk_version: "test_current",

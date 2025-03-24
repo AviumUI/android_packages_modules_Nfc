@@ -110,7 +110,8 @@ public class NfcInjector {
         mHandoverDataParser = new HandoverDataParser();
         mDeviceConfigFacade = new DeviceConfigFacade(mContext, new Handler(mainLooper));
         mNfcDispatcher =
-            new NfcDispatcher(mContext, mHandoverDataParser, this, isInProvisionMode());
+            new NfcDispatcher(mContext, mHandoverDataParser, this,
+                    isInProvisionMode(), mDeviceConfigFacade);
         mVibrationEffect = VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE);
         mBackupManager = new BackupManager(mContext);
         mFeatureFlags = new com.android.nfc.flags.FeatureFlagsImpl();

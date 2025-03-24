@@ -16,6 +16,8 @@
 
 package android.nfc.cts;
 
+import static org.junit.Assert.assertTrue;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.nfc.Constants;
@@ -80,8 +82,8 @@ public final class DefaultPaymentProviderTestUtils {
                     count++;
                 }
             }
-            Assert.assertTrue(count < 10);
-            Assert.assertTrue(serviceName == null
+            assertTrue(count < 10);
+            assertTrue(serviceName == null
                     ? null == CardEmulation.getPreferredPaymentService(context)
                     : serviceName.equals(cardEmulation.getPreferredPaymentService(context)));
             return originalValue;

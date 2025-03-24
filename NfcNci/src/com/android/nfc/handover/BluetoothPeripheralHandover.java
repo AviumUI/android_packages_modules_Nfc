@@ -43,6 +43,8 @@ import android.widget.Toast;
 
 import androidx.annotation.VisibleForTesting;
 
+import com.android.nfc.DeviceConfigFacade;
+import com.android.nfc.NfcInjector;
 import com.android.nfc.R;
 
 import java.lang.reflect.Method;
@@ -102,6 +104,7 @@ public class BluetoothPeripheralHandover implements BluetoothProfile.ServiceList
     final int mTransport;
     final boolean mProvisioning;
     final AudioManager mAudioManager;
+    private DeviceConfigFacade mDeviceConfigFacade;
 
     final Object mLock = new Object();
 
@@ -176,6 +179,8 @@ public class BluetoothPeripheralHandover implements BluetoothProfile.ServiceList
         }
 
         mAudioManager = mContext.getSystemService(AudioManager.class);
+
+        mDeviceConfigFacade = NfcInjector.getInstance().getDeviceConfigFacade();
 
         mState = STATE_INIT;
     }
@@ -608,7 +613,7 @@ public class BluetoothPeripheralHandover implements BluetoothProfile.ServiceList
     }
 
     void startTheMusic() {
-        if (!mContext.getResources().getBoolean(R.bool.enable_auto_play) && !mIsMusicActive) {
+        if (!mDeviceConfigFacade.getEnableAutoPlay() && !mIsMusicActive) {
             return;
         }
 

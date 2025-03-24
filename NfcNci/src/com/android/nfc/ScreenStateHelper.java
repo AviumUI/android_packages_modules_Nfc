@@ -1,12 +1,13 @@
 package com.android.nfc;
 
-import android.app.KeyguardManager;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.os.PowerManager;
 import android.view.Display;
 
 import androidx.annotation.VisibleForTesting;
+
+import com.android.server.display.feature.flags.Flags;
 
 /**
  * Helper class for determining the current screen state for NFC activities.
@@ -19,23 +20,36 @@ class ScreenStateHelper {
     static final int SCREEN_STATE_ON_LOCKED = 0x04;
     static final int SCREEN_STATE_ON_UNLOCKED = 0x08;
 
+    // Display category built-in displays before the AOSP API is ready.
+    // TODO (b/321309554): Get the correct value from OEM.
+    private static final int DISPLAY_BUILT_IN_DISPLAY_OEM = 1;
+
     //Polling mask
     static final int SCREEN_POLLING_TAG_MASK = 0x10;
     static final int SCREEN_POLLING_READER_MASK = 0x40;
 
     private final PowerManager mPowerManager;
-    private final KeyguardManager mKeyguardManager;
     private final DisplayManager mDisplayManager;
 
     ScreenStateHelper(Context context) {
-        this(context.getSystemService(KeyguardManager.class),
-                context.getSystemService(PowerManager.class),
+        this(context.getSystemService(PowerManager.class),
                 context.getSystemService(DisplayManager.class));
     }
 
     private boolean isDisplayOn() {
         Display display = mDisplayManager.getDisplay(Display.DEFAULT_DISPLAY);
-        return display.getState() == Display.STATE_ON;
+        Display displayBuiltIn = null;
+        if (Flags.displayCategoryBuiltIn()) {
+            Display[] displaysBuiltIn =
+                    mDisplayManager.getDisplays(DisplayManager.DISPLAY_CATEGORY_BUILT_IN_DISPLAYS);
+            if (displaysBuiltIn.length > 0) {
+                displayBuiltIn = displaysBuiltIn[0];
+            }
+        } else {
+            displayBuiltIn = mDisplayManager.getDisplay(DISPLAY_BUILT_IN_DISPLAY_OEM);
+        }
+        return display.getState() == Display.STATE_ON
+                || (displayBuiltIn != null && displayBuiltIn.getState() == Display.STATE_ON);
     }
 
     int checkScreenState(boolean checkDisplayState) {
@@ -100,9 +114,7 @@ class ScreenStateHelper {
     }
 
     @VisibleForTesting
-    ScreenStateHelper(KeyguardManager keyguardManager, PowerManager powerManager,
-            DisplayManager displayManager) {
-        mKeyguardManager = keyguardManager;
+    ScreenStateHelper(PowerManager powerManager, DisplayManager displayManager) {
         mPowerManager = powerManager;
         mDisplayManager = displayManager;
     }

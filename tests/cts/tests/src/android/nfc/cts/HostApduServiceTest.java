@@ -1,5 +1,8 @@
 package android.nfc.cts;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import android.content.Intent;
 import android.nfc.cardemulation.PollingFrame;
 import android.os.Bundle;
@@ -32,7 +35,7 @@ public class HostApduServiceTest {
   public void testOnBind() {
     Intent serviceIntent
           = new Intent(CtsMyHostApduService.SERVICE_INTERFACE);
-    Assert.assertNotNull(service.onBind(serviceIntent));
+    assertNotNull(service.onBind(serviceIntent));
   }
 
   @Test
@@ -67,8 +70,8 @@ public class HostApduServiceTest {
   @Test
   public void testProcessCommandApdu() {
     byte[] result = service.processCommandApdu(new byte[0], new Bundle());
-    Assert.assertNotNull(result);
-    Assert.assertTrue(result.length == 0);
+    assertNotNull(result);
+    assertTrue(result.length == 0);
   }
 
   @Test

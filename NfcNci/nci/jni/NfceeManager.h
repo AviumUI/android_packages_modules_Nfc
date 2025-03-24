@@ -103,6 +103,7 @@ class NfceeManager {
   static NfceeManager sNfceeManager;
   string eseName;
   string uiccName;
+  string ndefNfceeName;
   tNFA_EE_INFO mEeInfo[MAX_NUM_NFCEE];
   uint8_t mNumEePresent;
   uint8_t mActualNumEe;

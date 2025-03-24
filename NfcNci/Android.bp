@@ -109,6 +109,7 @@ android_app {
     libs: [
         "android.nfc.flags-aconfig-java",
         "android.permission.flags-aconfig-java",
+        "display_flags_lib",
         "framework-annotations-lib",
         "framework-bluetooth.stubs.module_lib",
         "framework-configinfrastructure.stubs.module_lib",

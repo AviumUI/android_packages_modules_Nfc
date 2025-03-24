@@ -15,13 +15,9 @@
  */
 package com.android.nfc.cardemulation;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.ContentObserver;
-import android.net.Uri;
-import android.provider.Settings;
 import android.telephony.SubscriptionInfo;
 import android.util.Log;
 
@@ -35,13 +31,12 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
     static final String TAG = "PreferredSubscriptionService";
     static final String PREF_SUBSCRIPTION = "SubscriptionPref";
     static final String PREF_PREFERRED_SUB_ID = "pref_sub_id";
-    private SharedPreferences mSubscriptionPrefs = null;;
+    private SharedPreferences mSubscriptionPrefs = null;
 
     Context mContext;
     Callback mCallback;
 
     int mDefaultSubscriptionId = TelephonyUtils.SUBSCRIPTION_ID_UNKNOWN;
-    private final ContentResolver mContentResolver;
     boolean mIsEuiccCapable;
     boolean mIsUiccCapable;
     TelephonyUtils mTelephonyUtils;
@@ -54,7 +49,6 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
 
     public PreferredSubscriptionService(Context context, Callback callback) {
         mContext = context;
-        mContentResolver = mContext.getContentResolver();
         mCallback = callback;
 
         mIsUiccCapable = context.getPackageManager().hasSystemFeature(
@@ -62,14 +56,15 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
         mIsEuiccCapable = mContext.getResources().getBoolean(R.bool.enable_euicc_support);
 
         mTelephonyUtils = TelephonyUtils.getInstance(context);
-        mSubscriptionPrefs =  mContext.getSharedPreferences(
+        mSubscriptionPrefs = mContext.getSharedPreferences(
                 PREF_SUBSCRIPTION, Context.MODE_PRIVATE);
 
         // Initialize default subscription to UICC if there is no preference
         if (mIsUiccCapable || mIsEuiccCapable) {
             mDefaultSubscriptionId = getPreferredSubscriptionId();
             if (mDefaultSubscriptionId == TelephonyUtils.SUBSCRIPTION_ID_UNKNOWN) {
-                Log.d(TAG, "Set preferred subscription to UICC, only update");
+                Log.d(TAG, "PreferredSubscriptionService: Set preferred subscription "
+                        + "to UICC, only update");
                 setPreferredSubscriptionId(TelephonyUtils.SUBSCRIPTION_ID_UICC, false);
             }
         }
@@ -86,7 +81,7 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
         Log.d(TAG, "getPreferredSubscriptionId: " + mDefaultSubscriptionId);
         return mSubscriptionPrefs.getInt(
                 PREF_PREFERRED_SUB_ID, TelephonyUtils.SUBSCRIPTION_ID_UNKNOWN);
-        }
+    }
 
     public void setPreferredSubscriptionId(int subscriptionId, boolean force) {
         Log.d(TAG, "setPreferredSubscriptionId: " + subscriptionId);
@@ -95,7 +90,7 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
             mSubscriptionPrefs.edit().putInt(PREF_PREFERRED_SUB_ID, subscriptionId).commit();
             if (force) {
                 onDefaultSubscriptionChanged();
-    }
+            }
         }
     }
 
@@ -114,18 +109,18 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
         if (isActivationStateChanged) {
             mCallback.onPreferredSubscriptionChanged(mDefaultSubscriptionId,
                     mActiveSubscriptoinState == TelephonyUtils.SUBSCRIPTION_STATE_ACTIVATE);
-        }
-        else {
-            Log.i(TAG, "Active Subscription is not changed");
+        } else {
+            Log.i(TAG, "onActiveSubscriptionsUpdated: Active Subscription is not changed");
         }
     }
 
     private boolean isSubscriptionActivated(int subscriptionId) {
         if (mActiveSubscriptions == null) {
-            Log.d(TAG, "get active subscriptions is list because it's null");
+            Log.d(TAG, "isSubscriptionActivated: get active subscriptions is "
+                    + "list because it's null");
             mActiveSubscriptions = mTelephonyUtils.getActiveSubscriptions().stream().filter(
-                    TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC.or(
-                            TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
+                            TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC.or(
+                                    TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
                     .collect(Collectors.toList());
         }
         boolean isEuiccSubscription = mTelephonyUtils.isEuiccSubscription(subscriptionId);
@@ -136,20 +131,19 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
     private boolean checkSubscriptionStateChanged(List<SubscriptionInfo> activeSubscriptionList) {
         // filtered subscriptions
         mActiveSubscriptions = activeSubscriptionList.stream().filter(
-                TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC.or(
-                        TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
+                        TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC.or(
+                                TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
                 .collect(Collectors.toList());
         int previousActiveSubscriptionState = mActiveSubscriptoinState;
         int currentActiveSubscriptionState = isSubscriptionActivated(mDefaultSubscriptionId) ?
                 TelephonyUtils.SUBSCRIPTION_STATE_ACTIVATE :
                 TelephonyUtils.SUBSCRIPTION_STATE_INACTIVATE;
         if (previousActiveSubscriptionState != currentActiveSubscriptionState) {
-            Log.d(TAG, "onSubscriptionsChanged - state changed: " +
-                    previousActiveSubscriptionState + " to " + currentActiveSubscriptionState);
+            Log.d(TAG, "checkSubscriptionStateChanged: state changed: "
+                    + previousActiveSubscriptionState + " to " + currentActiveSubscriptionState);
             mActiveSubscriptoinState = currentActiveSubscriptionState;
             return true;
         }
-
         return false;
     }
 }

@@ -932,7 +932,7 @@ public final class NdefRecord implements Parcelable {
             case TNF_UNCHANGED:
                 return "unexpected TNF_UNCHANGED in first chunk or logical record";
             default:
-                return String.format("unexpected tnf value: 0x%02x", tnf);
+                return String.format("unexpected tnf value=0x%02x", tnf);
         }
     }
 

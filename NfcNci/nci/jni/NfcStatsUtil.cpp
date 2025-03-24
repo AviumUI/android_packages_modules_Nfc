@@ -81,7 +81,7 @@ void NfcStatsUtil::logNfcTagType(int protocol, int discoveryMode) {
 *******************************************************************************/
 void NfcStatsUtil::writeNfcStatsTagTypeOccurred(int tagType) {
   static const char fn[] = "NfcStatsUtil::writeNfcStatsTagTypeOccurred";
-  LOG(DEBUG) << StringPrintf("%s: %d", fn, tagType);
+  LOG(DEBUG) << StringPrintf("%s: tagType=%d", fn, tagType);
 
   nfc::stats::stats_write(nfc::stats::NFC_TAG_TYPE_OCCURRED, tagType);
 }

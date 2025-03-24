@@ -27,6 +27,7 @@ import android.annotation.RequiresPermission;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.annotation.SystemApi;
+import android.annotation.TestApi;
 import android.annotation.UserHandleAware;
 import android.annotation.UserIdInt;
 import android.app.Activity;
@@ -1350,6 +1351,16 @@ public final class CardEmulation {
         default void onObserveModeStateChanged(boolean isEnabled) {}
 
         /**
+         * This method is called when observe mode has been disabled in the firmware.
+         *
+         * @param exitFrame The polling frame that caused the firmware to exit observe mode. Null
+         *                  when we were unable to parse the exit frame from the NFCC.
+         * @hide
+         */
+        @FlaggedApi(android.nfc.Flags.FLAG_NFC_EVENT_LISTENER)
+        default void onObserveModeDisabledInFirmware(@Nullable PollingFrame exitFrame) {}
+
+        /**
          * This method is called when an AID conflict is detected during an NFC transaction. This
          * can happen when multiple services are registered for the same AID. If your service is
          * registered for this AID you may want to instruct users to bring your app to the
@@ -1427,6 +1438,13 @@ public final class CardEmulation {
                         return;
                     }
                     callListeners(listener -> listener.onObserveModeStateChanged(isEnabled));
+                }
+
+                public void onObserveModeDisabledInFirmware(PollingFrame exitFrame) {
+                    if (!android.nfc.Flags.nfcEventListener()) {
+                        return;
+                    }
+                    callListeners(listener -> listener.onObserveModeDisabledInFirmware(exitFrame));
                 }
 
                 public void onAidConflictOccurred(String aid) {

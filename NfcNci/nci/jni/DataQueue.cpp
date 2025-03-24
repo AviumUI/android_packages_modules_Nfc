@@ -91,7 +91,7 @@ bool DataQueue::enqueue(uint8_t* data, uint16_t dataLen) {
 
     retval = true;
   } else {
-    LOG(ERROR) << StringPrintf("DataQueue::enqueue: out of memory ?????");
+    LOG(ERROR) << StringPrintf("DataQueue::%s: out of memory ?????", __func__);
   }
   mMutex.unlock();
   return retval;

@@ -50,7 +50,8 @@ bool IntervalTimer::set(int ms, TIMER_FUNC cb) {
   ts.it_interval.tv_nsec = 0;
 
   stat = timer_settime(mTimerId, 0, &ts, 0);
-  if (stat == -1) LOG(ERROR) << StringPrintf("fail set timer");
+  if (stat == -1)
+    LOG(ERROR) << StringPrintf("IntervalTimer::%s: fail set timer", __func__);
   return stat == 0;
 }
 
@@ -79,6 +80,8 @@ bool IntervalTimer::create(TIMER_FUNC cb) {
   se.sigev_signo = 0;
   mCb = cb;
   stat = timer_create(CLOCK_MONOTONIC, &se, &mTimerId);
-  if (stat == -1) LOG(ERROR) << StringPrintf("fail create timer");
+  if (stat == -1)
+    LOG(ERROR) << StringPrintf("IntervalTimer::%s: fail create timer",
+                               __func__);
   return stat == 0;
 }

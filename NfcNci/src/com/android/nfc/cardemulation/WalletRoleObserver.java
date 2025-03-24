@@ -89,8 +89,10 @@ public class WalletRoleObserver {
             List<String> roleHolders = roleManager.getRoleHoldersAsUser(RoleManager.ROLE_WALLET,
                     user);
             String roleHolder = roleHolders.isEmpty() ? null : roleHolders.get(0);
-            if (DBG) Log.i(TAG, "Wallet role changed for user " + user.getIdentifier() + " to "
-                       + roleHolder);
+            if (DBG) {
+                Log.i(TAG, "WalletRoleObserver: Wallet role changed for user "
+                        + user.getIdentifier() + " to " + roleHolder);
+            }
             mNfcEventLog.logEvent(
                     NfcEventProto.EventType.newBuilder()
                             .setWalletRoleHolderChange(
@@ -151,8 +153,10 @@ public class WalletRoleObserver {
     public void onUserSwitched(int userId) {
         mCurrentUser = userId;
         PackageAndUser roleHolder = getDefaultWalletRoleHolder(userId);
-        if (DBG) Log.i(TAG, "Wallet role for user " + userId + ": " + roleHolder.getUserId() +
-                " (" + roleHolder.getPackage() + ")");
+        if (DBG) {
+            Log.i(TAG, "onUserSwitched: Wallet role for user " + userId + ": "
+                    + roleHolder.getUserId() + " (" + roleHolder.getPackage() + ")");
+        }
         mCallback.onWalletRoleHolderChanged(roleHolder.getPackage(), roleHolder.getUserId());
     }
 }

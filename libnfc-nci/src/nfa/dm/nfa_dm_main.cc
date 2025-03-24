@@ -118,8 +118,8 @@ bool nfa_dm_evt_hdlr(NFC_HDR* p_msg) {
   bool freebuf = true;
   uint16_t event = p_msg->event & 0x00ff;
 
-  LOG(VERBOSE) << StringPrintf("event: %s (0x%02x)",
-                             nfa_dm_evt_2_str(event).c_str(), event);
+  LOG(VERBOSE) << StringPrintf("%s: event=%s (0x%02x)", __func__,
+                               nfa_dm_evt_2_str(event).c_str(), event);
 
   /* execute action functions */
   if (event < NFA_DM_NUM_ACTIONS) {
@@ -150,9 +150,9 @@ void nfa_dm_sys_disable(void) {
       nfa_dm_disable_complete();
     } else {
       /* probably waiting to be disabled */
-      LOG(WARNING) << StringPrintf("DM disc_state state = %d disc_flags:0x%x",
-                                   nfa_dm_cb.disc_cb.disc_state,
-                                   nfa_dm_cb.disc_cb.disc_flags);
+      LOG(WARNING) << StringPrintf(
+          "%s: DM disc_state state = %d disc_flags=0x%x", __func__,
+          nfa_dm_cb.disc_cb.disc_state, nfa_dm_cb.disc_cb.disc_flags);
     }
 
   } else {
@@ -190,7 +190,7 @@ bool nfa_dm_is_protocol_supported(tNFC_PROTOCOL protocol, uint8_t sel_res) {
 **
 *******************************************************************************/
 bool nfa_dm_is_active(void) {
-  LOG(VERBOSE) << StringPrintf("flags:0x%x", nfa_dm_cb.flags);
+  LOG(VERBOSE) << StringPrintf("%s: flags=0x%x", __func__, nfa_dm_cb.flags);
   if ((nfa_dm_cb.flags & NFA_DM_FLAGS_DM_IS_ACTIVE) &&
       ((nfa_dm_cb.flags &
         (NFA_DM_FLAGS_ENABLE_EVT_PEND | NFA_DM_FLAGS_NFCC_IS_RESTORING |
@@ -217,13 +217,12 @@ tNFA_STATUS nfa_dm_check_set_config(uint8_t tlv_list_len, uint8_t* p_tlv_list,
   tNFC_STATUS nfc_status;
   uint32_t cur_bit;
 
-  LOG(VERBOSE) << __func__;
-
   /* We only allow 32 pending SET_CONFIGs */
   if (nfa_dm_cb.setcfg_pending_num >= NFA_DM_SETCONFIG_PENDING_MAX) {
     LOG(ERROR) << StringPrintf(
-        "error: pending number of SET_CONFIG "
-        "exceeded");
+        "%s: error: pending number of SET_CONFIG "
+        "exceeded",
+        __func__);
     return NFA_STATUS_FAILED;
   }
 
@@ -235,11 +234,13 @@ tNFA_STATUS nfa_dm_check_set_config(uint8_t tlv_list_len, uint8_t* p_tlv_list,
     p_value = p_tlv_list + xx + 2;
     p_cur_len = nullptr;
     if (len > (tlv_list_len - xx - 2)) {
-      LOG(ERROR) << StringPrintf("error: invalid TLV length: t:0x%x, l:%d",
-                                 type, len);
+      LOG(ERROR) << StringPrintf("%s: error: invalid TLV length: t=0x%x, l=%d",
+                                 __func__, type, len);
       android_errorWriteLog(0x534e4554, "221216105");
       return NFA_STATUS_FAILED;
     }
+
+    LOG(VERBOSE) << StringPrintf("%s: type:0x%x", __func__, type);
 
     switch (type) {
       /*

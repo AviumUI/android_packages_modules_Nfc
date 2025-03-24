@@ -40,6 +40,7 @@ NfceeManager::NfceeManager() : mNumEePresent(0) {
   mActualNumEe = MAX_NUM_NFCEE;
   eseName = "eSE";
   uiccName = "SIM";
+  ndefNfceeName = "NDEF-NFCEE";
   memset(&mNfceeData_t, 0, sizeof(mNfceeData));
 }
 
@@ -109,6 +110,14 @@ jobject NfceeManager::getActiveNfceeList(JNIEnv* e) {
     nfceeMap[uiccRoute[i]] = uiccName + std::to_string(i + 1);
   }
 
+  if (NfcConfig::hasKey(NAME_T4T_NFCEE_ENABLE)) {
+    if (NfcConfig::getUnsigned(NAME_T4T_NFCEE_ENABLE)) {
+      uint8_t defaultNdefNfceeRoute =
+          NfcConfig::getUnsigned(NAME_DEFAULT_NDEF_NFCEE_ROUTE, 0x10);
+      nfceeMap[defaultNdefNfceeRoute] = ndefNfceeName;
+    }
+  }
+
   for (int i = 0; i < mNfceeData_t.mNfceePresent; i++) {
     uint8_t id = (mNfceeData_t.mNfceeID[i] & ~NFA_HANDLE_GROUP_EE);
     uint8_t status = mNfceeData_t.mNfceeStatus[i];
@@ -145,7 +154,7 @@ bool NfceeManager::getNFCEeInfo() {
     LOG(ERROR) << StringPrintf("%s: fail get info; error=0x%X", fn, nfaStat);
     mActualNumEe = 0;
   } else {
-    LOG(INFO) << StringPrintf("%s: num NFCEE discovered: %u", fn, mActualNumEe);
+    LOG(INFO) << StringPrintf("%s: num NFCEE discovered=%u", fn, mActualNumEe);
     if (mActualNumEe != 0) {
       for (uint8_t xx = 0; xx < mActualNumEe; xx++) {
         tNFA_TECHNOLOGY_MASK eeTechnology = 0x00;

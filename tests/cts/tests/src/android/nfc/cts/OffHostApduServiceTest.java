@@ -1,5 +1,7 @@
 package android.nfc.cts;
 
+import static org.junit.Assert.assertNull;
+
 import android.content.Intent;
 import android.os.Looper;
 import org.junit.Assert;
@@ -24,6 +26,6 @@ public class OffHostApduServiceTest {
     public void testOnBind() {
         Intent serviceIntent
             = new Intent(CtsMyOffHostApduService.SERVICE_INTERFACE);
-        Assert.assertNull(service.onBind(serviceIntent));
+        assertNull(service.onBind(serviceIntent));
     }
 }

@@ -39,11 +39,12 @@ HciEventManager& HciEventManager::getInstance() {
 }
 
 void HciEventManager::initialize(nfc_jni_native_data* native) {
+  static const char fn[] = "HciEventManager:initialize";
   mNativeData = native;
   tNFA_STATUS nfaStat = NFA_HciRegister(const_cast<char*>(APP_NAME),
                                         (tNFA_HCI_CBACK*)&nfaHciCallback, true);
   if (nfaStat != NFA_STATUS_OK) {
-    LOG(ERROR) << "HCI registration failed; status=" << nfaStat;
+    LOG(ERROR) << fn << ": HCI registration failed; status=" << nfaStat;
   }
   sEsePipe = NfcConfig::getUnsigned(NAME_OFF_HOST_ESE_PIPE_ID, 0x16);
   // Backward compatibility or For vendor supporting only single sim pipe ID
@@ -106,11 +107,12 @@ void HciEventManager::notifyTransactionListenersOfAid(std::vector<uint8_t> aid,
  */
 std::vector<uint8_t> HciEventManager::getDataFromBerTlv(
     std::vector<uint8_t> berTlv) {
+  static const char fn[] = "HciEventManager:getDataFromBerTlv";
   if (berTlv.empty()) {
     return std::vector<uint8_t>();
   }
   size_t lengthTag = berTlv[0];
-  LOG(DEBUG) << "decodeBerTlv: berTlv[0]=" << berTlv[0];
+  LOG(DEBUG) << fn << ": decodeBerTlv: berTlv[0]=" << berTlv[0];
 
   /* As per ISO/IEC 7816, read the first byte to determine the length and
    * the start index accordingly
@@ -139,12 +141,13 @@ std::vector<uint8_t> HciEventManager::getDataFromBerTlv(
       return std::vector<uint8_t>(berTlv.begin() + 5, berTlv.end());
     }
   }
-  LOG(ERROR) << "Error in TLV length encoding!";
+  LOG(ERROR) << fn << ": Error in TLV length encoding!";
   return std::vector<uint8_t>();
 }
 
 void HciEventManager::nfaHciCallback(tNFA_HCI_EVT event,
                                      tNFA_HCI_EVT_DATA* eventData) {
+  static const char fn[] = "HciEventManager:nfaHciCallback";
   if (eventData == nullptr) {
     return;
   }
@@ -155,15 +158,13 @@ void HciEventManager::nfaHciCallback(tNFA_HCI_EVT event,
   if (event != NFA_HCI_EVENT_RCVD_EVT ||
       eventData->rcvd_evt.evt_code != NFA_HCI_EVT_TRANSACTION ||
       event_buff_len <= 3 || event_buff == nullptr || event_buff[0] != 0x81) {
-    if (event_buff_len <= 3 || event_buff == nullptr || event_buff[0] != 0x81) {
-      LOG(WARNING) << "Invalid event";
-    }
     return;
   }
 
-  LOG(DEBUG) << StringPrintf(
-      "event=%d code=%d pipe=%d len=%d", event, eventData->rcvd_evt.evt_code,
-      eventData->rcvd_evt.pipe, eventData->rcvd_evt.evt_len);
+  LOG(DEBUG) << StringPrintf("%s: event=%d code=%d pipe=%d len=%d", fn, event,
+                             eventData->rcvd_evt.evt_code,
+                             eventData->rcvd_evt.pipe,
+                             eventData->rcvd_evt.evt_len);
 
   std::string evtSrc;
   if (eventData->rcvd_evt.pipe == sEsePipe) {
@@ -181,7 +182,7 @@ void HciEventManager::nfaHciCallback(tNFA_HCI_EVT event,
     sSimPipeIdsMutex.unlock();
 
     if (!isSimPipeId) {
-      LOG(WARNING) << "Incorrect Pipe Id";
+      LOG(WARNING) << fn << ": Incorrect Pipe Id";
       return;
     }
   }
@@ -189,7 +190,7 @@ void HciEventManager::nfaHciCallback(tNFA_HCI_EVT event,
   uint32_t aid_len = event_buff[1];
   if (aid_len >= (event_buff_len - 1)) {
     android_errorWriteLog(0x534e4554, "181346545");
-    LOG(ERROR) << StringPrintf("error: aidlen(%d) is too big", aid_len);
+    LOG(ERROR) << StringPrintf("%s: error: aidlen(%d) is too big", fn, aid_len);
     return;
   }
 

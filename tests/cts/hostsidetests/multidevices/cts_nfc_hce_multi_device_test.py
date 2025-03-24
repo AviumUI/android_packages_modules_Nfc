@@ -36,6 +36,7 @@ import json
 import logging
 import ssl
 import sys
+import time
 
 from android.platform.test.annotations import CddTest
 from android.platform.test.annotations import ApiTest
@@ -234,10 +235,6 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
                 'nfc_emulator', 'com.android.nfc.emulator'
             )
             self.emulator.debug_tag = 'emulator'
-            if not self.emulator.nfc_emulator.isNfcHceSupported():
-                self._setup_failure_reason = f'NFC HCE is not supported on {self.emulator}'
-                self._setup_failure_should_block_tests = False
-                return
             try:
                 self.emulator.adb.shell(['svc', 'nfc', 'enable'])
             except adb.AdbError:
@@ -1203,6 +1200,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
 
         _LOG.debug(f"Polling frame gain results {results_for_power_level}")
 
+        issues = []
         for power_level in power_levels:
             # No value to compare to
             if power_level == 0:
@@ -1211,16 +1209,27 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
             for type_ in polling_frame_types:
                 previous_gain = results_for_power_level[power_level - 1][type_]
                 current_gain = results_for_power_level[power_level][type_]
-                asserts.assert_greater_equal(
-                    current_gain, previous_gain,
-                    _FAILED_VENDOR_GAIN_VALUE_DROPPED_ON_POWER_INCREASE,
-                    {
-                        "type": type_,
-                        "power_level": power_level * 20,
-                        "previous_gain": previous_gain,
-                        "current_gain": current_gain,
-                    }
+                if current_gain >= previous_gain:
+                    continue
+                sample = {
+                    "type": type_,
+                    "power_level": power_level * 20,
+                    "previous_gain": previous_gain,
+                    "current_gain": current_gain,
+                }
+                _LOG.warning(
+                    f"Reported gain level dropped" + \
+                    f" between power steps {sample}"
                 )
+                issues.append(sample)
+
+        # Allow up to 2 reported gain decreases out of (5 * 3) = 15 test samples
+        # Theoretically, this could happen
+        # due to automatic power/gain/load management feature of chipsets
+        asserts.assert_true(
+            len(issues) <= 2,
+            _FAILED_VENDOR_GAIN_VALUE_DROPPED_ON_POWER_INCREASE,
+        )
 
     @CddTest(requirements = ["7.4.4/C-1-13"])
     def test_polling_frame_type(self):
@@ -1338,13 +1347,15 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
             self.emulator.nfc_emulator.closeActivity()
             self.emulator.nfc_emulator.logInfo(
                 "*** TEST END: " + self.current_test_info.name + " ***")
-        self.pn532.reset_buffers()
-        self.pn532.mute()
-        param_list = [[self.emulator]]
-        utils.concurrent_exec(lambda d: d.services.create_output_excerpts_all(
-            self.current_test_info),
-                              param_list=param_list,
-                              raise_on_exception=True)
+        if hasattr(self, 'pn532'):
+            self.pn532.reset_buffers()
+            self.pn532.mute()
+        if hasattr(self, 'emulator'):
+            param_list = [[self.emulator]]
+            utils.concurrent_exec(lambda d: d.services.create_output_excerpts_all(
+                self.current_test_info),
+                                  param_list=param_list,
+                                  raise_on_exception=True)
 
     #@CddTest(requirements = {"7.4.4/C-2-2", "7.4.4/C-1-2"})
     def test_single_non_payment_service_with_listen_tech_disabled(self):

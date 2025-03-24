@@ -159,7 +159,8 @@ public class RegisteredServicesCacheMigration {
         UserManager um = mContext.createContextAsUser(
                         UserHandle.of(ActivityManager.getCurrentUser()), /*flags=*/0)
                 .getSystemService(UserManager.class);
-        Log.i(TAG, "Migrating cache files: " + mDynamicSettingsFile + ", " + mOthersFile);
+        Log.i(TAG, "handleMigration: Migrating cache files: " + mDynamicSettingsFile + ", "
+                + mOthersFile);
         for (UserHandle uh : um.getEnabledProfiles()) {
             handleMigrationDynamicSettings(uh.getIdentifier());
             handleMigrationOtherServices(uh.getIdentifier());
@@ -174,7 +175,7 @@ public class RegisteredServicesCacheMigration {
         List<ApduServiceInfo> validServices = Stream.of(validPaymentServices, validOtherServices)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        Log.d(TAG, "getAllServices (all): " + validServices);
+        Log.d(TAG, "getAllServices: " + validServices);
         return validServices;
     }
 
@@ -199,7 +200,7 @@ public class RegisteredServicesCacheMigration {
     private void handleMigrationDynamicSettings(int userId) {
         final List<ApduServiceInfo> validServices = getAllServices(userId);
         if (validServices == null || validServices.isEmpty()) {
-            Log.i(TAG, "No installed services");
+            Log.i(TAG, "handleMigrationDynamicSettings: No installed services");
             return;
         }
         UserServices userServices = findOrCreateUserLocked(userId);
@@ -217,27 +218,32 @@ public class RegisteredServicesCacheMigration {
                 continue;
             } else {
                 for (AidGroup group : dynamicSettings.aidGroups.values()) {
-                    Log.d(TAG, "registerAidsForService: " + component + " = " + group.getAids());
+                    Log.d(TAG, "handleMigrationDynamicSettings: registerAidsForService: "
+                            + component + " = " + group.getAids());
                     if (!mCardEmulation.registerAidsForService(
                             component, group.getCategory(), group.getAids())) {
-                        Log.e(TAG, "registerAidsForService failed");
+                        Log.e(TAG, "handleMigrationDynamicSettings: "
+                                + "registerAidsForService failed");
                     }
                 }
                 if (dynamicSettings.offHostSE != null) {
-                    Log.d(TAG, "setOffHostForService: " + component + " = "
-                        + dynamicSettings.offHostSE);
+                    Log.d(TAG, "handleMigrationDynamicSettings: setOffHostForService: " + component
+                            + " = " + dynamicSettings.offHostSE);
                     if (!mCardEmulation.setOffHostForService(component, dynamicSettings.offHostSE)) {
-                        Log.e(TAG, "setOffHostForService failed");
+                        Log.e(TAG, "handleMigrationDynamicSettings: setOffHostForService failed");
                     }
                 }
                 if (dynamicSettings.shouldDefaultToObserveModeStr != null) {
-                    boolean shouldDefaultToObserveMode =
-                        convertValueToBoolean(dynamicSettings.shouldDefaultToObserveModeStr, false);
-                    Log.d(TAG, "setShouldDefaultToObserveModeForService: " + component
-                        + " = " + shouldDefaultToObserveMode);
+                    boolean shouldDefaultToObserveMode = convertValueToBoolean(
+                            dynamicSettings.shouldDefaultToObserveModeStr, false);
+                    Log.d(TAG,
+                            "handleMigrationDynamicSettings: "
+                                    + "setShouldDefaultToObserveModeForService: "
+                                    + component + " = " + shouldDefaultToObserveMode);
                     if (!mCardEmulation.setShouldDefaultToObserveModeForService(
                             component, shouldDefaultToObserveMode)) {
-                        Log.e(TAG, "setShouldDefaultToObserveModeForService failed");
+                        Log.e(TAG, "handleMigrationDynamicSettings: "
+                                + "setShouldDefaultToObserveModeForService failed");
                     }
                 }
             }
@@ -249,13 +255,13 @@ public class RegisteredServicesCacheMigration {
         List<ApduServiceInfo> validOtherServices =
                 mCardEmulation.getServices(CATEGORY_OTHER, userId);
         if (validOtherServices == null || validOtherServices.isEmpty()) {
-            Log.i(TAG, "No installed other services");
+            Log.i(TAG, "handleMigrationOtherServices: No installed other services");
             return;
         }
         UserServices userServices = findOrCreateUserLocked(userId);
         for (ApduServiceInfo service : validOtherServices) {
             if (!service.hasCategory(CATEGORY_OTHER)) {
-                Log.e(TAG, "service does not have other category");
+                Log.e(TAG, "handleMigrationOtherServices: service does not have other category");
                 continue;
             }
             ComponentName component = service.getComponent();
@@ -266,15 +272,16 @@ public class RegisteredServicesCacheMigration {
                             CardEmulation.class.getMethod(
                                     "setServiceEnabledForCategoryOther", ComponentName.class,
                                     boolean.class, int.class);
-                    Log.d(TAG, "setServiceEnabledForCategoryOther: " + component + " = "
-                        + status.checked);
+                    Log.d(TAG, "handleMigrationOtherServices: setServiceEnabledForCategoryOther: "
+                            + component + " = " + status.checked);
                     setServiceEnabledForCategoryOtherMethod.invoke(
                             mCardEmulation, component, status.checked, userId);
                     // TODO: Add formal API
                     // mCardEmulation.setServiceEnabledForCategoryOther(
                     //      component, status.checked, userId);
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to set other service status", e);
+                    Log.e(TAG, "handleMigrationOtherServices: Failed to set other service status",
+                            e);
 
                 }
             }
@@ -283,13 +290,13 @@ public class RegisteredServicesCacheMigration {
 
     private Map<Integer, List<Pair<ComponentName, DynamicSettings>>>
     readDynamicSettingsFromFile(SettingsFile settingsFile) {
-        Log.d(TAG, "Reading dynamic AIDs.");
+        Log.d(TAG, "readDynamicSettingsFromFile: Reading dynamic AIDs");
         Map<Integer, List<Pair<ComponentName, DynamicSettings>>> readSettingsMap =
                 new HashMap<>();
         InputStream fis = null;
         try {
             if (!settingsFile.exists()) {
-                Log.d(TAG, "Dynamic AIDs file does not exist.");
+                Log.d(TAG, "readDynamicSettingsFromFile: Dynamic AIDs file does not exist");
                 return new HashMap<>();
             }
             fis = settingsFile.openRead();
@@ -319,7 +326,8 @@ public class RegisteredServicesCacheMigration {
                             shouldDefaultToObserveModeStr =
                                     parser.getAttributeValue(null, "shouldDefaultToObserveMode");
                             if (compString == null || uidString == null) {
-                                Log.e(TAG, "Invalid service attributes");
+                                Log.e(TAG, "readDynamicSettingsFromFile: "
+                                        + "Invalid service attributes");
                             } else {
                                 try {
                                     currentUid = Integer.parseInt(uidString);
@@ -328,7 +336,8 @@ public class RegisteredServicesCacheMigration {
                                     currentOffHostSE = offHostString;
                                     inService = true;
                                 } catch (NumberFormatException e) {
-                                    Log.e(TAG, "Could not parse service uid");
+                                    Log.e(TAG, "readDynamicSettingsFromFile: "
+                                            + "Could not parse service uid");
                                 }
                             }
                         }
@@ -337,7 +346,8 @@ public class RegisteredServicesCacheMigration {
                             if (group != null) {
                                 currentGroups.add(group);
                             } else {
-                                Log.e(TAG, "Could not parse AID group.");
+                                Log.e(TAG, "readDynamicSettingsFromFile: "
+                                        + "Could not parse AID group");
                             }
                         }
                     } else if (eventType == XmlPullParser.END_TAG) {
@@ -347,7 +357,7 @@ public class RegisteredServicesCacheMigration {
                                     (currentGroups.size() > 0 || currentOffHostSE != null)) {
                                 final int userId = UserHandle.
                                         getUserHandleForUid(currentUid).getIdentifier();
-                                Log.d(TAG, " ## user id - " + userId);
+                                Log.d(TAG, "readDynamicSettingsFromFile: ## user id - " + userId);
                                 DynamicSettings dynSettings = new DynamicSettings(currentUid);
                                 for (AidGroup group : currentGroups) {
                                     dynSettings.aidGroups.put(group.getCategory(), group);
@@ -372,7 +382,7 @@ public class RegisteredServicesCacheMigration {
                 };
             }
         } catch (Exception e) {
-            Log.e(TAG, "Could not parse dynamic AIDs file, trashing.", e);
+            Log.e(TAG, "readDynamicSettingsFromFile: Could not parse dynamic AIDs file, e=", e);
             settingsFile.delete();
         } finally {
             if (fis != null) {
@@ -388,12 +398,12 @@ public class RegisteredServicesCacheMigration {
     private void readDynamicSettingsLocked() {
         Map<Integer, List<Pair<ComponentName, DynamicSettings>>> readSettingsMap
                 = readDynamicSettingsFromFile(mDynamicSettingsFile);
-        for(Integer userId: readSettingsMap.keySet()) {
+        for (Integer userId: readSettingsMap.keySet()) {
             UserServices services = findOrCreateUserLocked(userId);
             List<Pair<ComponentName, DynamicSettings>> componentNameDynamicServiceStatusPairs
                     = readSettingsMap.get(userId);
             int pairsSize = componentNameDynamicServiceStatusPairs.size();
-            for(int i = 0; i < pairsSize; i++) {
+            for (int i = 0; i < pairsSize; i++) {
                 Pair<ComponentName, DynamicSettings> pair
                         = componentNameDynamicServiceStatusPairs.get(i);
                 services.dynamicSettings.put(pair.first, pair.second);
@@ -405,12 +415,12 @@ public class RegisteredServicesCacheMigration {
     readOtherFromFile(SettingsFile settingsFile) {
         Map<Integer, List<Pair<ComponentName, OtherServiceStatus>>> readSettingsMap =
                 new HashMap<>();
-        Log.d(TAG, "read others locked");
+        Log.d(TAG, "readOtherFromFile");
 
         InputStream fis = null;
         try {
             if (!settingsFile.exists()) {
-                Log.d(TAG, "Other settings file does not exist.");
+                Log.d(TAG, "readOtherFromFile: Other settings file does not exist.");
                 return new HashMap<>();
             }
             fis = settingsFile.openRead();
@@ -435,7 +445,7 @@ public class RegisteredServicesCacheMigration {
                             String uidString = parser.getAttributeValue(null, "uid");
                             String checkedString = parser.getAttributeValue(null, "checked");
                             if (compString == null || uidString == null || checkedString == null) {
-                                Log.e(TAG, "Invalid service attributes");
+                                Log.e(TAG, "readOtherFromFile: Invalid service attributes");
                             } else {
                                 try {
                                     currentUid = Integer.parseInt(uidString);
@@ -443,7 +453,7 @@ public class RegisteredServicesCacheMigration {
                                             ComponentName.unflattenFromString(compString);
                                     checked = checkedString.equals("true") ? true : false;
                                 } catch (NumberFormatException e) {
-                                    Log.e(TAG, "Could not parse service uid");
+                                    Log.e(TAG, "readOtherFromFile: Could not parse service uid");
                                 }
                             }
                         }
@@ -451,12 +461,12 @@ public class RegisteredServicesCacheMigration {
                         if ("service".equals(tagName)) {
                             // See if we have a valid service
                             if (currentComponent != null && currentUid >= 0) {
-                                Log.d(TAG, " end of service tag");
+                                Log.d(TAG, " ereadOtherFromFile: nd of service tag");
                                 final int userId =
                                         UserHandle.getUserHandleForUid(currentUid).getIdentifier();
                                 OtherServiceStatus status =
                                         new OtherServiceStatus(currentUid, checked);
-                                Log.d(TAG, " ## user id - " + userId);
+                                Log.d(TAG, "readOtherFromFile: ## user id - " + userId);
                                 if (!readSettingsMap.containsKey(userId)) {
                                     readSettingsMap.put(userId, new ArrayList<>());
                                 }
@@ -472,7 +482,7 @@ public class RegisteredServicesCacheMigration {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Could not parse others AIDs file, trashing.", e);
+            Log.e(TAG, ": Could not parse others AIDs file, e=", e);
             settingsFile.delete();
         } finally {
             if (fis != null) {
@@ -489,12 +499,12 @@ public class RegisteredServicesCacheMigration {
     private void readOthersLocked() {
         Map<Integer, List<Pair<ComponentName, OtherServiceStatus>>> readSettingsMap
                 = readOtherFromFile(mOthersFile);
-        for(Integer userId: readSettingsMap.keySet()) {
+        for (Integer userId: readSettingsMap.keySet()) {
             UserServices services = findOrCreateUserLocked(userId);
             List<Pair<ComponentName, OtherServiceStatus>> componentNameOtherServiceStatusPairs
                     = readSettingsMap.get(userId);
             int pairsSize = componentNameOtherServiceStatusPairs.size();
-            for(int i = 0; i < pairsSize; i++) {
+            for (int i = 0; i < pairsSize; i++) {
                 Pair<ComponentName, OtherServiceStatus> pair
                         = componentNameOtherServiceStatusPairs.get(i);
                 services.others.put(pair.first,

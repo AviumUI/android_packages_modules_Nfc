@@ -38,11 +38,6 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.nfc.cardemulation.RegisteredT3tIdentifiersCache.T3tIdentifier;
 
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,10 +45,14 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 @RunWith(AndroidJUnit4.class)
 public class RegisteredT3tIdentifiersCacheTest {
@@ -155,7 +154,7 @@ public class RegisteredT3tIdentifiersCacheTest {
     cache = new RegisteredT3tIdentifiersCache(mContext, mRoutingManager);
     cache.mNfcEnabled = false;
 
-    cache.onSecureNfcToggled();
+    cache.onTriggerRoutingTableUpdate();
 
     verify(mRoutingManager, never()).configureRouting(any());
   }
@@ -166,7 +165,7 @@ public class RegisteredT3tIdentifiersCacheTest {
     cache.mNfcEnabled = true;
     cache.mForegroundT3tIdentifiersCache.put(NFCID2, mNfcFServiceInfo);
 
-    cache.onSecureNfcToggled();
+    cache.onTriggerRoutingTableUpdate();
 
     verify(mRoutingManager, times(2)).configureRouting(identifiersCaptor.capture());
     List<T3tIdentifier> firstList = identifiersCaptor.getAllValues().get(0);

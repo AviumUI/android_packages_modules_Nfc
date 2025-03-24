@@ -19,8 +19,10 @@ package android.nfc.test;
 import static org.junit.Assume.assumeFalse;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Instrumentation;
 import android.app.KeyguardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -54,11 +56,15 @@ public class TestUtils {
 
   static Activity createAndResumeActivity(Class<? extends Activity> activityClass) {
     ensureUnlocked();
-    Intent intent = new Intent(ApplicationProvider.getApplicationContext(), activityClass);
+    Context context = ApplicationProvider.getApplicationContext();
+    Intent intent = new Intent(context, activityClass);
     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     Activity activity = InstrumentationRegistry.getInstrumentation().startActivitySync(intent);
     InstrumentationRegistry.getInstrumentation().callActivityOnResume(activity);
-
+    ComponentName topComponentName = context.getSystemService(ActivityManager.class)
+        .getRunningTasks(1).get(0).topActivity;
+    Assert.assertEquals("Foreground activity not in the foreground",
+        activityClass.getName(), topComponentName.getClassName());
     return activity;
   }
 

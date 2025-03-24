@@ -79,7 +79,7 @@ public final class NfcActivityManager extends IAppCallback.Stub
     public void unregisterApplication(Application app) {
         NfcApplicationState appState = findAppState(app);
         if (appState == null) {
-            Log.e(TAG, "app was not registered " + app);
+            Log.e(TAG, "unregisterApplication: app was not registered " + app);
             return;
         }
         appState.unregister();
@@ -184,7 +184,7 @@ public final class NfcActivityManager extends IAppCallback.Stub
     }
 
     public void setReaderMode(Binder token, int flags, Bundle extras) {
-        if (DBG) Log.d(TAG, "Setting reader mode");
+        if (DBG) Log.d(TAG, "setReaderModee");
         NfcAdapter.callService(() -> NfcAdapter.sService.setReaderMode(
                 token, this, flags, extras, mAdapter.getContext().getPackageName()));
     }
@@ -236,7 +236,7 @@ public final class NfcActivityManager extends IAppCallback.Stub
 
         synchronized (NfcActivityManager.this) {
             NfcActivityState state = findActivityState(activity);
-            if (DBG) Log.d(TAG, "onResume() for " + activity + " " + state);
+            if (DBG) Log.d(TAG, "onActivityResumed: " + activity + " " + state);
             if (state == null) return;
             state.resumed = true;
             token = state.token;
@@ -265,7 +265,7 @@ public final class NfcActivityManager extends IAppCallback.Stub
 
         synchronized (NfcActivityManager.this) {
             NfcActivityState state = findActivityState(activity);
-            if (DBG) Log.d(TAG, "onPause() for " + activity + " " + state);
+            if (DBG) Log.d(TAG, "onActivityPaused: " + activity + " " + state);
             if (state == null) return;
             state.resumed = false;
             token = state.token;
@@ -297,7 +297,7 @@ public final class NfcActivityManager extends IAppCallback.Stub
     public void onActivityDestroyed(Activity activity) {
         synchronized (NfcActivityManager.this) {
             NfcActivityState state = findActivityState(activity);
-            if (DBG) Log.d(TAG, "onDestroy() for " + activity + " " + state);
+            if (DBG) Log.d(TAG, "onActivityDestroyed: " + activity + " " + state);
             if (state != null) {
                 // release all associated references
                 destroyActivityState(activity);

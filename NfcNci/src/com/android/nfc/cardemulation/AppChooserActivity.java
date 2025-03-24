@@ -88,7 +88,7 @@ public class AppChooserActivity extends AppCompatActivity
         registerReceiver(mReceiver, filter);
 
         if ((options == null || options.size() == 0) && failedComponent == null) {
-            Log.e(TAG, "No components passed in.");
+            Log.e(TAG, "onCreate: No components passed in.");
             finish();
             return;
         }
@@ -98,7 +98,7 @@ public class AppChooserActivity extends AppCompatActivity
 
         final NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
         if (adapter == null) {
-            Log.e(TAG, "adapter is null.");
+            Log.e(TAG, "onCreate: adapter is null");
             finish();
             return;
         }
@@ -217,7 +217,7 @@ public class AppChooserActivity extends AppCompatActivity
             try {
                 inflater = context.getSystemService(LayoutInflater.class);
             } catch (Exception e) {
-                Log.e(TAG, "Initiate mInflater failed.", e);
+                Log.e(TAG, "ListAdapter: Initiate mInflater failed ", e);
             }
             mInflater = inflater;
             // For each component, get the corresponding app name and icon
@@ -235,7 +235,8 @@ public class AppChooserActivity extends AppCompatActivity
                 if (mIsPayment) {
                     banner = service.loadBanner(pm);
                     if (banner == null) {
-                        Log.e(TAG, "Not showing " + label + " because no banner specified.");
+                        Log.e(TAG, "ListAdapter: Not showing " + label
+                                + " because no banner specified");
                         continue;
                     }
                 }

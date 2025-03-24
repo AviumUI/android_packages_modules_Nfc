@@ -150,12 +150,12 @@ tNFA_STATUS NfcDta::getConfigParamValues(std::vector<uint8_t> paramIds) {
         uint16_t len = gCurrentConfigLen - 2;
         // First Config TLV starts from index 1 of gConfig
         uint16_t index = 1;
-        LOG(DEBUG) << StringPrintf("%s: default_config len: %d", __func__, len);
+        LOG(DEBUG) << StringPrintf("%s: default_config len=%d", __func__, len);
         while (index <= len) {
           mDefaultTlv.push_back(gConfig[index++]);
         }
       } else {
-        LOG(DEBUG) << StringPrintf("%s: getConfig failed len: %d", __func__,
+        LOG(DEBUG) << StringPrintf("%s: getConfig failed len=%d", __func__,
                                    gCurrentConfigLen);
         status = NFA_STATUS_FAILED;
       }
@@ -183,7 +183,7 @@ tNFA_STATUS NfcDta::setConfigParams(std::vector<uint8_t> configTlv) {
   while (index < configTlv.size()) {
     paramId = configTlv[index++];
     len = configTlv[index++];
-    LOG(DEBUG) << StringPrintf("%s: Param Id: %02X, Length: %02X", __func__,
+    LOG(DEBUG) << StringPrintf("%s: Param Id=%02X, Length=%02X", __func__,
                                paramId, len);
     SyncEventGuard guard(gNfaSetConfigEvent);
     status = NFA_SetConfig(paramId, len, &configTlv[index]);
@@ -212,7 +212,7 @@ void NfcDta::setNfccConfigParams() {
   int len = 0;
   len = property_get("nfc.dta.configTLV", sysPropTlvs, "");
   std::string configTlvs(sysPropTlvs);
-  LOG(DEBUG) << StringPrintf("%s: SysProperty nfc.configTLV: %s", __func__,
+  LOG(DEBUG) << StringPrintf("%s: SysProperty nfc.configTLV=%s", __func__,
                              configTlvs.c_str());
   if (len <= 0 || (configTlvs.empty() && mDefaultTlv.empty())) {
     LOG(DEBUG) << StringPrintf("%s: Config TLVs not available", __func__);

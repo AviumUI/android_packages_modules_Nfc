@@ -26,6 +26,7 @@
             <item name="polling_disable_allowed" type="bool" />
             <item name="nfcc_always_on_allowed" type="bool" />
             <item name="enable_reader_option_support" type="bool" />
+            <item name="enable_service_for_category_other" type="bool" />
             <item name="payment_foreground_preference" type="bool" />
             <item name="tag_intent_app_pref_supported" type="bool" />
             <item name="max_antenna_blocked_failure_count" type="integer" />

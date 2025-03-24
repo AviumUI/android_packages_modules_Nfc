@@ -22,7 +22,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.nfc.NfcAdapter;
-import android.nfc.cardemulation.CardEmulation;
 import android.os.Handler;
 import android.util.Log;
 
@@ -43,7 +42,7 @@ public class NfcMigrationBootCompleteReceiver extends BroadcastReceiver {
                     NfcAdapter.class.getMethod("indicateDataMigration", boolean.class);
             indicateDataMirationMethod.invoke(mNfcAdapter, inProgress);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to indicate nfc data migration", e);
+            Log.e(TAG, "indicateDataMigration: error=", e);
         }
     }
 
@@ -67,7 +66,7 @@ public class NfcMigrationBootCompleteReceiver extends BroadcastReceiver {
                    Handler handler = new Handler();
                    // Let NFC stack handle user unlock before doing the migration.
                    handler.post(()  -> {
-                       Log.d(TAG, "Starting NFC data Migration");
+                       Log.d(TAG, "onReceive: Starting NFC data Migration");
                        indicateDataMigration(true);
                        preferencesMigration.handleMigration();
                        RegisteredServicesCacheMigration cacheMigration =

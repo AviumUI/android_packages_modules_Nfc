@@ -141,18 +141,18 @@ void NativeWlcManager::notifyWlcCompletion(uint8_t wpt_end_condition) {
   JNIEnv* e = NULL;
   ScopedAttach attach(mNativeData->vm, &e);
   if (e == NULL) {
-    LOG(ERROR) << "jni env is null";
+    LOG(ERROR) << __func__ << ": jni env is null";
     return;
   }
 
-  LOG(DEBUG) << StringPrintf("%s: ", __func__);
+  LOG(DEBUG) << StringPrintf("%s", __func__);
 
   e->CallVoidMethod(mNativeData->manager,
                     android::gCachedNfcManagerNotifyWlcStopped,
                     (int)wpt_end_condition);
   if (e->ExceptionCheck()) {
     e->ExceptionClear();
-    LOG(ERROR) << StringPrintf("fail notify");
+    LOG(ERROR) << StringPrintf("%s: fail notify", __func__);
   }
 }
 
@@ -169,8 +169,6 @@ void NativeWlcManager::notifyWlcCompletion(uint8_t wpt_end_condition) {
 *******************************************************************************/
 void nfaWlcManagementCallback(tNFA_WLC_EVT wlcEvent,
                               tNFA_WLC_EVT_DATA* eventData) {
-  LOG(DEBUG) << StringPrintf("%s: enter; event=0x%X", __func__, wlcEvent);
-
   switch (wlcEvent) {
     case NFA_WLC_ENABLE_RESULT_EVT:  // whether WLC module enabled
     {

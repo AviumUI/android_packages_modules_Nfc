@@ -126,13 +126,15 @@ public class NfcProprietaryCapsTest {
                 true,
                 false,
                 true,
-                5
+                5,
+                false
         );
         String expected = "NfcProprietaryCaps{" +
                 "passiveObserveMode=SUPPORT_WITHOUT_RF_DEACTIVATION, " +
                 "isPollingFrameNotificationSupported=true, " +
                 "isPowerSavingModeSupported=false, " +
-                "isAutotransactPollingLoopFilterSupported=true}";
+                "isAutotransactPollingLoopFilterSupported=true, " +
+                "mIsReaderModeAnnotationSupported=false}";
 
         assertEquals(expected, caps.toString());
     }

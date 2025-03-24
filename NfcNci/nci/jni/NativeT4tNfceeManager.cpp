@@ -39,7 +39,7 @@ namespace android {
 **
 *******************************************************************************/
 jint t4tNfceeManager_doClearNdefData(JNIEnv* e, jobject o) {
-  LOG(DEBUG) << StringPrintf("%s: enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s", __func__);
 
   return NativeT4tNfcee::getInstance().t4tClearData(e, o);
 }
@@ -55,7 +55,7 @@ jint t4tNfceeManager_doClearNdefData(JNIEnv* e, jobject o) {
 **
 *******************************************************************************/
 jboolean t4tNfceeManager_isNdefOperationOngoing(JNIEnv* e, jobject o) {
-  LOG(DEBUG) << StringPrintf("%s: enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s", __func__);
 
   return NativeT4tNfcee::getInstance().getT4tStatus(e, o);
 }
@@ -72,7 +72,7 @@ jboolean t4tNfceeManager_isNdefOperationOngoing(JNIEnv* e, jobject o) {
 **
 *******************************************************************************/
 jboolean t4tNfceeManager_isNdefNfceeEmulationSupported(JNIEnv* e, jobject o) {
-  LOG(DEBUG) << StringPrintf("%s: enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s", __func__);
 
   return NativeT4tNfcee::getInstance().isT4tNdefNfceeEmulationSupported(e, o);
 }
@@ -89,7 +89,7 @@ jboolean t4tNfceeManager_isNdefNfceeEmulationSupported(JNIEnv* e, jobject o) {
  *******************************************************************************/
 jint t4tNfceeManager_doWriteData(JNIEnv* e, jobject o, jbyteArray fileId,
                                  jbyteArray data) {
-  LOG(DEBUG) << StringPrintf("%s: enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s", __func__);
 
   return NativeT4tNfcee::getInstance().t4tWriteData(e, o, fileId, data);
 }
@@ -108,7 +108,7 @@ jint t4tNfceeManager_doWriteData(JNIEnv* e, jobject o, jbyteArray fileId,
 **
 *******************************************************************************/
 jbyteArray t4tNfceeManager_doReadData(JNIEnv* e, jobject o, jbyteArray fileId) {
-  LOG(DEBUG) << StringPrintf("%s: enter", __func__);
+  LOG(DEBUG) << StringPrintf("%s", __func__);
   return NativeT4tNfcee::getInstance().t4tReadData(e, o, fileId);
 }
 /*******************************************************************************

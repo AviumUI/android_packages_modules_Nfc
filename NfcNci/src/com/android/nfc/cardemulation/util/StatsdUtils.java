@@ -84,6 +84,13 @@ public class StatsdUtils {
     public static final int TRIGGER_SOURCE_AUTO_TRANSACT =
             NfcStatsLog.NFC_OBSERVE_MODE_STATE_CHANGED__TRIGGER_SOURCE__AUTO_TRANSACT;
 
+    public static final int PROCESSOR_UNKNOWN =
+            NfcStatsLog.NFC_AUTO_TRANSACT_REPORTED__AUTO_TRANSACT_PROCESSOR__PROCESSOR_UNKNOWN;
+    public static final int PROCESSOR_HOST =
+            NfcStatsLog.NFC_AUTO_TRANSACT_REPORTED__AUTO_TRANSACT_PROCESSOR__HOST;
+    public static final int PROCESSOR_NFCC =
+            NfcStatsLog.NFC_AUTO_TRANSACT_REPORTED__AUTO_TRANSACT_PROCESSOR__NFCC;
+
     /** Name of SE terminal to log in statsd */
     private String mSeName = "";
     /** Timestamp in millis when app binding starts */
@@ -223,7 +230,10 @@ public class StatsdUtils {
         int bindingLimitMillis = 500;
         if (mBindingStartTimeMillis > 0) {
             long bindingElapsedTimeMillis = SystemClock.elapsedRealtime() - mBindingStartTimeMillis;
-            if (DBG) Log.d(TAG, "binding took " + bindingElapsedTimeMillis + " millis");
+            if (DBG) {
+                Log.d(TAG, "notifyCardEmulationEventServiceBound: binding took "
+                        + bindingElapsedTimeMillis + " millis");
+            }
             if (bindingElapsedTimeMillis >= bindingLimitMillis) {
                 logErrorEvent(NfcStatsLog.NFC_ERROR_OCCURRED__TYPE__HCE_LATE_BINDING);
             }
@@ -328,6 +338,11 @@ public class StatsdUtils {
      */
     public void logExitFrameTableChanged(int tableSize, int timeoutMs) {
         NfcStatsLog.write(NfcStatsLog.NFC_EXIT_FRAME_TABLE_CHANGED, tableSize, timeoutMs);
+    }
+
+    public void logAutoTransactReported(int processor, byte[] data) {
+      NfcStatsLog.write(NfcStatsLog.NFC_AUTO_TRANSACT_REPORTED, processor, data.length,
+          getFrameType(data));
     }
 
     private final HashMap<String, PollingFrameLog> pollingFrameMap = new HashMap<>();

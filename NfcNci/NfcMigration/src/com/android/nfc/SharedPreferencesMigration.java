@@ -140,28 +140,29 @@ public class SharedPreferencesMigration {
     }
 
     public void handleMigration() {
-        Log.i(TAG, "Migrating preferences: " + mSharedPreferences.getAll()
+        Log.i(TAG, "handleMigration: Migrating preferences: " + mSharedPreferences.getAll()
                 + ", " + mTagAppPrefListPreferences.getAll());
         if (mSharedPreferences.contains(PREF_NFC_ON)) {
             boolean enableNfc = mSharedPreferences.getBoolean(PREF_NFC_ON, false);
-            Log.d(TAG, "enableNfc: " + enableNfc);
+            Log.d(TAG, "handleMigration: enableNfc: " + enableNfc);
             if (!setNfcEnabled(enableNfc)) {
-                Log.e(TAG, "Failed to set NFC " + (enableNfc ? "enabled" : "disabled"));
+                Log.e(TAG, "handleMigration: Failed to set NFC "
+                        + (enableNfc ? "enabled" : "disabled"));
             }
         }
         if (mSharedPreferences.contains(PREF_SECURE_NFC_ON)) {
             boolean enableSecureNfc = mSharedPreferences.getBoolean(PREF_SECURE_NFC_ON, false);
-            Log.d(TAG, "enableSecureNfc: " + enableSecureNfc);
+            Log.d(TAG, "handleMigration: enableSecureNfc: " + enableSecureNfc);
             if (!mNfcAdapter.enableSecureNfc(enableSecureNfc)) {
-                Log.e(TAG, "enableSecureNfc failed");
+                Log.e(TAG, "handleMigration: enableSecureNfc failed");
             }
         }
         if (mSharedPreferences.contains(PREF_NFC_READER_OPTION_ON)) {
             boolean enableReaderOption =
                 mSharedPreferences.getBoolean(PREF_NFC_READER_OPTION_ON, false);
-            Log.d(TAG, "enableSecureNfc: " + enableReaderOption);
+            Log.d(TAG, "handleMigration: enableSecureNfc: " + enableReaderOption);
             if (!mNfcAdapter.enableReaderOption(enableReaderOption)) {
-                Log.e(TAG, "enableReaderOption failed");
+                Log.e(TAG, "handleMigration: enableReaderOption failed");
             }
         }
         if (mTagAppPrefListPreferences != null) {
@@ -176,16 +177,18 @@ public class SharedPreferencesMigration {
                         while (keysItr.hasNext()) {
                             String pkg = keysItr.next();
                             Boolean allow = jsonObject.getBoolean(pkg);
-                            Log.d(TAG, "setTagIntentAppPreferenceForUser: " + pkg + " = " + allow);
-                            if (mNfcAdapter.setTagIntentAppPreferenceForUser(userId, pkg, allow)
-                                    != NfcAdapter.TAG_INTENT_APP_PREF_RESULT_SUCCESS) {
-                                Log.e(TAG, "setTagIntentAppPreferenceForUser failed");
+                            Log.d(TAG, "handleMigration: setTagIntentAppPreferenceForUser: " + pkg
+                                    + " = " + allow);
+                            if (mNfcAdapter.setTagIntentAppPreferenceForUser(userId, pkg,
+                                    allow) != NfcAdapter.TAG_INTENT_APP_PREF_RESULT_SUCCESS) {
+                                Log.e(TAG,
+                                        "handleMigration: setTagIntentAppPreferenceForUser failed");
                             }
                         }
                     }
                 }
             } catch (JSONException e) {
-                Log.e(TAG, "JSONException: " + e);
+                Log.e(TAG, "handleMigration: JSONException: " + e);
             }
         }
     }

@@ -52,7 +52,6 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 import android.util.Log;
 
-import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -624,7 +623,6 @@ public final class NfcAdapter {
     final Object mLock;
     final NfcOemExtension mNfcOemExtension;
 
-    ITagRemovedCallback mTagRemovedListener; // protected by mLock
 
     /**
      * A callback to be invoked when the system finds a tag while the foreground activity is
@@ -942,7 +940,6 @@ public final class NfcAdapter {
         mContext = context;
         mNfcActivityManager = new NfcActivityManager(this);
         mNfcUnlockHandlers = new HashMap<NfcUnlockHandler, INfcUnlockHandler>();
-        mTagRemovedListener = null;
         mLock = new Object();
         mControllerAlwaysOnListener = new NfcControllerAlwaysOnListener();
         mNfcWlcStateListener = new NfcWlcStateListener(getService());
@@ -1195,6 +1192,21 @@ public final class NfcAdapter {
         callService(() -> sService.pausePolling(timeoutInMs));
     }
 
+    /**
+     * Returns whether the device supports setting annotation frames when enabling reader
+     * mode by passing an extras bundle that includes a
+     * {@link #EXTRA_READER_TECH_A_POLLING_LOOP_ANNOTATION} key to
+     * {@link #enableReaderMode(Activity, ReaderCallback, int, Bundle)}. These annotations frames
+     * will be reported as unknown frames via
+     * {@link android.nfc.cardemulation.HostApduService#processPollingFrames(List)} on another
+     * Android device that has set enabled observe mode by passing true to
+     * {@link #setObserveModeEnabled(boolean)} .
+     * @return true if the mode is supported, false otherwise.
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_READER_MODE_ANNOTATIONS)
+    public boolean isReaderModeAnnotationSupported() {
+        return callServiceReturn(() ->  sService.isReaderModeAnnotationSupported(), false);
+    }
 
     /**
      * Returns whether the device supports observe mode or not. When observe mode is enabled, the
@@ -2202,14 +2214,8 @@ public final class NfcAdapter {
                     } else {
                         tagRemovedListener.onTagRemoved();
                     }
-                    synchronized (mLock) {
-                        mTagRemovedListener = null;
-                    }
                 }
             };
-        }
-        synchronized (mLock) {
-            mTagRemovedListener = iListener;
         }
         final ITagRemovedCallback.Stub passedListener = iListener;
         return callServiceReturn(() ->

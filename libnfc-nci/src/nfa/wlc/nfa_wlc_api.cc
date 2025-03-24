@@ -62,7 +62,7 @@ tNFA_STATUS NFA_WlcEnable(tNFA_WLC_CBACK* p_wlc_cback) {
 
   /* Validate parameters */
   if (!p_wlc_cback) {
-    LOG(ERROR) << StringPrintf("%s; error null callback", __func__);
+    LOG(ERROR) << StringPrintf("%s:  error null callback", __func__);
     return (NFA_STATUS_FAILED);
   }
 
@@ -104,7 +104,7 @@ tNFA_STATUS NFA_WlcStart(tNFA_WLC_MODE mode) {
   LOG(VERBOSE) << __func__;
 
   if (mode) {
-    LOG(ERROR) << StringPrintf("%s; Wireless Charging mode not supported",
+    LOG(ERROR) << StringPrintf("%s:  Wireless Charging mode not supported",
                                __func__);
     return (NFA_STATUS_INVALID_PARAM);
   }
@@ -151,15 +151,15 @@ tNFA_STATUS NFA_WlcStart(tNFA_WLC_MODE mode) {
 tNFA_STATUS NFA_WlcStartWPT(uint8_t power_adj_req, uint8_t wpt_time_int) {
   tNFA_WLC_MSG* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("%s; power_adj_req: %d, wpt_time_int: %d",
-                             __func__, power_adj_req, wpt_time_int);
+  LOG(VERBOSE) << StringPrintf("%s:  power_adj_req=%d, wpt_time_int=%d",
+                               __func__, power_adj_req, wpt_time_int);
 
   /* POWER_ADJ_REQ is in the range [0x00..0x14] for request to increase power
    * POWER_ADJ_REQ is in the range [0xF6..0xFF] for request to decrease power
    */
   if ((power_adj_req > POWER_ADJ_REQ_INC_MAX) &&
       (power_adj_req < POWER_ADJ_REQ_DEC_MIN)) {
-    LOG(ERROR) << StringPrintf("%s; Invalid POWER_ADJ_REQ value", __func__);
+    LOG(ERROR) << StringPrintf("%s:  Invalid POWER_ADJ_REQ value", __func__);
     return false;
   }
 
@@ -168,7 +168,7 @@ tNFA_STATUS NFA_WlcStartWPT(uint8_t power_adj_req, uint8_t wpt_time_int) {
    */
   if ((wpt_time_int > WPT_DURATION_INT_MAX) ||
       (wpt_time_int & WPT_DURATION_INT_MASK)) {
-    LOG(ERROR) << StringPrintf("%s; Invalid WPT_DURATIOM_INT value", __func__);
+    LOG(ERROR) << StringPrintf("%s:  Invalid WPT_DURATIOM_INT value", __func__);
     return false;
   }
 

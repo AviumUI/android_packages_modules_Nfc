@@ -54,18 +54,19 @@ tNFA_STATUS NFA_HciRegister(char* p_app_name, tNFA_HCI_CBACK* p_cback,
   uint8_t app_name_len;
 
   if (p_app_name == nullptr) {
-    LOG(VERBOSE) << StringPrintf("Invalid Application name");
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Application name", __func__);
     return (NFA_STATUS_FAILED);
   }
 
   if (p_cback == nullptr) {
     LOG(VERBOSE) << StringPrintf(
-        "Application should provide callback function to "
-        "register!");
+        "%s: Application should provide callback function to "
+        "register!",
+        __func__);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("Application Name: %s", p_app_name);
+  LOG(VERBOSE) << StringPrintf("%s: Application Name=%s", __func__, p_app_name);
 
   app_name_len = (uint8_t)strlen(p_app_name);
 
@@ -109,11 +110,12 @@ tNFA_STATUS NFA_HciGetGateAndPipeList(tNFA_HANDLE hci_handle) {
   tNFA_HCI_API_GET_APP_GATE_PIPE* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x", hci_handle);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x", __func__, hci_handle);
 
   /* Register the application with HCI */
   if ((nfa_hci_cb.hci_state != NFA_HCI_STATE_DISABLED) &&
@@ -151,11 +153,11 @@ tNFA_STATUS NFA_HciDeregister(char* p_app_name) {
   uint8_t app_name_len;
 
   if (p_app_name == nullptr) {
-    LOG(VERBOSE) << StringPrintf("Invalid Application");
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Application", __func__);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("Application Name: %s", p_app_name);
+  LOG(VERBOSE) << StringPrintf("%s: Application Name=%s", __func__, p_app_name);
   app_name_len = (uint8_t)strlen(p_app_name);
 
   if (app_name_len > NFA_MAX_HCI_APP_NAME_LEN) return (NFA_STATUS_FAILED);
@@ -169,7 +171,8 @@ tNFA_STATUS NFA_HciDeregister(char* p_app_name) {
   }
 
   if (xx == NFA_HCI_MAX_APP_CB) {
-    LOG(ERROR) << StringPrintf("Application Name: %s  NOT FOUND", p_app_name);
+    LOG(ERROR) << StringPrintf("%s: Application Name=%s  NOT FOUND", __func__,
+                               p_app_name);
     return (NFA_STATUS_FAILED);
   }
 
@@ -210,19 +213,21 @@ tNFA_STATUS NFA_HciAllocGate(tNFA_HANDLE hci_handle, uint8_t gate) {
   tNFA_HCI_API_ALLOC_GATE* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if ((gate) && ((gate < NFA_HCI_FIRST_HOST_SPECIFIC_GENERIC_GATE) ||
                  (gate > NFA_HCI_LAST_PROP_GATE) ||
                  (gate == NFA_HCI_CONNECTIVITY_GATE))) {
-    LOG(VERBOSE) << StringPrintf("Cannot allocate gate:0x%02x", gate);
+    LOG(VERBOSE) << StringPrintf("%s: Cannot allocate gate=0x%02x", __func__,
+                                 gate);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x, Gate:0x%02x", hci_handle,
-                             gate);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x, Gate=0x%02x", __func__,
+                               hci_handle, gate);
 
   /* Request HCI to allocate gate to the application */
   if ((nfa_hci_cb.hci_state != NFA_HCI_STATE_DISABLED) &&
@@ -255,18 +260,20 @@ tNFA_STATUS NFA_HciDeallocGate(tNFA_HANDLE hci_handle, uint8_t gate) {
   tNFA_HCI_API_DEALLOC_GATE* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if ((gate < NFA_HCI_FIRST_HOST_SPECIFIC_GENERIC_GATE) ||
       (gate > NFA_HCI_LAST_PROP_GATE) || (gate == NFA_HCI_CONNECTIVITY_GATE)) {
-    LOG(VERBOSE) << StringPrintf("Cannot deallocate the gate:0x%02x", gate);
+    LOG(VERBOSE) << StringPrintf("%s: Cannot deallocate the gate=0x%02x",
+                                 __func__, gate);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x, gate:0x%02X", hci_handle,
-                             gate);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x, gate=0x%02X", __func__,
+                               hci_handle, gate);
 
   /* Request HCI to deallocate the gate that was previously allocated to the
    * application */
@@ -300,11 +307,12 @@ tNFA_STATUS NFA_HciGetHostList(tNFA_HANDLE hci_handle) {
   tNFA_HCI_API_GET_HOST_LIST* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x", hci_handle);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x", __func__, hci_handle);
 
   /* Request HCI to get list of host in the hci network */
   if ((nfa_hci_cb.hci_state != NFA_HCI_STATE_DISABLED) &&
@@ -345,18 +353,20 @@ tNFA_STATUS NFA_HciCreatePipe(tNFA_HANDLE hci_handle, uint8_t source_gate_id,
   tNFA_HCI_API_CREATE_PIPE_EVT* p_msg;
 
   LOG(VERBOSE) << StringPrintf(
-      "hci_handle:0x%04x, source gate:0x%02X, "
-      "destination host:0x%02X , destination gate:0x%02X",
-      hci_handle, source_gate_id, dest_host, dest_gate);
+      "%s: hci_handle=0x%04x, source gate=0x%02X, "
+      "destination host=0x%02X , destination gate=0x%02X",
+      __func__, hci_handle, source_gate_id, dest_host, dest_gate);
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if ((source_gate_id < NFA_HCI_FIRST_HOST_SPECIFIC_GENERIC_GATE) ||
       (source_gate_id > NFA_HCI_LAST_PROP_GATE)) {
-    LOG(VERBOSE) << StringPrintf("Invalid local Gate:0x%02x", source_gate_id);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid local Gate=0x%02x", __func__,
+                                 source_gate_id);
     return (NFA_STATUS_FAILED);
   }
 
@@ -364,12 +374,14 @@ tNFA_STATUS NFA_HciCreatePipe(tNFA_HANDLE hci_handle, uint8_t source_gate_id,
        (dest_gate != NFA_HCI_LOOP_BACK_GATE) &&
        (dest_gate != NFA_HCI_IDENTITY_MANAGEMENT_GATE)) ||
       (dest_gate > NFA_HCI_LAST_PROP_GATE)) {
-    LOG(VERBOSE) << StringPrintf("Invalid Destination Gate:0x%02x", dest_gate);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Destination Gate=0x%02x",
+                                 __func__, dest_gate);
     return (NFA_STATUS_FAILED);
   }
 
   if (!nfa_hciu_is_active_host(dest_host)) {
-    LOG(VERBOSE) << StringPrintf("Host not active: 0x%02x", dest_host);
+    LOG(VERBOSE) << StringPrintf("%s: Host not active=0x%02x", __func__,
+                                 dest_host);
     return (NFA_STATUS_FAILED);
   }
 
@@ -407,18 +419,19 @@ tNFA_STATUS NFA_HciOpenPipe(tNFA_HANDLE hci_handle, uint8_t pipe) {
   tNFA_HCI_API_OPEN_PIPE_EVT* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if ((pipe < NFA_HCI_FIRST_DYNAMIC_PIPE) ||
       (pipe > NFA_HCI_LAST_DYNAMIC_PIPE)) {
-    LOG(VERBOSE) << StringPrintf("Invalid Pipe:0x%02x", pipe);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Pipe=0x%02x", __func__, pipe);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x, pipe:0x%02X", hci_handle,
-                             pipe);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x, pipe=0x%02X", __func__,
+                               hci_handle, pipe);
 
   /* Request HCI to open a pipe if it is in closed state */
   if ((nfa_hci_cb.hci_state != NFA_HCI_STATE_DISABLED) &&
@@ -456,17 +469,18 @@ tNFA_STATUS NFA_HciGetRegistry(tNFA_HANDLE hci_handle, uint8_t pipe,
   tNFA_HCI_API_GET_REGISTRY* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if (pipe < NFA_HCI_FIRST_DYNAMIC_PIPE) {
-    LOG(VERBOSE) << StringPrintf("Invalid Pipe:0x%02x", pipe);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Pipe=0x%02x", __func__, pipe);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x  Pipe: 0x%02x", hci_handle,
-                             pipe);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x  Pipe=0x%02x", __func__,
+                               hci_handle, pipe);
 
   /* Request HCI to get list of gates supported by the specified host */
   if ((nfa_hci_cb.hci_state != NFA_HCI_STATE_DISABLED) &&
@@ -505,22 +519,25 @@ tNFA_STATUS NFA_HciSendCommand(tNFA_HANDLE hci_handle, uint8_t pipe,
   tNFA_HCI_API_SEND_CMD_EVT* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if (pipe < NFA_HCI_FIRST_DYNAMIC_PIPE) {
-    LOG(VERBOSE) << StringPrintf("Invalid Pipe:0x%02x", pipe);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Pipe=0x%02x", __func__, pipe);
     return (NFA_STATUS_FAILED);
   }
 
   if ((cmd_size && (p_data == nullptr)) || (cmd_size > NFA_MAX_HCI_CMD_LEN)) {
-    LOG(VERBOSE) << StringPrintf("Invalid cmd size:0x%02x", cmd_size);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid cmd size=0x%02x", __func__,
+                                 cmd_size);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x, pipe:0x%02x  Code: 0x%02x",
-                             hci_handle, pipe, cmd_code);
+  LOG(VERBOSE) << StringPrintf(
+      "%s: hci_handle=0x%04x, pipe=0x%02x  Code=0x%02x", __func__, hci_handle,
+      pipe, cmd_code);
 
   /* Request HCI to post event data on a particular pipe */
   if ((nfa_hci_cb.hci_state != NFA_HCI_STATE_DISABLED) &&
@@ -578,28 +595,30 @@ tNFA_STATUS NFA_HciSendEvent(tNFA_HANDLE hci_handle, uint8_t pipe,
                              uint8_t* p_rsp_buf, uint16_t rsp_timeout) {
   tNFA_HCI_API_SEND_EVENT_EVT* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x, pipe:0x%02x  Code: 0x%02x",
-                             hci_handle, pipe, evt_code);
+  LOG(VERBOSE) << StringPrintf(
+      "%s: hci_handle=0x%04x, pipe=0x%02x  Code=0x%02x", __func__, hci_handle,
+      pipe, evt_code);
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if (pipe < NFA_HCI_FIRST_DYNAMIC_PIPE) {
-    LOG(VERBOSE) << StringPrintf("Invalid Pipe:0x%02x", pipe);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Pipe=0x%02x", __func__, pipe);
     return (NFA_STATUS_FAILED);
   }
 
   if (evt_size && (p_data == nullptr)) {
-    LOG(VERBOSE) << StringPrintf("Invalid Event size:0x%02x", evt_size);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Event size=0x%02x", __func__,
+                                 evt_size);
     return (NFA_STATUS_FAILED);
   }
 
   if (rsp_size && (p_rsp_buf == nullptr)) {
     LOG(VERBOSE) << StringPrintf(
-        "No Event buffer, but invalid event buffer size "
-        ":%u",
+        "%s: No Event buffer, but invalid event buffer size %u", __func__,
         rsp_size);
     return (NFA_STATUS_FAILED);
   }
@@ -641,17 +660,18 @@ tNFA_STATUS NFA_HciSendEvent(tNFA_HANDLE hci_handle, uint8_t pipe,
 tNFA_STATUS NFA_HciClosePipe(tNFA_HANDLE hci_handle, uint8_t pipe) {
   tNFA_HCI_API_CLOSE_PIPE_EVT* p_msg;
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x, pipe:0x%02X", hci_handle,
-                             pipe);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x, pipe=0x%02X", __func__,
+                               hci_handle, pipe);
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if ((pipe < NFA_HCI_FIRST_DYNAMIC_PIPE) ||
       (pipe > NFA_HCI_LAST_DYNAMIC_PIPE)) {
-    LOG(VERBOSE) << StringPrintf("Invalid Pipe:0x%02x", pipe);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Pipe=0x%02x", __func__, pipe);
     return (NFA_STATUS_FAILED);
   }
 
@@ -690,18 +710,19 @@ tNFA_STATUS NFA_HciDeletePipe(tNFA_HANDLE hci_handle, uint8_t pipe) {
   tNFA_HCI_API_DELETE_PIPE_EVT* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if ((pipe < NFA_HCI_FIRST_DYNAMIC_PIPE) ||
       (pipe > NFA_HCI_LAST_DYNAMIC_PIPE)) {
-    LOG(VERBOSE) << StringPrintf("Invalid Pipe:0x%02x", pipe);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Pipe=0x%02x", __func__, pipe);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x, pipe:0x%02X", hci_handle,
-                             pipe);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x, pipe=0x%02X", __func__,
+                               hci_handle, pipe);
 
   /* Request HCI to delete a pipe created by the application identified by hci
    * handle */
@@ -737,27 +758,28 @@ tNFA_STATUS NFA_HciAddStaticPipe(tNFA_HANDLE hci_handle, uint8_t host,
   tNFA_HCI_API_ADD_STATIC_PIPE_EVT* p_msg;
 
   if ((NFA_HANDLE_GROUP_MASK & hci_handle) != NFA_HANDLE_GROUP_HCI) {
-    LOG(VERBOSE) << StringPrintf("Invalid hci_handle:0x%04x", hci_handle);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid hci_handle=0x%04x", __func__,
+                                 hci_handle);
     return (NFA_STATUS_FAILED);
   }
 
   if (!nfa_hciu_is_active_host(host)) {
-    LOG(VERBOSE) << StringPrintf("Host not active: 0x%02x", host);
+    LOG(VERBOSE) << StringPrintf("%s: Host not active=0x%02x", __func__, host);
     return (NFA_STATUS_FAILED);
   }
 
   if (gate <= NFA_HCI_LAST_HOST_SPECIFIC_GATE) {
-    LOG(VERBOSE) << StringPrintf("Invalid Gate:0x%02x", gate);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Gate=0x%02x", __func__, gate);
     return (NFA_STATUS_FAILED);
   }
 
   if (pipe <= NFA_HCI_LAST_DYNAMIC_PIPE) {
-    LOG(VERBOSE) << StringPrintf("Invalid Pipe:0x%02x", pipe);
+    LOG(VERBOSE) << StringPrintf("%s: Invalid Pipe=0x%02x", __func__, pipe);
     return (NFA_STATUS_FAILED);
   }
 
-  LOG(VERBOSE) << StringPrintf("hci_handle:0x%04x, pipe:0x%02X", hci_handle,
-                             pipe);
+  LOG(VERBOSE) << StringPrintf("%s: hci_handle=0x%04x, pipe=0x%02X", __func__,
+                               hci_handle, pipe);
 
   /* Request HCI to delete a pipe created by the application identified by hci
    * handle */
@@ -793,33 +815,33 @@ void NFA_HciDebug(uint8_t action, uint8_t size, uint8_t* p_data) {
 
   switch (action) {
     case NFA_HCI_DEBUG_DISPLAY_CB:
-      LOG(VERBOSE) << StringPrintf("NFA_HciDebug  Host List:");
+      LOG(VERBOSE) << StringPrintf("%s:  Host List: ", __func__);
       for (xx = 0; xx < NFA_HCI_MAX_APP_CB; xx++) {
         if (nfa_hci_cb.cfg.reg_app_names[xx][0] != 0) {
-          LOG(VERBOSE) << StringPrintf("              Host Inx:  %u   Name: %s",
-                                     xx, &nfa_hci_cb.cfg.reg_app_names[xx][0]);
+          LOG(VERBOSE) << StringPrintf("%s:              Host Inx=%u   Name=%s",
+                                       __func__, xx,
+                                       &nfa_hci_cb.cfg.reg_app_names[xx][0]);
         }
       }
 
-      LOG(VERBOSE) << StringPrintf("NFA_HciDebug  Gate List:");
+      LOG(VERBOSE) << StringPrintf("%s:  Gate List: ", __func__);
       for (xx = 0; xx < NFA_HCI_MAX_GATE_CB; xx++, pg++) {
         if (pg->gate_id != 0) {
           LOG(VERBOSE) << StringPrintf(
-              "              Gate Inx: %x  ID: 0x%02x  Owner: 0x%04x  "
-              "PipeInxMask: 0x%08x",
-              xx, pg->gate_id, pg->gate_owner, pg->pipe_inx_mask);
+              "%s:              Gate Inx=%x  ID=0x%02x  Owner=0x%04x  "
+              "PipeInxMask=0x%08x",
+              __func__, xx, pg->gate_id, pg->gate_owner, pg->pipe_inx_mask);
         }
       }
 
-      LOG(VERBOSE) << StringPrintf("NFA_HciDebug  Pipe List:");
+      LOG(VERBOSE) << StringPrintf("%s:  Pipe List: ", __func__);
       for (xx = 0; xx < NFA_HCI_MAX_PIPE_CB; xx++, pp++) {
         if (pp->pipe_id != 0) {
           LOG(VERBOSE) << StringPrintf(
-              "              Pipe Inx: %x  ID: 0x%02x  State: %u  "
-              "LocalGate: "
-              "0x%02x  Dest Gate: 0x%02x  Host: 0x%02x",
-              xx, pp->pipe_id, pp->pipe_state, pp->local_gate, pp->dest_gate,
-              pp->dest_host);
+              "%s:              Pipe Inx=%x  ID=0x%02x  State=%u  "
+              "LocalGate=0x%02x  Dest Gate=0x%02x  Host=0x%02x",
+              __func__, xx, pp->pipe_id, pp->pipe_state, pp->local_gate,
+              pp->dest_gate, pp->dest_host);
         }
       }
       break;
@@ -840,12 +862,12 @@ void NFA_HciDebug(uint8_t action, uint8_t size, uint8_t* p_data) {
       break;
 
     case NFA_HCI_DEBUG_ENABLE_LOOPBACK:
-      LOG(VERBOSE) << StringPrintf("NFA_HciDebug  HCI_LOOPBACK_DEBUG = TRUE");
+      LOG(VERBOSE) << StringPrintf("%s:  HCI_LOOPBACK_DEBUG = TRUE", __func__);
       HCI_LOOPBACK_DEBUG = NFA_HCI_DEBUG_ON;
       break;
 
     case NFA_HCI_DEBUG_DISABLE_LOOPBACK:
-      LOG(VERBOSE) << StringPrintf("NFA_HciDebug  HCI_LOOPBACK_DEBUG = FALSE");
+      LOG(VERBOSE) << StringPrintf("%s:  HCI_LOOPBACK_DEBUG = FALSE", __func__);
       HCI_LOOPBACK_DEBUG = NFA_HCI_DEBUG_OFF;
       break;
   }

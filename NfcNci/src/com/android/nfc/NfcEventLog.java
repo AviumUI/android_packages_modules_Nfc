@@ -25,16 +25,12 @@ import android.util.Log;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.nfc.proto.NfcEventProto;
 
-import libcore.util.HexEncoding;
-
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 
@@ -91,14 +87,14 @@ public final class NfcEventLog {
     private void readListFromLogFile() {
         byte[] bytes = readLogFile();
         if (bytes == null) {
-            Log.i(TAG, "No NFC events found in log file");
+            Log.i(TAG, "readListFromLogFile: No NFC events found in log file");
             return;
         }
         NfcEventProto.EventList eventList;
         try {
             eventList = NfcEventProto.EventList.parseFrom(bytes);
         } catch (InvalidProtocolBufferException e) {
-            Log.e(TAG, "Failed to deserialize events from log file", e);
+            Log.e(TAG, "readListFromLogFile: Failed to deserialize events from log file", e);
             return;
         }
         synchronized (mEventList) {
@@ -120,7 +116,7 @@ public final class NfcEventLog {
         try {
             writeLogFile(bytes);
         } catch (IOException e) {
-            Log.e(TAG, "Failed to write to log file", e);
+            Log.e(TAG, "writeListToLogFile: e=", e);
         }
     }
 

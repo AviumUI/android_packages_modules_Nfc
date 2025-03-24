@@ -93,7 +93,7 @@ static void nfcsnoop_cb(const uint8_t* data, const size_t length,
   uint64_t delta_time_ms = 0;
 
   if (last_timestamp_ms[buffer_index] > timestamp_us) {
-    LOG(ERROR) << StringPrintf("Timestamp error!");
+    LOG(ERROR) << StringPrintf("%s: Timestamp error!", __func__);
     err = true;
   } else if (last_timestamp_ms[buffer_index]) {
     __builtin_sub_overflow(timestamp_us, last_timestamp_ms[buffer_index],
@@ -102,9 +102,9 @@ static void nfcsnoop_cb(const uint8_t* data, const size_t length,
 
   if (delta_time_ms > (uint64_t)MICRO_SECOND_THREE_DAYS || err) {
     LOG(ERROR) << StringPrintf(
-        "Reset last timestamp and add empty nci to "
+        "%s: Reset last timestamp and add empty nci to "
         "snoop buffer %zu with error",
-        buffer_index);
+        __func__, buffer_index);
     last_timestamp_ms[buffer_index] = timestamp_us;
     nfcsnoop_cb(EMPTY_ERR_NCI[buffer_index],
                 EMPTY_ERR_NCI[buffer_index][2] + NCI_MSG_HDR_SIZE, true,
@@ -114,8 +114,8 @@ static void nfcsnoop_cb(const uint8_t* data, const size_t length,
 
   while (delta_time_ms > UINT32_MAX) {
     uint64_t middle_time = last_timestamp_ms[buffer_index] + UINT32_MAX;
-    LOG(WARNING) << StringPrintf("Add empty nci to snoop buffer %zu",
-                                 buffer_index);
+    LOG(WARNING) << StringPrintf("%s: Add empty nci to snoop buffer %zu",
+                                 __func__, buffer_index);
     nfcsnoop_cb(EMPTY_NCI[buffer_index],
                 EMPTY_NCI[buffer_index][2] + NCI_MSG_HDR_SIZE, true,
                 middle_time, buffer_index);

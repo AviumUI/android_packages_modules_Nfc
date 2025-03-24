@@ -126,12 +126,8 @@ void nfc_process_timer_evt(void) {
         nfc_mode_set_ntf_timeout();
         break;
       default:
-        LOG(VERBOSE) << StringPrintf(
-            "nfc_process_timer_evt: timer:0x%p event (0x%04x)", p_tle,
-            p_tle->event);
-        LOG(VERBOSE) << StringPrintf(
-            "nfc_process_timer_evt: unhandled timer event (0x%04x)",
-            p_tle->event);
+        LOG(VERBOSE) << StringPrintf("%s:: unhandled timer event (0x%04x)",
+                                     __func__, p_tle->event);
     }
   }
 
@@ -277,9 +273,8 @@ void nfc_process_quick_timer_evt(void) {
         break;
 #endif
       default:
-        LOG(VERBOSE) << StringPrintf(
-            "nfc_process_quick_timer_evt: unhandled timer event (0x%04x)",
-            p_tle->event);
+        LOG(VERBOSE) << StringPrintf("%s:: unhandled timer event (0x%04x)",
+                                     __func__, p_tle->event);
         break;
     }
   }
@@ -348,7 +343,7 @@ uint32_t nfc_task(__attribute__((unused)) uint32_t arg) {
   /* Initialize the nfc control block */
   memset(&nfc_cb, 0, sizeof(tNFC_CB));
 
-  LOG(VERBOSE) << StringPrintf("NFC_TASK started.");
+  LOG(VERBOSE) << StringPrintf("%s: started", __func__);
 
   /* main loop */
   while (true) {
@@ -358,7 +353,8 @@ uint32_t nfc_task(__attribute__((unused)) uint32_t arg) {
     }
     /* Handle NFC_TASK_EVT_TRANSPORT_READY from NFC HAL */
     if (event & NFC_TASK_EVT_TRANSPORT_READY) {
-      LOG(VERBOSE) << StringPrintf("NFC_TASK got NFC_TASK_EVT_TRANSPORT_READY.");
+      LOG(VERBOSE) << StringPrintf("%s: got NFC_TASK_EVT_TRANSPORT_READY",
+                                   __func__);
 
       /* Reset the NFC controller. */
       nfc_set_state(NFC_STATE_CORE_INIT);
@@ -411,7 +407,8 @@ uint32_t nfc_task(__attribute__((unused)) uint32_t arg) {
 
           default:
             LOG(VERBOSE) << StringPrintf(
-                "nfc_task: unhandle mbox message, event=%04x", p_msg->event);
+                "%s: unhandle mbox message, event=%04x", __func__,
+                p_msg->event);
             break;
         }
 
@@ -442,7 +439,7 @@ uint32_t nfc_task(__attribute__((unused)) uint32_t arg) {
     }
   }
 
-  LOG(VERBOSE) << StringPrintf("nfc_task terminated");
+  LOG(VERBOSE) << StringPrintf("%s: terminated", __func__);
 
   GKI_exit_task(GKI_get_taskid());
   return 0;

@@ -18,14 +18,21 @@ package android.nfc.cts;
 
 import static android.Manifest.permission.WRITE_SECURE_SETTINGS;
 
+import static com.android.compatibility.common.util.PropertyUtil.getVsrApiLevel;
+
+import static org.junit.Assume.assumeTrue;
+
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.nfc.NfcAdapter;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -34,97 +41,113 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class NfcUtils {
     private NfcUtils() {}
 
-    static boolean enableNfc(NfcAdapter nfcAdapter, Context context) {
-        try {
-            if (nfcAdapter.isEnabled()) {
-                return true;
-            }
-            CountDownLatch countDownLatch = new CountDownLatch(1);
-            AtomicInteger state = new AtomicInteger(NfcAdapter.STATE_OFF);
-            BroadcastReceiver nfcChangeListener = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    int s = intent.getIntExtra(NfcAdapter.EXTRA_ADAPTER_STATE,
-                            NfcAdapter.STATE_OFF);
-                    if (s == NfcAdapter.STATE_TURNING_ON) {
-                        return;
-                    }
-                    context.unregisterReceiver(this);
-                    state.set(s);
-                    countDownLatch.countDown();
-                }
-            };
-            HandlerThread handlerThread = new HandlerThread("nfc_cts_listener");
-            handlerThread.start();
-            Handler handler = new Handler(handlerThread.getLooper());
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED);
-            context.registerReceiver(nfcChangeListener, intentFilter, null,
-                    handler);
-            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-                    .getUiAutomation().adoptShellPermissionIdentity(WRITE_SECURE_SETTINGS);
-            if (!nfcAdapter.enable()) {
-                return false;
-            }
-            countDownLatch.await(2000, TimeUnit.MILLISECONDS);
-            return state.get() == NfcAdapter.STATE_ON;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-                    .getUiAutomation().dropShellPermissionIdentity();
-        }
+    private static final String TAG = "NfcUtils";
+
+    static boolean enableNfc(@NonNull NfcAdapter nfcAdapter, @NonNull Context context) {
+        return setNfcState(nfcAdapter, context, /* setEnabled= */ true, null);
     }
 
-    static boolean disableNfc(NfcAdapter nfcAdapter, Context context) {
+    static boolean disableNfc(@NonNull NfcAdapter nfcAdapter, @NonNull Context context) {
         return disableNfc(nfcAdapter, context, null);
     }
 
-    static boolean disableNfc(NfcAdapter nfcAdapter, Context context, @Nullable Boolean persist) {
+    static boolean disableNfc(@NonNull NfcAdapter nfcAdapter, @NonNull Context context,
+        @Nullable Boolean persist) {
+        return setNfcState(nfcAdapter, context, /* setEnabled= */ false, persist);
+    }
+
+    private static boolean setNfcState(
+            @NonNull NfcAdapter nfcAdapter,
+            @NonNull Context context,
+            boolean setEnabled,
+            @Nullable Boolean disablePersist) {
+        if (setEnabled == nfcAdapter.isEnabled()) {
+            return true;
+        }
+        HandlerThread handlerThread = new HandlerThread("nfc_cts_listener");
+        handlerThread.start();
+        Handler handler = new Handler(handlerThread.getLooper());
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED);
+
+        NfcStateChangeListener nfcChangeListener = new NfcStateChangeListener(setEnabled);
         try {
-            if (!nfcAdapter.isEnabled()) {
-                return true;
-            }
-            CountDownLatch countDownLatch = new CountDownLatch(1);
-            AtomicInteger state = new AtomicInteger(NfcAdapter.STATE_ON);
-            BroadcastReceiver nfcChangeListener = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    int s =  intent.getIntExtra(NfcAdapter.EXTRA_ADAPTER_STATE,
-                            NfcAdapter.STATE_ON);
-                    if (s == NfcAdapter.STATE_TURNING_OFF) {
-                        return;
-                    }
-                    context.unregisterReceiver(this);
-                    state.set(s);
-                    countDownLatch.countDown();
+            context.registerReceiver(nfcChangeListener, intentFilter, null, handler);
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                    .getUiAutomation()
+                    .adoptShellPermissionIdentity(WRITE_SECURE_SETTINGS);
+
+            if (setEnabled) {
+                if (!nfcAdapter.enable()) {
+                    Log.e(TAG, "Failed to enable NFC");
+                    return false;
                 }
-            };
-            HandlerThread handlerThread = new HandlerThread("nfc_cts_listener");
-            handlerThread.start();
-            Handler handler = new Handler(handlerThread.getLooper());
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED);
-            context.registerReceiver(nfcChangeListener, intentFilter, null,
-                    handler);
-            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-                    .getUiAutomation().adoptShellPermissionIdentity(WRITE_SECURE_SETTINGS);
-            boolean result = false;
-            if (persist != null) {
-                result = nfcAdapter.disable(persist);
             } else {
-                result = nfcAdapter.disable();
+                if (disablePersist != null) {
+                    if (!nfcAdapter.disable(disablePersist)) {
+                        Log.e(TAG, "Failed to disable NFC");
+                        return false;
+                    }
+                } else {
+                    if (!nfcAdapter.disable()) {
+                        Log.e(TAG, "Failed to disable NFC");
+                        return false;
+                    }
+                }
             }
-            if (!result) return false;
-            countDownLatch.await(2000, TimeUnit.MILLISECONDS);
-            return state.get() == NfcAdapter.STATE_OFF;
-        } catch (Exception e) {
-            return false;
+
+            return nfcChangeListener.awaitStateChange();
         } finally {
+            context.unregisterReceiver(nfcChangeListener);
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-                    .getUiAutomation().dropShellPermissionIdentity();
+                    .getUiAutomation()
+                    .dropShellPermissionIdentity();
         }
     }
 
+    private static class NfcStateChangeListener extends BroadcastReceiver {
+        private final CountDownLatch mCountDownLatch;
+        private final boolean mExpectingEnabled;
+
+        NfcStateChangeListener(boolean expectingEnabled) {
+            mCountDownLatch = new CountDownLatch(1);
+            mExpectingEnabled = expectingEnabled;
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int s = intent.getIntExtra(NfcAdapter.EXTRA_ADAPTER_STATE, 0);
+
+            if ((mExpectingEnabled && s == NfcAdapter.STATE_ON)
+                    || (!mExpectingEnabled && s == NfcAdapter.STATE_OFF)) {
+                mCountDownLatch.countDown();
+            }
+        }
+
+        public boolean awaitStateChange() {
+            try {
+                boolean success = mCountDownLatch.await(20, TimeUnit.SECONDS);
+
+                if (!success) {
+                    Log.e( TAG, "Timeout waiting for NFC to be "
+                                    + (mExpectingEnabled ? "enabled" : "disabled"));
+                }
+
+                return success;
+            } catch (InterruptedException e) {
+                Log.e( TAG, "Interrupted while waiting for NFC to be "
+                                + (mExpectingEnabled ? "enabled" : "disabled"));
+                return false;
+            }
+        }
+    }
+
+    public static void assumeObserveModeSupported(@NonNull NfcAdapter adapter) {
+        assumeTrue("Observe mode must be supported", adapter.isObserveModeSupported());
+    }
+
+    public static void assumeVsrApiGreaterThanUdc() {
+        assumeTrue("Device VSR API level must be greater than UDC",
+            getVsrApiLevel() > Build.VERSION_CODES.UPSIDE_DOWN_CAKE);
+    }
 }

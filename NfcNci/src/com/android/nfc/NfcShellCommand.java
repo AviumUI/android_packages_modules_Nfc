@@ -77,7 +77,10 @@ public class NfcShellCommand extends BasicShellCommandHandler {
     @VisibleForTesting
     @Override
     public PrintWriter getOutPrintWriter() {
-        return mPrintWriter;
+        if( mPrintWriter != null )
+            return mPrintWriter;
+        else
+            return super.getOutPrintWriter();
     }
 
     @Override

@@ -20,8 +20,8 @@ import android.content.ComponentName;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.android.nfc.utils.HceUtils;
 import com.android.nfc.service.ThroughputService;
+import com.android.nfc.utils.HceUtils;
 
 public class ThroughputEmulatorActivity extends BaseEmulatorActivity {
     private static final String TAG = "ThroughputEm";
@@ -39,7 +39,7 @@ public class ThroughputEmulatorActivity extends BaseEmulatorActivity {
     }
 
     @Override
-    public ComponentName getPreferredServiceComponent(){
+    public ComponentName getPreferredServiceComponent() {
         return ThroughputService.COMPONENT;
     }
 

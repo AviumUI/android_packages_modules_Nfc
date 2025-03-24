@@ -73,7 +73,7 @@ public class NfcPreferredPaymentTest {
 
     @Before
     public void setUp() throws Exception {
-        assumeTrue(supportsHardware());
+        assumeTrue("Device must support NFC HCE", supportsHardware());
         mContext = InstrumentationRegistry.getContext();
         mAdapter = NfcAdapter.getDefaultAdapter(mContext);
         assertNotNull(mAdapter);

@@ -23,7 +23,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.os.Process;
 import android.os.SystemClock;
 import android.util.Log;
@@ -75,7 +74,7 @@ public class NfcWatchdog extends BroadcastReceiver {
     }
 
     void killNfcProcess() {
-        Log.wtf(TAG, "Killing nfc process.");
+        Log.wtf(TAG, "killNfcProcess");
         Process.killProcess(Process.myPid());
     }
 

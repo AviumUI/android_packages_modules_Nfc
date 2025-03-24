@@ -18,9 +18,10 @@ package com.android.nfc;
 
 import android.content.Context;
 import android.os.Handler;
-import android.provider.DeviceConfig;
 import android.os.SystemProperties;
+import android.provider.DeviceConfig;
 import android.text.TextUtils;
+
 import androidx.annotation.VisibleForTesting;
 
 /**
@@ -48,11 +49,24 @@ public class DeviceConfigFacade {
     private boolean mReaderOptionDefault;
     private boolean mSecureNfcCapable;
     private boolean mSecureNfcDefault;
+    private boolean mEnableAutoPlay;
+    private boolean mPollingDisableAllowed;
+    private boolean mNfccAlwaysOnAllowed;
+    private boolean mEnableServiceOther;
+    private boolean mTagIntentAppPrefSupported;
+    private boolean mProprietaryGetcapsSupported;
+    private boolean mEnableOemExtension;
+    private boolean mEnableDeveloperNotification;
+    private boolean mCheckDisplayStateForScreenState;
+    private boolean mIndicateUserActivityForHce;
     private String mDefaultRoute;
     private String mDefaultIsoDepRoute;
     private String mDefaultOffHostRoute;
     private String mDefaultScRoute;
     private int mSlowTapThresholdMillis;
+    private int mUnknownTagPollingDelay;
+    private int mUnknownTagPollingDelayMax;
+    private int mUnknownTagPollingDelayLong;
 
     private static DeviceConfigFacade sInstance;
     public static DeviceConfigFacade getInstance(Context context, Handler handler) {
@@ -100,6 +114,46 @@ public class DeviceConfigFacade {
             KEY_SECURE_NFC_DEFAULT,
             mContext.getResources().getBoolean(R.bool.secure_nfc_default));
 
+        mEnableAutoPlay = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "enable_auto_play",
+                mContext.getResources().getBoolean(R.bool.enable_auto_play));
+
+        mPollingDisableAllowed = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "polling_disable_allowed",
+                mContext.getResources().getBoolean(R.bool.polling_disable_allowed));
+
+        mNfccAlwaysOnAllowed = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "nfcc_always_on_allowed",
+                mContext.getResources().getBoolean(R.bool.nfcc_always_on_allowed));
+
+        mEnableServiceOther = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "enable_service_for_category_other",
+                mContext.getResources().getBoolean(R.bool.enable_service_for_category_other));
+
+        mTagIntentAppPrefSupported = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "tag_intent_app_pref_supported",
+                mContext.getResources().getBoolean(R.bool.tag_intent_app_pref_supported));
+
+        mProprietaryGetcapsSupported = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "nfc_proprietary_getcaps_supported",
+                mContext.getResources().getBoolean(R.bool.nfc_proprietary_getcaps_supported));
+
+        mEnableOemExtension = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "enable_oem_extension",
+                mContext.getResources().getBoolean(R.bool.enable_oem_extension));
+
+        mEnableDeveloperNotification = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "enable_developer_option_notification",
+                mContext.getResources().getBoolean(R.bool.enable_developer_option_notification));
+
+        mCheckDisplayStateForScreenState = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "check_display_state_for_screen_state",
+                mContext.getResources().getBoolean(R.bool.check_display_state_for_screen_state));
+
+        mIndicateUserActivityForHce = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "indicate_user_activity_for_hce",
+                mContext.getResources().getBoolean(R.bool.indicate_user_activity_for_hce));
+
         mDefaultRoute = DeviceConfig.getString(DEVICE_CONFIG_NAMESPACE_NFC,
                 "nfc_default_route",
                 mContext.getResources().getString(R.string.nfc_default_route));
@@ -119,6 +173,19 @@ public class DeviceConfigFacade {
         mSlowTapThresholdMillis = DeviceConfig.getInt(DEVICE_CONFIG_NAMESPACE_NFC,
                 KEY_SLOW_TAP_THRESHOLD_MILLIS,
                 mContext.getResources().getInteger(R.integer.slow_tap_threshold_millis));
+
+        mUnknownTagPollingDelay = DeviceConfig.getInt(DEVICE_CONFIG_NAMESPACE_NFC,
+                "unknown_tag_polling_delay",
+                mContext.getResources().getInteger(R.integer.unknown_tag_polling_delay));
+
+        mUnknownTagPollingDelayMax = DeviceConfig.getInt(DEVICE_CONFIG_NAMESPACE_NFC,
+                "unknown_tag_polling_delay_count_max",
+                mContext.getResources().getInteger(R.integer.unknown_tag_polling_delay_count_max));
+
+        mUnknownTagPollingDelayLong = DeviceConfig.getInt(DEVICE_CONFIG_NAMESPACE_NFC,
+                "unknown_tag_polling_delay_long",
+                mContext.getResources().getInteger(R.integer.unknown_tag_polling_delay_long));
+
     }
 
     private boolean isSecureNfcCapableDefault() {
@@ -142,14 +209,47 @@ public class DeviceConfigFacade {
         return mAntennaBlockedAlertEnabled;
     }
 
-    public boolean getNfcDefaultState(){ return mNfcDefaultState; }
-    public boolean isReaderOptionCapable() { return mReaderOptionSupport; }
-    public boolean getDefaultReaderOption() { return mReaderOptionDefault; }
-    public boolean isSecureNfcCapable() {return mSecureNfcCapable; }
-    public boolean getDefaultSecureNfcState() { return mSecureNfcDefault; }
-    public String getDefaultRoute() { return mDefaultRoute; }
-    public String getDefaultIsoDepRoute() { return mDefaultIsoDepRoute; }
-    public String getDefaultOffHostRoute() { return mDefaultOffHostRoute; }
-    public String getDefaultScRoute() { return mDefaultScRoute; }
-    public int getSlowTapThresholdMillis() { return mSlowTapThresholdMillis; }
+    public boolean getNfcDefaultState() {
+        return mNfcDefaultState;
+    }
+    public boolean isReaderOptionCapable() {
+        return mReaderOptionSupport;
+    }
+    public boolean getDefaultReaderOption() {
+        return mReaderOptionDefault;
+    }
+    public boolean isSecureNfcCapable() {
+        return mSecureNfcCapable;
+    }
+    public boolean getDefaultSecureNfcState() {
+        return mSecureNfcDefault;
+    }
+    public boolean getEnableAutoPlay() { return mEnableAutoPlay; }
+    public boolean getPollingDisableAllowed() { return mPollingDisableAllowed; }
+    public boolean getNfccAlwaysOnAllowed() { return mNfccAlwaysOnAllowed; }
+    public boolean getEnableServiceOther() { return mEnableServiceOther; }
+    public boolean getTagIntentAppPrefSupported() { return mTagIntentAppPrefSupported; }
+    public boolean getProprietaryGetcapsSupported() { return mProprietaryGetcapsSupported; }
+    public boolean getEnableOemExtension() { return mEnableOemExtension; }
+    public boolean getEnableDeveloperNotification() { return mEnableDeveloperNotification; }
+    public boolean getCheckDisplayStateForScreenState() { return mCheckDisplayStateForScreenState; }
+    public boolean getIndicateUserActivityForHce() { return mIndicateUserActivityForHce; }
+    public String getDefaultRoute() {
+        return mDefaultRoute;
+    }
+    public String getDefaultIsoDepRoute() {
+        return mDefaultIsoDepRoute;
+    }
+    public String getDefaultOffHostRoute() {
+        return mDefaultOffHostRoute;
+    }
+    public String getDefaultScRoute() {
+        return mDefaultScRoute;
+    }
+    public int getSlowTapThresholdMillis() {
+        return mSlowTapThresholdMillis;
+    }
+    public int getUnknownTagPollingDelay() { return mUnknownTagPollingDelay; }
+    public int getUnknownTagPollingDelayMax() { return mUnknownTagPollingDelayMax; }
+    public int getUnknownTagPollingDelayLong() { return mUnknownTagPollingDelayLong; }
 }

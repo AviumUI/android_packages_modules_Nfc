@@ -69,6 +69,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.nfc.DeviceConfigFacade;
+import com.android.nfc.NfcInjector;
 
 import org.junit.After;
 import org.junit.Before;
@@ -114,18 +116,25 @@ public class BluetoothPeripheralHandoverTest {
     Intent mockIntent;
     @Mock
     BluetoothA2dp mockA2dp;
+    @Mock
+    DeviceConfigFacade mDeviceConfigFacade;
     private MockitoSession mStaticMockSession;
     BluetoothPeripheralHandover bluetoothPeripheralHandover;
 
     @Before
     public void setUp() {
-        mStaticMockSession = ExtendedMockito.mockitoSession().mockStatic(
-                Settings.Global.class).mockStatic(Toast.class).strictness(
-                Strictness.LENIENT).startMocking();
+        mStaticMockSession = ExtendedMockito.mockitoSession()
+                .mockStatic(Settings.Global.class)
+                .mockStatic(Toast.class)
+                .mockStatic(NfcInjector.class)
+                .strictness(Strictness.LENIENT).startMocking();
         MockitoAnnotations.initMocks(this);
         when(mockContext.getSystemService(AudioManager.class)).thenReturn(mockAudioManager);
         when(mockContext.getContentResolver()).thenReturn(mockContentResolver);
         when(mockContext.getResources()).thenReturn(mockResources);
+        NfcInjector nfcInjector = mock(NfcInjector.class);
+        when(NfcInjector.getInstance()).thenReturn(nfcInjector);
+        when(nfcInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
         when(Toast.makeText(any(), anyString(), anyInt())).thenReturn(mockToast);
         bluetoothPeripheralHandover = createBluetoothPerHandOvrInstance(
                 BluetoothDevice.TRANSPORT_LE);

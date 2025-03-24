@@ -188,7 +188,7 @@ void GKI_start_timer(uint8_t tnum, int32_t ticks, bool is_continuous) {
   bool bad_timer = false;
 
   if (task_id >= GKI_MAX_TASKS) {
-    LOG(ERROR) << StringPrintf("%s: invalid task_id:0x%02x. start timer failed",
+    LOG(ERROR) << StringPrintf("%s: invalid task_id=0x%02x. start timer failed",
                                __func__, task_id);
     return;
   }
@@ -730,13 +730,11 @@ uint32_t GKI_get_remaining_ticks(TIMER_LIST_Q* p_timer_listq,
     if ((p_tle != nullptr) && (p_tle == p_target_tle)) {
       rem_ticks += p_tle->ticks;
     } else {
-      LOG(ERROR) << StringPrintf(
-          "GKI_get_remaining_ticks: No timer entry in the list");
+      LOG(ERROR) << StringPrintf("%s: No timer entry in the list", __func__);
       return (0);
     }
   } else {
-    LOG(ERROR) << StringPrintf(
-        "GKI_get_remaining_ticks: timer entry is not active");
+    LOG(ERROR) << StringPrintf("%s: timer entry is not active", __func__);
   }
 
   return (rem_ticks);

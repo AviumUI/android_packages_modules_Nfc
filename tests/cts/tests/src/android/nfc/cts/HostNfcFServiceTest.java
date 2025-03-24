@@ -1,5 +1,8 @@
 package android.nfc.cts;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Looper;
@@ -25,7 +28,7 @@ public class HostNfcFServiceTest {
     public void testOnBind() {
         Intent serviceIntent
             = new Intent(CtsMyHostNfcFService.SERVICE_INTERFACE);
-        Assert.assertNotNull(service.onBind(serviceIntent));
+        assertNotNull(service.onBind(serviceIntent));
     }
 
     @Test
@@ -41,8 +44,8 @@ public class HostNfcFServiceTest {
     @Test
     public void testProcessNfcFPacket() {
         byte[] result = service.processNfcFPacket(new byte[0], new Bundle());
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.length == 0);
+        assertNotNull(result);
+        assertTrue(result.length == 0);
     }
 
     @Test

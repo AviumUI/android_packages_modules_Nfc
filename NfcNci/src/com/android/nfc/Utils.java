@@ -182,7 +182,8 @@ public final class Utils {
                     .filter(permission-> TextUtils.equals(permission, BIND_NFC_SERVICE ))
                     .findFirst().isPresent();
         } catch (PackageManager.NameNotFoundException | NullPointerException e) {
-            Log.e(TAG, "Could not create user package context" + packageInfo);
+            Log.e(TAG, "hasCeServicesWithValidPermissions: Could not create user package context"
+                    + packageInfo);
             return false;
         }
     }

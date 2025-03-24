@@ -8,12 +8,13 @@ import static android.nfc.NfcRoutingTableEntry.TYPE_SYSTEM_CODE;
 import static android.nfc.NfcRoutingTableEntry.TYPE_TECHNOLOGY;
 import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE;
 import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET;
-
-import static com.android.compatibility.common.util.PropertyUtil.getVsrApiLevel;
+import static android.nfc.cts.NfcUtils.assumeObserveModeSupported;
+import static android.nfc.cts.NfcUtils.assumeVsrApiGreaterThanUdc;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
@@ -51,7 +53,6 @@ import android.nfc.cardemulation.ApduServiceInfo;
 import android.nfc.cardemulation.CardEmulation;
 import android.nfc.tech.IsoDep;
 import android.nfc.tech.TagTechnology;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
@@ -69,6 +70,7 @@ import androidx.test.filters.RequiresDevice;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -105,17 +107,16 @@ public class NfcAdapterTest {
         MockitoAnnotations.initMocks(this);
         mContext = spy(new ContextWrapper(InstrumentationRegistry.getContext()));
         assumeTrue("Device must support NFC", supportsHardware());
-        // Backup the original service. It is being overridden
-        // when creating a mocked adapter.
+
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
-        Assume.assumeNotNull("NFC Adapter is null", adapter);
-        assumeTrue("NFC Adapter could not be enabled", NfcUtils.enableNfc(adapter, mContext));
+        assertNotNull("NFC Adapter is null", adapter);
+        assertTrue("NFC Adapter could not be enabled", NfcUtils.enableNfc(adapter, mContext));
     }
 
     @Test
     public void testGetDefaultAdapter() {
         NfcAdapter adapter = getDefaultAdapter();
-        Assert.assertNotNull(adapter);
+        assertNotNull(adapter);
     }
 
     @Test
@@ -130,29 +131,29 @@ public class NfcAdapterTest {
     @Test
     public void testEnableAndDisable() throws NoSuchFieldException, RemoteException {
         NfcAdapter adapter = getDefaultAdapter();
-        Assert.assertTrue(adapter.isEnabled());
+        assertTrue(adapter.isEnabled());
 
         // Disable NFC
-        Assert.assertTrue(NfcUtils.disableNfc(adapter, mContext));
-        Assert.assertFalse(adapter.isEnabled());
+        assertTrue(NfcUtils.disableNfc(adapter, mContext));
+        assertFalse(adapter.isEnabled());
 
         // Re-enable NFC
-        Assert.assertTrue(NfcUtils.enableNfc(adapter, mContext));
-        Assert.assertTrue(adapter.isEnabled());
+        assertTrue(NfcUtils.enableNfc(adapter, mContext));
+        assertTrue(adapter.isEnabled());
     }
 
     @Test
     public void testEnableAndDisablePersist() throws NoSuchFieldException, RemoteException {
         NfcAdapter adapter = getDefaultAdapter();
-        Assert.assertTrue(adapter.isEnabled());
+        assertTrue(adapter.isEnabled());
 
         // Disable NFC
-        Assert.assertTrue(NfcUtils.disableNfc(adapter, mContext, /* persist = */ false));
-        Assert.assertFalse(adapter.isEnabled());
+        assertTrue(NfcUtils.disableNfc(adapter, mContext, /* persist = */ false));
+        assertFalse(adapter.isEnabled());
 
         // Re-enable NFC
-        Assert.assertTrue(NfcUtils.enableNfc(adapter, mContext));
-        Assert.assertTrue(adapter.isEnabled());
+        assertTrue(NfcUtils.enableNfc(adapter, mContext));
+        assertTrue(adapter.isEnabled());
     }
 
     @Test
@@ -194,32 +195,32 @@ public class NfcAdapterTest {
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_READER_OPTION)
     public void testEnableAndDisableReaderOption() throws NoSuchFieldException, RemoteException {
         NfcAdapter adapter = getDefaultAdapter();
-        assumeTrue(adapter.isReaderOptionSupported());
+        assumeTrue("Device must support reader option", adapter.isReaderOptionSupported());
 
-        Assert.assertTrue(adapter.enableReaderOption(/* enable = */ true));
-        Assert.assertTrue(adapter.isReaderOptionEnabled());
+        assertTrue(adapter.enableReaderOption(/* enable = */ true));
+        assertTrue(adapter.isReaderOptionEnabled());
 
-        Assert.assertTrue(adapter.enableReaderOption(/* enable = */ false));
-        Assert.assertFalse(adapter.isReaderOptionEnabled());
+        assertTrue(adapter.enableReaderOption(/* enable = */ false));
+        assertFalse(adapter.isReaderOptionEnabled());
     }
 
     @Test
     public void testEnableAndDisableSecureNfc() throws RemoteException {
         NfcAdapter adapter = getDefaultAdapter();
-        assumeTrue(adapter.isSecureNfcSupported());
+        assumeTrue("Device must support secure NFC", adapter.isSecureNfcSupported());
 
-        Assert.assertTrue(adapter.enableSecureNfc(/* enable = */ true));
-        Assert.assertTrue(adapter.isSecureNfcEnabled());
+        assertTrue(adapter.enableSecureNfc(/* enable = */ true));
+        assertTrue(adapter.isSecureNfcEnabled());
 
-        Assert.assertTrue(adapter.enableSecureNfc(/* enable = */ false));
-        Assert.assertFalse(adapter.isSecureNfcEnabled());
+        assertTrue(adapter.enableSecureNfc(/* enable = */ false));
+        assertFalse(adapter.isSecureNfcEnabled());
     }
 
     @Test
     public void testGetNfcAntennaInfo() throws NoSuchFieldException, RemoteException {
         NfcAdapter adapter = getDefaultAdapter();
         NfcAntennaInfo antenna = adapter.getNfcAntennaInfo();
-        Assert.assertNotNull(antenna);
+        assertNotNull(antenna);
     }
 
     @Test
@@ -229,14 +230,14 @@ public class NfcAdapterTest {
         sTagRemoved = false;
         IsoDep isoDep = createIsoDepTag();
 
-        Assert.assertTrue(adapter.ignore(isoDep.getTag(), 0, listener, null));
+        assertTrue(adapter.ignore(isoDep.getTag(), 0, listener, null));
         // Wait a second to make sure listener callback fired
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             // Ignore
         }
-        Assert.assertTrue(sTagRemoved);
+        assertTrue(sTagRemoved);
     }
 
     @Test
@@ -245,24 +246,25 @@ public class NfcAdapterTest {
         NfcAdapter adapter = getDefaultAdapter();
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
             .getUiAutomation().adoptShellPermissionIdentity(NFC_SET_CONTROLLER_ALWAYS_ON);
-        assumeTrue(adapter.isControllerAlwaysOnSupported());
+        assumeTrue("Device must support controller always on",
+            adapter.isControllerAlwaysOnSupported());
         NfcControllerAlwaysOnListener cb = null;
         CountDownLatch countDownLatch;
         try {
             countDownLatch = new CountDownLatch(1);
             cb = new NfcControllerAlwaysOnListener(countDownLatch);
             adapter.registerControllerAlwaysOnListener(Executors.newSingleThreadExecutor(), cb);
-            Assert.assertTrue(adapter.setControllerAlwaysOn(true));
+            assertTrue(adapter.setControllerAlwaysOn(true));
             assertTrue(countDownLatch.await(1, TimeUnit.SECONDS));
-            Assert.assertTrue(adapter.isControllerAlwaysOn());
+            assertTrue(adapter.isControllerAlwaysOn());
             adapter.unregisterControllerAlwaysOnListener(cb);
 
             countDownLatch = new CountDownLatch(1);
             cb = new NfcControllerAlwaysOnListener(countDownLatch);
             adapter.registerControllerAlwaysOnListener(Executors.newSingleThreadExecutor(), cb);
-            Assert.assertTrue(adapter.setControllerAlwaysOn(false));
+            assertTrue(adapter.setControllerAlwaysOn(false));
             assertTrue(countDownLatch.await(1, TimeUnit.SECONDS));
-            Assert.assertFalse(adapter.isControllerAlwaysOn());
+            assertFalse(adapter.isControllerAlwaysOn());
             adapter.unregisterControllerAlwaysOnListener(cb);
         } finally {
             if (cb != null)
@@ -278,11 +280,11 @@ public class NfcAdapterTest {
     public void testAdapterState() throws NoSuchFieldException, RemoteException {
         NfcAdapter adapter = getDefaultAdapter();
 
-        Assert.assertTrue(NfcUtils.enableNfc(adapter, mContext));
-        Assert.assertTrue(adapter.getAdapterState() == NfcAdapter.STATE_ON);
+        assertTrue(NfcUtils.enableNfc(adapter, mContext));
+        assertTrue(adapter.getAdapterState() == NfcAdapter.STATE_ON);
 
-        Assert.assertTrue(NfcUtils.disableNfc(adapter, mContext));
-        Assert.assertTrue(adapter.getAdapterState() == NfcAdapter.STATE_OFF);
+        assertTrue(NfcUtils.disableNfc(adapter, mContext));
+        assertTrue(adapter.getAdapterState() == NfcAdapter.STATE_OFF);
     }
 
     @Test
@@ -343,9 +345,9 @@ public class NfcAdapterTest {
         try {
             originalDefault = setDefaultPaymentService(CtsMyHostApduService.class);
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-            assumeTrue(adapter.isObserveModeSupported());
+            assumeObserveModeSupported(adapter);
             boolean result = adapter.setObserveModeEnabled(false);
-            Assert.assertTrue(result);
+            assertTrue(result);
         } finally {
             setDefaultPaymentService(originalDefault);
             adapter.notifyHceDeactivated();
@@ -362,9 +364,9 @@ public class NfcAdapterTest {
         try {
             originalDefault = setDefaultPaymentService(CtsMyHostApduService.class);
 
-            assumeTrue(adapter.isObserveModeSupported());
+            assumeObserveModeSupported(adapter);
             boolean result = adapter.setObserveModeEnabled(true);
-            Assert.assertTrue(result);
+            assertTrue(result);
         } finally {
             setDefaultPaymentService(originalDefault);
             adapter.notifyHceDeactivated();
@@ -385,10 +387,10 @@ public class NfcAdapterTest {
                     CustomHostApduService.class), true);
             originalDefault = setDefaultPaymentService(CustomHostApduService.class);
             CardEmulationTest.ensurePreferredService(CustomHostApduService.class, mContext);
-            Assert.assertTrue(adapter.isObserveModeEnabled());
+            assertTrue(adapter.isObserveModeEnabled());
             setDefaultPaymentService(CtsMyHostApduService.class);
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-            Assert.assertFalse(adapter.isObserveModeEnabled());
+            assertFalse(adapter.isObserveModeEnabled());
         } finally {
             cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                     CustomHostApduService.class), false);
@@ -402,7 +404,7 @@ public class NfcAdapterTest {
     public void testDefaultObserveModeForegroundDynamic() {
         NfcAdapter adapter = getDefaultAdapter();
         adapter.notifyHceDeactivated();
-        assumeTrue(adapter.isObserveModeSupported());
+        assumeObserveModeSupported(adapter);
         CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
         try {
             Activity activity = createAndResumeActivity();
@@ -410,15 +412,15 @@ public class NfcAdapterTest {
                     CustomHostApduService.class), true);
             cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                     CtsMyHostApduService.class), false);
-            Assert.assertTrue(cardEmulation.setPreferredService(activity,
+            assertTrue(cardEmulation.setPreferredService(activity,
                     new ComponentName(mContext, CustomHostApduService.class)));
             CardEmulationTest.ensurePreferredService(CustomHostApduService.class, mContext);
-            Assert.assertTrue(adapter.isObserveModeEnabled());
-            Assert.assertTrue(cardEmulation.setPreferredService(activity,
+            assertTrue(adapter.isObserveModeEnabled());
+            assertTrue(cardEmulation.setPreferredService(activity,
                     new ComponentName(mContext, CtsMyHostApduService.class)));
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
             adapter.notifyHceDeactivated();
-            Assert.assertFalse(adapter.isObserveModeEnabled());
+            assertFalse(adapter.isObserveModeEnabled());
         } finally {
             cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                     CustomHostApduService.class), false);
@@ -431,27 +433,27 @@ public class NfcAdapterTest {
     public void testDefaultObserveModeOnlyWithServiceChange() {
         NfcAdapter adapter = getDefaultAdapter();
         adapter.notifyHceDeactivated();
-        assumeTrue(adapter.isObserveModeSupported());
+        assumeObserveModeSupported(adapter);
         CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
         cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                 CtsMyHostApduService.class), true);
         WalletRoleTestUtils.runWithRole(mContext, WalletRoleTestUtils.CTS_PACKAGE_NAME, () -> {
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-            Assert.assertTrue(adapter.isObserveModeEnabled());
-            Assert.assertTrue(adapter.setObserveModeEnabled(false));
-            Assert.assertFalse(adapter.isObserveModeEnabled());
+            assertTrue(adapter.isObserveModeEnabled());
+            assertTrue(adapter.setObserveModeEnabled(false));
+            assertFalse(adapter.isObserveModeEnabled());
             try {
                 Activity activity = createAndResumeActivity();
-                Assert.assertTrue(cardEmulation.setPreferredService(activity,
+                assertTrue(cardEmulation.setPreferredService(activity,
                         new ComponentName(mContext, CtsMyHostApduService.class)));
                 CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-                Assert.assertFalse(adapter.isObserveModeEnabled());
-                Assert.assertTrue(adapter.setObserveModeEnabled(true));
-                Assert.assertTrue(adapter.isObserveModeEnabled());
-                Assert.assertTrue(cardEmulation.setPreferredService(activity,
+                assertFalse(adapter.isObserveModeEnabled());
+                assertTrue(adapter.setObserveModeEnabled(true));
+                assertTrue(adapter.isObserveModeEnabled());
+                assertTrue(cardEmulation.setPreferredService(activity,
                         new ComponentName(mContext, CustomHostApduService.class)));
                 CardEmulationTest.ensurePreferredService(CustomHostApduService.class, mContext);
-                Assert.assertFalse(adapter.isObserveModeEnabled());
+                assertFalse(adapter.isObserveModeEnabled());
             } finally {
                 cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                         CustomHostApduService.class), false);
@@ -472,10 +474,10 @@ public class NfcAdapterTest {
         try {
             originalDefault = setDefaultPaymentService(BackgroundHostApduService.class);
             CardEmulationTest.ensurePreferredService(BackgroundHostApduService.class, mContext);
-            Assert.assertTrue(adapter.isObserveModeEnabled());
+            assertTrue(adapter.isObserveModeEnabled());
             setDefaultPaymentService(CtsMyHostApduService.class);
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-            Assert.assertFalse(adapter.isObserveModeEnabled());
+            assertFalse(adapter.isObserveModeEnabled());
         } finally {
             setDefaultPaymentService(originalDefault);
             adapter.notifyHceDeactivated();
@@ -491,15 +493,15 @@ public class NfcAdapterTest {
             new ComponentName(mContext, CtsMyHostApduService.class), false);
         Activity activity = createAndResumeActivity();
         adapter.notifyHceDeactivated();
-        assumeTrue(adapter.isObserveModeSupported());
-        Assert.assertTrue(cardEmulation.setPreferredService(activity,
+        assumeObserveModeSupported(adapter);
+        assertTrue(cardEmulation.setPreferredService(activity,
                 new ComponentName(mContext, BackgroundHostApduService.class)));
         CardEmulationTest.ensurePreferredService(BackgroundHostApduService.class, mContext);
-        Assert.assertTrue(adapter.isObserveModeEnabled());
-        Assert.assertTrue(cardEmulation.setPreferredService(activity,
+        assertTrue(adapter.isObserveModeEnabled());
+        assertTrue(cardEmulation.setPreferredService(activity,
                 new ComponentName(mContext, CtsMyHostApduService.class)));
         CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-        Assert.assertFalse(adapter.isObserveModeEnabled());
+        assertFalse(adapter.isObserveModeEnabled());
     }
 
     @Test
@@ -509,9 +511,9 @@ public class NfcAdapterTest {
         WalletRoleTestUtils.runWithRole(mContext, WalletRoleTestUtils.CTS_PACKAGE_NAME, () -> {
             NfcAdapter adapter = getDefaultAdapter();
             adapter.notifyHceDeactivated();
-            assumeTrue(adapter.isObserveModeSupported());
+            assumeObserveModeSupported(adapter);
             adapter.setObserveModeEnabled(false);
-            Assert.assertFalse(adapter.isObserveModeEnabled());
+            assertFalse(adapter.isObserveModeEnabled());
             adapter.notifyHceDeactivated();
         });
     }
@@ -523,9 +525,9 @@ public class NfcAdapterTest {
         WalletRoleTestUtils.runWithRole(mContext, WalletRoleTestUtils.CTS_PACKAGE_NAME, () -> {
             NfcAdapter adapter = getDefaultAdapter();
             adapter.notifyHceDeactivated();
-            assumeTrue(adapter.isObserveModeSupported());
+            assumeObserveModeSupported(adapter);
             adapter.setObserveModeEnabled(true);
-            Assert.assertTrue(adapter.isObserveModeEnabled());
+            assertTrue(adapter.isObserveModeEnabled());
             adapter.notifyHceDeactivated();
         });
     }
@@ -536,22 +538,22 @@ public class NfcAdapterTest {
         NfcAdapter adapter = getDefaultAdapter();
 
         // Disable charging feature
-        Assert.assertTrue(adapter.setWlcEnabled(false));
-        Assert.assertFalse(adapter.isWlcEnabled());
+        assertTrue(adapter.setWlcEnabled(false));
+        assertFalse(adapter.isWlcEnabled());
 
         // Enable charging feature
-        Assert.assertTrue(adapter.setWlcEnabled(true));
-        Assert.assertTrue(adapter.isWlcEnabled());
+        assertTrue(adapter.setWlcEnabled(true));
+        assertTrue(adapter.isWlcEnabled());
     }
 
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_NFC_VENDOR_CMD)
     public void testSendVendorCmd() throws InterruptedException, RemoteException {
-        assumeTrue(getVsrApiLevel() > Build.VERSION_CODES.UPSIDE_DOWN_CAKE);
+        assumeVsrApiGreaterThanUdc();
         CountDownLatch rspCountDownLatch = new CountDownLatch(1);
         CountDownLatch ntfCountDownLatch = new CountDownLatch(1);
         NfcAdapter nfcAdapter = getDefaultAdapter();
-        Assert.assertNotNull(nfcAdapter);
+        assertNotNull(nfcAdapter);
         NfcVendorNciCallback cb =
                 new NfcVendorNciCallback(rspCountDownLatch, ntfCountDownLatch);
         try {
@@ -587,7 +589,7 @@ public class NfcAdapterTest {
                 .thenReturn(mDevicePolicyManager);
         NfcAdapter adapter = getDefaultAdapter();
         boolean result = adapter.enable();
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
@@ -602,32 +604,32 @@ public class NfcAdapterTest {
                 .thenReturn(mDevicePolicyManager);
         NfcAdapter adapter = getDefaultAdapter();
         boolean result = adapter.disable();
-        Assert.assertTrue(result);
+        assertTrue(result);
         result = adapter.enable();
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
     public void testShouldDefaultToObserveModeAfterNfcOffOn() throws InterruptedException {
         NfcAdapter adapter = getDefaultAdapter();
         adapter.notifyHceDeactivated();
-        assumeTrue(adapter.isObserveModeSupported());
+        assumeObserveModeSupported(adapter);
         adapter.notifyHceDeactivated();
         Activity activity = createAndResumeActivity();
         final CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
         ComponentName ctsService = new ComponentName(mContext, CtsMyHostApduService.class);
 
         try {
-            Assert.assertTrue(cardEmulation.setShouldDefaultToObserveModeForService(ctsService,
+            assertTrue(cardEmulation.setShouldDefaultToObserveModeForService(ctsService,
                     true));
 
-            Assert.assertTrue(cardEmulation.setPreferredService(activity, ctsService));
+            assertTrue(cardEmulation.setPreferredService(activity, ctsService));
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
 
-            Assert.assertTrue(adapter.isObserveModeEnabled());
-            Assert.assertTrue(NfcUtils.disableNfc(adapter, mContext));
-            Assert.assertTrue(NfcUtils.enableNfc(adapter, mContext));
-            Assert.assertTrue(adapter.isObserveModeEnabled());
+            assertTrue(adapter.isObserveModeEnabled());
+            assertTrue(NfcUtils.disableNfc(adapter, mContext));
+            assertTrue(NfcUtils.enableNfc(adapter, mContext));
+            assertTrue(adapter.isObserveModeEnabled());
         } finally {
             cardEmulation.setShouldDefaultToObserveModeForService(ctsService,
                     false);
@@ -640,20 +642,20 @@ public class NfcAdapterTest {
     public void testShouldDefaultToObserveModeWithNfcOff() throws InterruptedException {
         NfcAdapter adapter = getDefaultAdapter();
         adapter.notifyHceDeactivated();
-        assumeTrue(adapter.isObserveModeSupported());
+        assumeObserveModeSupported(adapter);
         Activity activity = createAndResumeActivity();
         final CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
         ComponentName ctsService = new ComponentName(mContext, CtsMyHostApduService.class);
         try {
-            Assert.assertTrue(NfcUtils.disableNfc(adapter, mContext));
-            Assert.assertTrue(cardEmulation.setShouldDefaultToObserveModeForService(ctsService,
+            assertTrue(NfcUtils.disableNfc(adapter, mContext));
+            assertTrue(cardEmulation.setShouldDefaultToObserveModeForService(ctsService,
                     true));
 
-            Assert.assertTrue(cardEmulation.setPreferredService(activity, ctsService));
+            assertTrue(cardEmulation.setPreferredService(activity, ctsService));
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
 
-            Assert.assertTrue(NfcUtils.enableNfc(adapter, mContext));
-            Assert.assertTrue(adapter.isObserveModeEnabled());
+            assertTrue(NfcUtils.enableNfc(adapter, mContext));
+            assertTrue(adapter.isObserveModeEnabled());
         } finally {
             cardEmulation.setShouldDefaultToObserveModeForService(ctsService,
                     false);
@@ -667,9 +669,9 @@ public class NfcAdapterTest {
     public void testOemExtension() throws InterruptedException {
         CountDownLatch tagDetectedCountDownLatch = new CountDownLatch(3);
         NfcAdapter nfcAdapter = getDefaultAdapter();
-        Assert.assertNotNull(nfcAdapter);
+        assertNotNull(nfcAdapter);
         NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
-        Assert.assertNotNull(nfcOemExtension);
+        assertNotNull(nfcOemExtension);
         NfcOemExtensionCallback cb =
                 new NfcOemExtensionCallback(tagDetectedCountDownLatch);
         try {
@@ -748,28 +750,30 @@ public class NfcAdapterTest {
 
     @Test
     @RequiresDevice
+    @Ignore("b/404565741")
     @RequiresFlagsEnabled(Flags.FLAG_NFC_OEM_EXTENSION)
     public void testOemExtensionMaybeTriggerFirmwareUpdateWhenEnabled()
             throws InterruptedException, RemoteException {
         NfcAdapter nfcAdapter = getDefaultAdapter();
-        Assert.assertNotNull(nfcAdapter);
+        assertNotNull(nfcAdapter);
         NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
-        Assert.assertNotNull(nfcOemExtension);
+        assertNotNull(nfcOemExtension);
         nfcOemExtension.maybeTriggerFirmwareUpdate();
     }
 
     @Test
     @RequiresDevice
+    @Ignore("b/404565741")
     @RequiresFlagsEnabled(Flags.FLAG_NFC_OEM_EXTENSION)
     public void testOemExtensionMaybeTriggerFirmwareUpdateWhenDisabled()
             throws InterruptedException, RemoteException {
         NfcAdapter nfcAdapter = getDefaultAdapter();
-        Assert.assertNotNull(nfcAdapter);
+        assertNotNull(nfcAdapter);
         // Disable NFC
-        Assert.assertTrue(NfcUtils.disableNfc(nfcAdapter, mContext));
-        Assert.assertFalse(nfcAdapter.isEnabled());
+        assertTrue(NfcUtils.disableNfc(nfcAdapter, mContext));
+        assertFalse(nfcAdapter.isEnabled());
         NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
-        Assert.assertNotNull(nfcOemExtension);
+        assertNotNull(nfcOemExtension);
         nfcOemExtension.maybeTriggerFirmwareUpdate();
     }
 
@@ -778,9 +782,9 @@ public class NfcAdapterTest {
     public void testOemExtensionTriggerInitialization()
             throws InterruptedException, RemoteException {
         NfcAdapter nfcAdapter = getDefaultAdapter();
-        Assert.assertNotNull(nfcAdapter);
+        assertNotNull(nfcAdapter);
         NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
-        Assert.assertNotNull(nfcOemExtension);
+        assertNotNull(nfcOemExtension);
         nfcOemExtension.triggerInitialization();
     }
 
@@ -790,10 +794,10 @@ public class NfcAdapterTest {
             throws RemoteException, InterruptedException {
         CountDownLatch tagDetectedCountDownLatch = new CountDownLatch(5);
         NfcAdapter nfcAdapter = getDefaultAdapter();
-        Assert.assertNotNull(nfcAdapter);
+        assertNotNull(nfcAdapter);
         NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
 
-        Assert.assertNotNull(nfcOemExtension);
+        assertNotNull(nfcOemExtension);
         NfcOemExtension.Callback cb = new NfcOemExtensionCallback(tagDetectedCountDownLatch);
         try {
             nfcOemExtension.registerCallback(
@@ -914,12 +918,13 @@ public class NfcAdapterTest {
     @RequiresFlagsEnabled(Flags.FLAG_NFC_OEM_EXTENSION)
     public void testOemExtensionSetControllerAlwaysOn() throws InterruptedException {
         NfcAdapter nfcAdapter = getDefaultAdapter();
-        Assert.assertNotNull(nfcAdapter);
+        assertNotNull(nfcAdapter);
         NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
-        Assert.assertNotNull(nfcOemExtension);
+        assertNotNull(nfcOemExtension);
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation().adoptShellPermissionIdentity(NFC_SET_CONTROLLER_ALWAYS_ON);
-        assumeTrue(nfcAdapter.isControllerAlwaysOnSupported());
+        assumeTrue("Device must support controller always on",
+            nfcAdapter.isControllerAlwaysOnSupported());
         NfcControllerAlwaysOnListener cb = null;
         CountDownLatch countDownLatch;
         try {
@@ -1193,6 +1198,10 @@ public class NfcAdapterTest {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         Activity activity = InstrumentationRegistry.getInstrumentation().startActivitySync(intent);
         InstrumentationRegistry.getInstrumentation().callActivityOnResume(activity);
+        ComponentName topComponentName = mContext.getSystemService(ActivityManager.class)
+                .getRunningTasks(1).get(0).topActivity;
+        Assert.assertEquals("Foreground activity not in the foreground",
+                NfcFCardEmulationActivity.class.getName(), topComponentName.getClassName());
         return activity;
     }
 
@@ -1236,28 +1245,29 @@ public class NfcAdapterTest {
     @RequiresFlagsEnabled(Flags.FLAG_NFC_CHECK_TAG_INTENT_PREFERENCE)
     public void testSetTagIntentAppPreference() throws NoSuchFieldException, RemoteException {
         NfcAdapter adapter = getDefaultAdapter();
-        assumeTrue(adapter.isTagIntentAppPreferenceSupported());
+        assumeTrue("Device must support tag intent app preference",
+            adapter.isTagIntentAppPreferenceSupported());
         int user = mContext.getUser().getIdentifier();
 
         // Disallow package
-        Assert.assertEquals(NfcAdapter.TAG_INTENT_APP_PREF_RESULT_SUCCESS,
+        assertEquals(NfcAdapter.TAG_INTENT_APP_PREF_RESULT_SUCCESS,
             adapter.setTagIntentAppPreferenceForUser(
             user, "android.nfc.cts", /* allow = */ false));
         Map<String, Boolean> disallowMap = adapter.getTagIntentAppPreferenceForUser(user);
-        Assert.assertNotNull(disallowMap);
-        Assert.assertFalse(disallowMap.isEmpty());
-        Assert.assertEquals(false, disallowMap.get("android.nfc.cts"));
-        Assert.assertFalse(adapter.isTagIntentAllowed());
+        assertNotNull(disallowMap);
+        assertFalse(disallowMap.isEmpty());
+        assertEquals(false, disallowMap.get("android.nfc.cts"));
+        assertFalse(adapter.isTagIntentAllowed());
 
         // Allow package
-        Assert.assertEquals(NfcAdapter.TAG_INTENT_APP_PREF_RESULT_SUCCESS,
+        assertEquals(NfcAdapter.TAG_INTENT_APP_PREF_RESULT_SUCCESS,
             adapter.setTagIntentAppPreferenceForUser(
                 user, "android.nfc.cts", /* allow = */ true));
         Map<String, Boolean> allowMap = adapter.getTagIntentAppPreferenceForUser(user);
-        Assert.assertNotNull(allowMap);
-        Assert.assertFalse(allowMap.isEmpty());
-        Assert.assertEquals(true, allowMap.get("android.nfc.cts"));
-        Assert.assertTrue(adapter.isTagIntentAllowed());
+        assertNotNull(allowMap);
+        assertFalse(allowMap.isEmpty());
+        assertEquals(true, allowMap.get("android.nfc.cts"));
+        assertTrue(adapter.isTagIntentAllowed());
     }
 
     @Test

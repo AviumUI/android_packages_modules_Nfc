@@ -62,7 +62,7 @@ class NfcUnlockManager {
                     return true;
                 }
             } catch (Exception e) {
-                Log.e(TAG, "failed to communicate with unlock handler, removing", e);
+                Log.e(TAG, "tryUnlock: failed to communicate with unlock handler, removing", e);
                 iterator.remove();
                 mLockscreenPollMask = recomputePollMask();
             }
