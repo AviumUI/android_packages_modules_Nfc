@@ -68,6 +68,7 @@ cc_defaults {
         "android_nfc_flags_aconfig_c_lib",
         "server_configurable_flags",
         "libxml2",
+        "com.android.nfc.module.flags-aconfig-cpp",
     ],
 
     defaults: [
