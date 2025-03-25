@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name" msgid="5975754765946896125">"Nfc Үйлчилгээ"</string>
-    <string name="nfcUserLabel" msgid="1264167300457896256">"NFC"</string>
+    <!-- no translation found for app_name (6065635506543927196) -->
+    <skip />
+    <!-- no translation found for nfcUserLabel (8399413714687124782) -->
+    <skip />
     <string name="accessibility_nfc_enabled" msgid="830589378553181410">"NFC идэвхжүүлсэн."</string>
     <string name="tap_to_beam" msgid="2022424274840394451">"Илгээхийн тулд дарна уу"</string>
     <string name="beam_progress" msgid="1929294166633309327">"Орж ирж буй бийм..."</string>

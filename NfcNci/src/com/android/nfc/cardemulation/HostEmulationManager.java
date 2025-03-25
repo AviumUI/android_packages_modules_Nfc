@@ -296,6 +296,9 @@ public class HostEmulationManager {
         public void run() {
             synchronized (mLock) {
                 Log.d(TAG, "mEnableObserveModeAfterTransactionRunnable.run");
+                if (!mEnableObserveModeAfterTransaction && !mEnableObserveModeOnFieldOff) {
+                    return;
+                }
                 mEnableObserveModeAfterTransaction = false;
                 mEnableObserveModeOnFieldOff = false;
             }
@@ -404,6 +407,15 @@ public class HostEmulationManager {
                 mEnableObserveModeAfterTransaction = enabled;
                 return;
             }
+            if (mHandler.hasCallbacks(mEnableObserveModeAfterTransactionRunnable)) {
+                if (enabled) {
+                    return;
+                } else {
+                    mHandler.removeCallbacks(mEnableObserveModeAfterTransactionRunnable);
+                }
+            }
+            mEnableObserveModeAfterTransaction = false;
+            mEnableObserveModeOnFieldOff = false;
         }
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         adapter.setObserveModeEnabled(enabled);
