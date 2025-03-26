@@ -542,20 +542,22 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
         Log.d(TAG, text);
         try {
             UiScrollable listView = new UiScrollable(new UiSelector());
-            listView.scrollTextIntoView(text);
             listView.waitForExists(TIMEOUT_MS);
+            listView.scrollTextIntoView(text);
             UiObject listViewItem =
                     listView.getChildByText(
                             new UiSelector().className(android.widget.TextView.class.getName()),
                             "" + text + "");
             if (listViewItem.exists()) {
-                listViewItem.click();
+                listViewItem.clickAndWaitForNewWindow();
                 Log.d(TAG, text + " ListView item was clicked.");
+                // Wait for NFC to update services.
+                Thread.currentThread().sleep(1_000);
             } else {
                 Log.e(TAG, "UI Object does not exist.");
             }
-        } catch (UiObjectNotFoundException e) {
-            Log.e(TAG, "Ui Object not found.");
+        } catch (UiObjectNotFoundException|InterruptedException e) {
+            Log.e(TAG, "Ui Object not found.", e);
         }
     }
 
