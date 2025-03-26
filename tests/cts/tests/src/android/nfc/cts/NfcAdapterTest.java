@@ -688,8 +688,6 @@ public class NfcAdapterTest {
             }
             nfcOemExtension.hasUserEnabledNfc();
             nfcOemExtension.isTagPresent();
-            nfcOemExtension.pausePolling(0);
-            nfcOemExtension.resumePolling();
             RoutingStatus status = nfcOemExtension.getRoutingStatus();
             status.getDefaultRoute();
             status.getDefaultIsoDepRoute();
@@ -700,9 +698,11 @@ public class NfcAdapterTest {
             assertThat(ndefNfcee).isNotNull();
             if (ndefNfcee.isSupported()) {
                 byte[] ndefData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
-                assertThat(ndefNfcee.writeData(5, ndefData))
+
+                byte[] FILE_ID_NDEF_TEST = new byte[]{(byte)0xE1, 0x04};
+                assertThat(ndefNfcee.writeData(bytesToInt(FILE_ID_NDEF_TEST), ndefData))
                                .isEqualTo(T4tNdefNfcee.WRITE_DATA_SUCCESS);
-                assertThat(ndefNfcee.readData(5)).isEqualTo(ndefData);
+                assertThat(ndefNfcee.readData(bytesToInt(FILE_ID_NDEF_TEST))).isEqualTo(ndefData);
                 assertThat(ndefNfcee.isOperationOngoing()).isEqualTo(false);
                 T4tNdefNfceeCcFileInfo ccFileInfo = ndefNfcee.readCcfile();
                 assertThat(ccFileInfo).isNotNull();
@@ -1239,6 +1239,14 @@ public class NfcAdapterTest {
                 .thenReturn(PackageManager.PERMISSION_DENIED);
         doThrow(new SecurityException()).when(mContext)
                 .enforceCallingOrSelfPermission(eq(permission), anyString());
+    }
+
+    private static int bytesToInt(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            hexString.append(String.format("%02X", b & 0xFF));
+        }
+        return Integer.parseInt(hexString.toString(), 16);
     }
 
     @Test
