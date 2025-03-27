@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <!-- no translation found for app_name (6065635506543927196) -->
-    <skip />
-    <!-- no translation found for nfcUserLabel (8399413714687124782) -->
-    <skip />
+    <string name="app_name" msgid="6065635506543927196">"บริการ NFC"</string>
+    <string name="nfcUserLabel" msgid="8399413714687124782">"NFC"</string>
     <string name="accessibility_nfc_enabled" msgid="830589378553181410">"เปิดใช้งาน NFC แล้ว"</string>
     <string name="tap_to_beam" msgid="2022424274840394451">"แตะเพื่อบีม"</string>
     <string name="beam_progress" msgid="1929294166633309327">"บีมขาเข้า..."</string>
