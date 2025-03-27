@@ -22,8 +22,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -34,10 +38,13 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.nfc.ComponentNameAndUser;
 import android.nfc.Flags;
+import android.nfc.INfcOemExtensionCallback;
 import android.nfc.cardemulation.ApduServiceInfo;
 import android.nfc.cardemulation.CardEmulation;
+import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.util.proto.ProtoOutputStream;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
@@ -56,10 +63,18 @@ import org.mockito.Mockito;
 import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 @RunWith(AndroidJUnit4.class)
 public class RegisteredAidCacheTest {
@@ -101,20 +116,70 @@ public class RegisteredAidCacheTest {
 
     private static final int USER_ID = 0;
     private static final UserHandle USER_HANDLE = UserHandle.of(USER_ID);
-
-    @Mock private Context mContext;
-    @Mock private WalletRoleObserver mWalletRoleObserver;
-    @Mock private AidRoutingManager mAidRoutingManager;
-    @Mock private UserManager mUserManager;
-    @Mock private PackageManager mPackageManager;
-    @Mock private NfcService mNfcService;
-
+    RegisteredAidCache mRegisteredAidCache;
+    @Mock
+    private Context mContext;
+    @Mock
+    private WalletRoleObserver mWalletRoleObserver;
+    @Mock
+    private AidRoutingManager mAidRoutingManager;
+    @Mock
+    private UserManager mUserManager;
+    @Mock
+    private PackageManager mPackageManager;
+    @Mock
+    private NfcService mNfcService;
     @Captor
     private ArgumentCaptor<HashMap<String, AidRoutingManager.AidEntry>> mRoutingEntryMapCaptor;
-
     private MockitoSession mStaticMockSession;
 
-    RegisteredAidCache mRegisteredAidCache;
+    private static ApduServiceInfo createServiceInfoForAidRouting(
+            ComponentName componentName,
+            boolean onHost,
+            List<String> aids,
+            List<String> categories,
+            boolean requiresUnlock,
+            boolean requiresScreenOn,
+            int uid,
+            boolean isCategoryOtherServiceEnabled) {
+        return createServiceInfoForAidRouting(componentName,
+                onHost,
+                aids,
+                categories,
+                requiresUnlock,
+                requiresScreenOn,
+                uid,
+                isCategoryOtherServiceEnabled,
+                false);
+    }
+
+    private static ApduServiceInfo createServiceInfoForAidRouting(
+            ComponentName componentName,
+            boolean onHost,
+            List<String> aids,
+            List<String> categories,
+            boolean requiresUnlock,
+            boolean requiresScreenOn,
+            int uid,
+            boolean isCategoryOtherServiceEnabled,
+            boolean wantsRoleHolderPriority) {
+        ApduServiceInfo apduServiceInfo = Mockito.mock(ApduServiceInfo.class);
+        when(apduServiceInfo.isOnHost()).thenReturn(onHost);
+        when(apduServiceInfo.getAids()).thenReturn(aids);
+        when(apduServiceInfo.getUid()).thenReturn(uid);
+        when(apduServiceInfo.requiresUnlock()).thenReturn(requiresUnlock);
+        when(apduServiceInfo.requiresScreenOn()).thenReturn(requiresScreenOn);
+        when(apduServiceInfo.isCategoryOtherServiceEnabled())
+                .thenReturn(isCategoryOtherServiceEnabled);
+        when(apduServiceInfo.getComponent()).thenReturn(componentName);
+        when(apduServiceInfo.wantsRoleHolderPriority()).thenReturn(wantsRoleHolderPriority);
+        for (int i = 0; i < aids.size(); i++) {
+            String aid = aids.get(i);
+            String category = categories.get(i);
+            when(apduServiceInfo.getCategoryForAid(eq(aid))).thenReturn(category);
+        }
+        return apduServiceInfo;
+    }
 
     @Before
     public void setUp() {
@@ -132,7 +197,7 @@ public class RegisteredAidCacheTest {
         when(mUserManager.getProfileParent(eq(USER_HANDLE))).thenReturn(USER_HANDLE);
         when(mContext.createContextAsUser(any(), anyInt())).thenReturn(mContext);
         when(mContext.getSystemService(eq(UserManager.class))).thenReturn(mUserManager);
-        when (mContext.getPackageManager()).thenReturn(mPackageManager);
+        when(mContext.getPackageManager()).thenReturn(mPackageManager);
     }
 
     @After
@@ -770,54 +835,6 @@ public class RegisteredAidCacheTest {
         when(mAidRoutingManager.supportsAidSubsetRouting()).thenReturn(support);
     }
 
-    private static ApduServiceInfo createServiceInfoForAidRouting(
-            ComponentName componentName,
-            boolean onHost,
-            List<String> aids,
-            List<String> categories,
-            boolean requiresUnlock,
-            boolean requiresScreenOn,
-            int uid,
-            boolean isCategoryOtherServiceEnabled) {
-        return createServiceInfoForAidRouting(componentName,
-                onHost,
-                aids,
-                categories,
-                requiresUnlock,
-                requiresScreenOn,
-                uid,
-                isCategoryOtherServiceEnabled,
-                false);
-    }
-
-    private static ApduServiceInfo createServiceInfoForAidRouting(
-            ComponentName componentName,
-            boolean onHost,
-            List<String> aids,
-            List<String> categories,
-            boolean requiresUnlock,
-            boolean requiresScreenOn,
-            int uid,
-            boolean isCategoryOtherServiceEnabled,
-            boolean wantsRoleHolderPriority) {
-        ApduServiceInfo apduServiceInfo = Mockito.mock(ApduServiceInfo.class);
-        when(apduServiceInfo.isOnHost()).thenReturn(onHost);
-        when(apduServiceInfo.getAids()).thenReturn(aids);
-        when(apduServiceInfo.getUid()).thenReturn(uid);
-        when(apduServiceInfo.requiresUnlock()).thenReturn(requiresUnlock);
-        when(apduServiceInfo.requiresScreenOn()).thenReturn(requiresScreenOn);
-        when(apduServiceInfo.isCategoryOtherServiceEnabled())
-                .thenReturn(isCategoryOtherServiceEnabled);
-        when(apduServiceInfo.getComponent()).thenReturn(componentName);
-        when(apduServiceInfo.wantsRoleHolderPriority()).thenReturn(wantsRoleHolderPriority);
-        for (int i = 0; i < aids.size(); i++) {
-            String aid = aids.get(i);
-            String category = categories.get(i);
-            when(apduServiceInfo.getCategoryForAid(eq(aid))).thenReturn(category);
-        }
-        return apduServiceInfo;
-    }
-
     @Test
     public void testGetPreferredService() {
 
@@ -830,5 +847,605 @@ public class RegisteredAidCacheTest {
         servicePair = mRegisteredAidCache.getPreferredService();
         Assert.assertNotNull(servicePair.getComponentName());
         assertEquals(new ComponentNameAndUser(USER_ID, FOREGROUND_SERVICE), servicePair);
+    }
+
+    @Test
+    public void testIsDefaultServiceForAidWithDefaultService()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        List<ApduServiceInfo> services = new ArrayList<>();
+        ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
+        services.add(apduServiceInfo);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(PAYMENT_AID_1, aidResolveInfo);
+        when(mAidRoutingManager.supportsAidPrefixRouting()).thenReturn(false);
+        when(mAidRoutingManager.supportsAidSubsetRouting()).thenReturn(false);
+        Field field = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        field.setAccessible(true);
+        field.set(mRegisteredAidCache, mAidCache);
+        aidResolveInfo.services = services;
+        aidResolveInfo.defaultService = apduServiceInfo;
+        when(apduServiceInfo.getComponent()).thenReturn(PAYMENT_SERVICE);
+
+        assertTrue(
+                mRegisteredAidCache.isDefaultServiceForAid(1, PAYMENT_SERVICE, PAYMENT_AID_1));
+        verify(apduServiceInfo).getComponent();
+    }
+
+    @Test
+    public void testIsDefaultServiceForAidWithSingleService()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        List<ApduServiceInfo> services = new ArrayList<>();
+        ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
+        services.add(apduServiceInfo);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(PAYMENT_AID_1, aidResolveInfo);
+        when(mAidRoutingManager.supportsAidPrefixRouting()).thenReturn(false);
+        when(mAidRoutingManager.supportsAidSubsetRouting()).thenReturn(false);
+        Field field = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        field.setAccessible(true);
+        field.set(mRegisteredAidCache, mAidCache);
+        aidResolveInfo.services = services;
+        aidResolveInfo.defaultService = null;
+        when(apduServiceInfo.getComponent()).thenReturn(PAYMENT_SERVICE);
+
+        assertTrue(
+                mRegisteredAidCache.isDefaultServiceForAid(1, PAYMENT_SERVICE, PAYMENT_AID_1));
+        verify(apduServiceInfo).getComponent();
+    }
+
+    @Test
+    public void testIsDefaultServiceForAidWithMultipleService()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        List<ApduServiceInfo> services = new ArrayList<>();
+        ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
+        ApduServiceInfo secondApduServiceInfo = mock(ApduServiceInfo.class);
+        services.add(apduServiceInfo);
+        services.add(secondApduServiceInfo);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(PAYMENT_AID_1, aidResolveInfo);
+        when(mAidRoutingManager.supportsAidPrefixRouting()).thenReturn(false);
+        when(mAidRoutingManager.supportsAidSubsetRouting()).thenReturn(false);
+        Field field = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        field.setAccessible(true);
+        field.set(mRegisteredAidCache, mAidCache);
+        aidResolveInfo.services = services;
+        aidResolveInfo.defaultService = null;
+        when(apduServiceInfo.getComponent()).thenReturn(PAYMENT_SERVICE);
+
+        assertFalse(
+                mRegisteredAidCache.isDefaultServiceForAid(1, PAYMENT_SERVICE, PAYMENT_AID_1));
+        verify(apduServiceInfo, never()).getComponent();
+    }
+
+    @Test
+    public void testIsDefaultServiceForAid() throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        when(mAidRoutingManager.supportsAidPrefixRouting()).thenReturn(false);
+        when(mAidRoutingManager.supportsAidSubsetRouting()).thenReturn(false);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put("aidResolveInfo", aidResolveInfo);
+        Field field = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        field.setAccessible(true);
+        field.set(mRegisteredAidCache, mAidCache);
+        aidResolveInfo.services = null;
+
+        assertFalse(mRegisteredAidCache.isDefaultServiceForAid(1, PAYMENT_SERVICE, "AID"));
+    }
+
+    @Test
+    public void testDumpEntry() {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        ApduServiceInfo defaultServiceInfo = mock(ApduServiceInfo.class);
+        Map.Entry<String, RegisteredAidCache.AidResolveInfo> map = new AbstractMap.SimpleEntry<>(
+                PAYMENT_AID_1, aidResolveInfo);
+        List<ApduServiceInfo> services = new ArrayList<>();
+        services.add(defaultServiceInfo);
+        aidResolveInfo.category = "PAYMENT";
+        aidResolveInfo.defaultService = defaultServiceInfo;
+        aidResolveInfo.services = services;
+        when(defaultServiceInfo.getComponent()).thenReturn(PAYMENT_SERVICE);
+        when(defaultServiceInfo.getDescription()).thenReturn("PAYMENT");
+        String sb = "    \"" + PAYMENT_AID_1 + "\" (category: " + "PAYMENT" + ")\n"
+                + "        "
+                + "*DEFAULT* "
+                + defaultServiceInfo + " (Description: " + "PAYMENT" + ")\n";
+        assertEquals(sb, mRegisteredAidCache.dumpEntry(map));
+    }
+
+    @Test
+    public void testDump() throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        FileDescriptor fd = mock(FileDescriptor.class);
+        PrintWriter pw = mock(PrintWriter.class);
+        String[] args = new String[]{};
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put("PAYMENT_AID_1", aidResolveInfo);
+        ApduServiceInfo defaultServiceInfo = mock(ApduServiceInfo.class);
+        Map.Entry<String, RegisteredAidCache.AidResolveInfo> map = new AbstractMap.SimpleEntry<>(
+                PAYMENT_AID_1, aidResolveInfo);
+        List<ApduServiceInfo> services = new ArrayList<>();
+        services.add(defaultServiceInfo);
+        aidResolveInfo.category = "PAYMENT";
+        aidResolveInfo.defaultService = defaultServiceInfo;
+        aidResolveInfo.services = services;
+        when(defaultServiceInfo.getComponent()).thenReturn(PAYMENT_SERVICE);
+        when(defaultServiceInfo.getDescription()).thenReturn("PAYMENT");
+        when(Flags.nfcAssociatedRoleServices()).thenReturn(true);
+        Field field = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        field.setAccessible(true);
+        field.set(mRegisteredAidCache, mAidCache);
+
+        mRegisteredAidCache.dump(fd, pw, args);
+        verify(mAidRoutingManager).dump(fd, pw, args);
+    }
+
+    @Test
+    public void testDumpDebug() throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        ProtoOutputStream proto = mock(ProtoOutputStream.class);
+        ApduServiceInfo defaultServiceInfo = mock(ApduServiceInfo.class);
+        ComponentName mPreferredPaymentService = mock(ComponentName.class);
+        ComponentName mPreferredForegroundService = mock(ComponentName.class);
+        aidResolveInfo.category = "PAYMENT";
+        aidResolveInfo.defaultService = defaultServiceInfo;
+        List<ApduServiceInfo> services = new ArrayList<>();
+        services.add(defaultServiceInfo);
+        aidResolveInfo.services = services;
+        when(defaultServiceInfo.getComponent()).thenReturn(PAYMENT_SERVICE);
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(PAYMENT_AID_1, aidResolveInfo);
+        Field fieldAidCache = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        fieldAidCache.setAccessible(true);
+        fieldAidCache.set(mRegisteredAidCache, mAidCache);
+        Field fieldPayScheme = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredPaymentService");
+        fieldPayScheme.setAccessible(true);
+        fieldPayScheme.set(mRegisteredAidCache, mPreferredPaymentService);
+        Field fieldService = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredForegroundService");
+        fieldService.setAccessible(true);
+        fieldService.set(mRegisteredAidCache, mPreferredForegroundService);
+
+        mRegisteredAidCache.dumpDebug(proto);
+        verify(mAidRoutingManager).dumpDebug(proto);
+    }
+
+    @Test
+    public void testFindPrefixConflictForSubsetAidNoPrefixMatch() {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String subsetAid = "A000000001#";
+        List<ApduServiceInfo> prefixServices = Collections.emptyList();
+
+        RegisteredAidCache.ResolvedPrefixConflictAid result =
+                mRegisteredAidCache.findPrefixConflictForSubsetAid(
+                        subsetAid, prefixServices, false);
+        assertNull(result.prefixAid);
+        assertFalse(result.matchingSubset);
+    }
+
+    @Test
+    public void testFindPrefixConflictForSubsetAidWithMatchingPrefix() {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String subsetAid = "A000000001#";
+        ApduServiceInfo mockService = mock(ApduServiceInfo.class);
+        when(mockService.getPrefixAids()).thenReturn(List.of("A0000000#"));
+        List<ApduServiceInfo> prefixServices = Collections.singletonList(mockService);
+
+        RegisteredAidCache.ResolvedPrefixConflictAid result =
+                mRegisteredAidCache.findPrefixConflictForSubsetAid(
+                        subsetAid, prefixServices, false);
+        assertNotNull(result.prefixAid);
+        assertEquals("A0000000#", result.prefixAid);
+        assertFalse(result.matchingSubset);
+    }
+
+    @Test
+    public void testFindPrefixConflictForSubsetAidMultiplePrefixes() {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String subsetAid = "A000000001#";
+        ApduServiceInfo mockService = mock(ApduServiceInfo.class);
+        when(mockService.getPrefixAids()).thenReturn(Arrays.asList("A0000000#", "A000#"));
+        List<ApduServiceInfo> prefixServices = Collections.singletonList(mockService);
+
+        RegisteredAidCache.ResolvedPrefixConflictAid result =
+                mRegisteredAidCache.findPrefixConflictForSubsetAid(
+                        subsetAid, prefixServices, false);
+        assertNotNull(result.prefixAid);
+        assertEquals("A000#", result.prefixAid); // The smallest prefix should be chosen
+    }
+
+    @Test
+    public void testFindPrefixConflictForSubsetAidMatchingSubset() {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String subsetAid = "A000000001#";
+        ApduServiceInfo mockService = mock(ApduServiceInfo.class);
+        when(mockService.getPrefixAids()).thenReturn(List.of("A000000001#"));
+        List<ApduServiceInfo> prefixServices = Collections.singletonList(mockService);
+
+        RegisteredAidCache.ResolvedPrefixConflictAid result =
+                mRegisteredAidCache.findPrefixConflictForSubsetAid(
+                        subsetAid, prefixServices, false);
+        assertNotNull(result.prefixAid);
+        assertEquals("A000000001#", result.prefixAid);
+        assertTrue(result.matchingSubset);
+    }
+
+    @Test
+    public void testFindPrefixConflictForSubsetAidPriorityRootAid() {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String subsetAid = "A000000001#";
+        ApduServiceInfo mockService = mock(ApduServiceInfo.class);
+        when(mockService.getPrefixAids()).thenReturn(Arrays.asList("A0000000#", "A000#"));
+        when(mockService.getCategoryForAid(anyString())).thenReturn(CardEmulation.CATEGORY_PAYMENT);
+        when(mockService.getUid()).thenReturn(1000);
+        List<ApduServiceInfo> prefixServices = Collections.singletonList(mockService);
+
+        RegisteredAidCache.ResolvedPrefixConflictAid result =
+                mRegisteredAidCache.findPrefixConflictForSubsetAid(
+                        subsetAid, prefixServices, true);
+        assertNotNull(result.prefixAid);
+        assertEquals("A000#", result.prefixAid); // Smallest prefix should be chosen
+    }
+
+    @Test
+    public void testOnRoutingOverridedOrRecovered()
+            throws NoSuchFieldException, IllegalAccessException, RemoteException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        INfcOemExtensionCallback mNfcOemExtensionCallback = mock(INfcOemExtensionCallback.class);
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField("mNfcEnabled");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, true);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        aidResolveInfo.services = new ArrayList<>();
+        List<String> unCheckedOffHostSecureElement = new ArrayList<>();
+        unCheckedOffHostSecureElement.add("SampleElement");
+        aidResolveInfo.unCheckedOffHostSecureElement = unCheckedOffHostSecureElement;
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(PAYMENT_AID_1, aidResolveInfo);
+        Field fieldAidCache = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        fieldAidCache.setAccessible(true);
+        fieldAidCache.set(mRegisteredAidCache, mAidCache);
+        when(mAidRoutingManager.configureRouting(any(HashMap.class), anyBoolean(),
+                anyBoolean())).thenReturn(AidRoutingManager.CONFIGURE_ROUTING_FAILURE_TABLE_FULL);
+        mRegisteredAidCache.setOemExtension(mNfcOemExtensionCallback);
+
+        assertEquals(AidRoutingManager.CONFIGURE_ROUTING_FAILURE_TABLE_FULL,
+                mRegisteredAidCache.onRoutingOverridedOrRecovered());
+        verify(mNfcOemExtensionCallback).onRoutingTableFull();
+    }
+
+    @Test
+    public void testUpdateRoutingLockedWithNfcDisabled() {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+
+        assertEquals(AidRoutingManager.CONFIGURE_ROUTING_FAILURE_UNKNOWN,
+                mRegisteredAidCache.updateRoutingLocked(true, true));
+    }
+
+    @Test
+    public void testUpdateRoutingLockedWithDefaultService()
+            throws NoSuchFieldException, IllegalAccessException, RemoteException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        INfcOemExtensionCallback mNfcOemExtensionCallback = mock(INfcOemExtensionCallback.class);
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField("mNfcEnabled");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, true);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        ApduServiceInfo defaultServiceInfo = mock(ApduServiceInfo.class);
+        when(defaultServiceInfo.isOnHost()).thenReturn(false);
+        when(defaultServiceInfo.requiresUnlock()).thenReturn(true);
+        when(defaultServiceInfo.requiresScreenOn()).thenReturn(true);
+        when(defaultServiceInfo.getOffHostSecureElement()).thenReturn("sampleElement");
+        List<ApduServiceInfo> services = new ArrayList<>();
+        services.add(defaultServiceInfo);
+        aidResolveInfo.services = services;
+        aidResolveInfo.defaultService = defaultServiceInfo;
+        List<String> unCheckedOffHostSecureElement = new ArrayList<>();
+        unCheckedOffHostSecureElement.add("SampleElement");
+        aidResolveInfo.unCheckedOffHostSecureElement = unCheckedOffHostSecureElement;
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(SUBSET_AID, aidResolveInfo);
+        Field fieldAidCache = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        fieldAidCache.setAccessible(true);
+        fieldAidCache.set(mRegisteredAidCache, mAidCache);
+        NfcService nfcService = mock(NfcService.class);
+        when(NfcService.getInstance()).thenReturn(nfcService);
+        when(nfcService.getNciVersion()).thenReturn(NfcService.NCI_VERSION_1_0);
+        when(mAidRoutingManager.configureRouting(any(HashMap.class), anyBoolean(),
+                anyBoolean())).thenReturn(AidRoutingManager.CONFIGURE_ROUTING_SUCCESS);
+        mRegisteredAidCache.setOemExtension(mNfcOemExtensionCallback);
+
+        assertEquals(AidRoutingManager.CONFIGURE_ROUTING_SUCCESS,
+                mRegisteredAidCache.updateRoutingLocked(true, true));
+        verify(mNfcOemExtensionCallback, never()).onRoutingTableFull();
+        verify(nfcService).getNciVersion();
+    }
+
+    @Test
+    public void testUpdateRoutingLockedWithSingleServiceAsPayment()
+            throws NoSuchFieldException, IllegalAccessException, RemoteException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        INfcOemExtensionCallback mNfcOemExtensionCallback = mock(INfcOemExtensionCallback.class);
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField("mNfcEnabled");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, true);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        ApduServiceInfo defaultServiceInfo = mock(ApduServiceInfo.class);
+        when(defaultServiceInfo.requiresUnlock()).thenReturn(true);
+        when(defaultServiceInfo.requiresScreenOn()).thenReturn(true);
+        List<ApduServiceInfo> services = new ArrayList<>();
+        services.add(defaultServiceInfo);
+        aidResolveInfo.services = services;
+        aidResolveInfo.defaultService = null;
+        aidResolveInfo.category = CardEmulation.CATEGORY_PAYMENT;
+        List<String> unCheckedOffHostSecureElement = new ArrayList<>();
+        unCheckedOffHostSecureElement.add("SampleElement");
+        aidResolveInfo.unCheckedOffHostSecureElement = unCheckedOffHostSecureElement;
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(PREFIX_AID, aidResolveInfo);
+        Field fieldAidCache = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        fieldAidCache.setAccessible(true);
+        fieldAidCache.set(mRegisteredAidCache, mAidCache);
+        NfcService nfcService = mock(NfcService.class);
+        when(NfcService.getInstance()).thenReturn(nfcService);
+        when(nfcService.getNciVersion()).thenReturn(NfcService.NCI_VERSION_1_0);
+        when(mAidRoutingManager.configureRouting(any(HashMap.class), anyBoolean(),
+                anyBoolean())).thenReturn(AidRoutingManager.CONFIGURE_ROUTING_SUCCESS);
+        mRegisteredAidCache.setOemExtension(mNfcOemExtensionCallback);
+
+        assertEquals(AidRoutingManager.CONFIGURE_ROUTING_SUCCESS,
+                mRegisteredAidCache.updateRoutingLocked(true, true));
+        verify(mNfcOemExtensionCallback, never()).onRoutingTableFull();
+        verify(nfcService).getNciVersion();
+    }
+
+    @Test
+    public void testUpdateRoutingLockedWithSingleService()
+            throws NoSuchFieldException, IllegalAccessException, RemoteException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        INfcOemExtensionCallback mNfcOemExtensionCallback = mock(INfcOemExtensionCallback.class);
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField("mNfcEnabled");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, true);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        ApduServiceInfo defaultServiceInfo = mock(ApduServiceInfo.class);
+        when(defaultServiceInfo.isOnHost()).thenReturn(false);
+        when(defaultServiceInfo.requiresUnlock()).thenReturn(true);
+        when(defaultServiceInfo.requiresScreenOn()).thenReturn(true);
+        when(defaultServiceInfo.getOffHostSecureElement()).thenReturn("sampleElement");
+        List<ApduServiceInfo> services = new ArrayList<>();
+        services.add(defaultServiceInfo);
+        aidResolveInfo.services = services;
+        aidResolveInfo.defaultService = null;
+        aidResolveInfo.category = CardEmulation.CATEGORY_PAYMENT;
+        List<String> unCheckedOffHostSecureElement = new ArrayList<>();
+        unCheckedOffHostSecureElement.add("SampleElement");
+        aidResolveInfo.unCheckedOffHostSecureElement = unCheckedOffHostSecureElement;
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(PREFIX_AID, aidResolveInfo);
+        Field fieldAidCache = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        fieldAidCache.setAccessible(true);
+        fieldAidCache.set(mRegisteredAidCache, mAidCache);
+        NfcService nfcService = mock(NfcService.class);
+        when(NfcService.getInstance()).thenReturn(nfcService);
+        when(nfcService.getNciVersion()).thenReturn(NfcService.NCI_VERSION_1_0);
+        when(mAidRoutingManager.configureRouting(any(HashMap.class), anyBoolean(),
+                anyBoolean())).thenReturn(AidRoutingManager.CONFIGURE_ROUTING_SUCCESS);
+        mRegisteredAidCache.setOemExtension(mNfcOemExtensionCallback);
+
+        assertEquals(AidRoutingManager.CONFIGURE_ROUTING_SUCCESS,
+                mRegisteredAidCache.updateRoutingLocked(true, true));
+        verify(mNfcOemExtensionCallback, never()).onRoutingTableFull();
+        verify(nfcService).getNciVersion();
+    }
+
+    @Test
+    public void testUpdateRoutingLockedWithMultipleService()
+            throws NoSuchFieldException, IllegalAccessException, RemoteException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        INfcOemExtensionCallback mNfcOemExtensionCallback = mock(INfcOemExtensionCallback.class);
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField("mNfcEnabled");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, true);
+        RegisteredAidCache.AidResolveInfo aidResolveInfo = mock(
+                RegisteredAidCache.AidResolveInfo.class);
+        ApduServiceInfo defaultServiceInfo = mock(ApduServiceInfo.class);
+        ApduServiceInfo secondServiceInfo = mock(ApduServiceInfo.class);
+        when(defaultServiceInfo.isOnHost()).thenReturn(false);
+        when(defaultServiceInfo.requiresUnlock()).thenReturn(true);
+        when(defaultServiceInfo.requiresScreenOn()).thenReturn(true);
+        when(defaultServiceInfo.getOffHostSecureElement()).thenReturn("sampleElement");
+        when(secondServiceInfo.getOffHostSecureElement()).thenReturn("sampleElement");
+        List<ApduServiceInfo> services = new ArrayList<>();
+        services.add(defaultServiceInfo);
+        services.add(secondServiceInfo);
+        aidResolveInfo.services = services;
+        aidResolveInfo.defaultService = null;
+        aidResolveInfo.category = CardEmulation.CATEGORY_PAYMENT;
+        List<String> unCheckedOffHostSecureElement = new ArrayList<>();
+        unCheckedOffHostSecureElement.add("SampleElement");
+        aidResolveInfo.unCheckedOffHostSecureElement = unCheckedOffHostSecureElement;
+        TreeMap<String, RegisteredAidCache.AidResolveInfo> mAidCache = new TreeMap<>();
+        mAidCache.put(PREFIX_AID, aidResolveInfo);
+        Field fieldAidCache = RegisteredAidCache.class.getDeclaredField("mAidCache");
+        fieldAidCache.setAccessible(true);
+        fieldAidCache.set(mRegisteredAidCache, mAidCache);
+        NfcService nfcService = mock(NfcService.class);
+        when(NfcService.getInstance()).thenReturn(nfcService);
+        when(nfcService.getNciVersion()).thenReturn(NfcService.NCI_VERSION_1_0);
+        when(mAidRoutingManager.configureRouting(any(HashMap.class), anyBoolean(),
+                anyBoolean())).thenReturn(AidRoutingManager.CONFIGURE_ROUTING_SUCCESS);
+        mRegisteredAidCache.setOemExtension(mNfcOemExtensionCallback);
+
+        assertEquals(AidRoutingManager.CONFIGURE_ROUTING_SUCCESS,
+                mRegisteredAidCache.updateRoutingLocked(true, true));
+        verify(mNfcOemExtensionCallback, never()).onRoutingTableFull();
+        verify(nfcService).getNciVersion();
+    }
+
+    @Test
+    public void testisPreferredServicePackageNameForUser()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String packageName = FOREGROUND_SERVICE.getPackageName();
+        ComponentName mPreferredForegroundService = mock(ComponentName.class);
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredForegroundService");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, mPreferredForegroundService);
+        Field fieldService = RegisteredAidCache.class.getDeclaredField(
+                "mUserIdPreferredForegroundService");
+        fieldService.setAccessible(true);
+        fieldService.set(mRegisteredAidCache, USER_ID);
+        when(mPreferredForegroundService.getPackageName()).thenReturn(packageName);
+
+        assertTrue(mRegisteredAidCache.isPreferredServicePackageNameForUser(packageName, USER_ID));
+    }
+
+    @Test
+    public void testisPreferredServicePackageNameForUserWithDifferentService()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String packageName = WALLET_PAYMENT_SERVICE.getPackageName();
+        ComponentName mPreferredForegroundService = mock(ComponentName.class);
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredForegroundService");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, mPreferredForegroundService);
+        Field fieldService = RegisteredAidCache.class.getDeclaredField(
+                "mUserIdPreferredForegroundService");
+        fieldService.setAccessible(true);
+        fieldService.set(mRegisteredAidCache, USER_ID);
+        when(mPreferredForegroundService.getPackageName()).thenReturn(packageName);
+
+        assertFalse(mRegisteredAidCache.isPreferredServicePackageNameForUser(
+                FOREGROUND_SERVICE.getPackageName(), USER_ID));
+    }
+
+    @Test
+    public void testisPreferredServicePackageNameForUserWithWallet()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String packageName = WALLET_PAYMENT_SERVICE.getPackageName();
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredForegroundService");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, null);
+        Field fieldWalletHolder = RegisteredAidCache.class.getDeclaredField(
+                "mUserIdDefaultWalletHolder");
+        fieldWalletHolder.setAccessible(true);
+        fieldWalletHolder.set(mRegisteredAidCache, USER_ID);
+        Field fieldWalletHolderPackage = RegisteredAidCache.class.getDeclaredField(
+                "mDefaultWalletHolderPackageName");
+        fieldWalletHolderPackage.setAccessible(true);
+        fieldWalletHolderPackage.set(mRegisteredAidCache, packageName);
+        when(mWalletRoleObserver.isWalletRoleFeatureEnabled()).thenReturn(true);
+
+
+        assertTrue(mRegisteredAidCache.isPreferredServicePackageNameForUser(packageName, USER_ID));
+    }
+
+    @Test
+    public void testisPreferredServicePackageNameForUserWithDifferentWalletService()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String packageName = WALLET_PAYMENT_SERVICE.getPackageName();
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredForegroundService");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, null);
+        Field fieldWalletHolder = RegisteredAidCache.class.getDeclaredField(
+                "mUserIdDefaultWalletHolder");
+        fieldWalletHolder.setAccessible(true);
+        fieldWalletHolder.set(mRegisteredAidCache, 1);
+        when(mWalletRoleObserver.isWalletRoleFeatureEnabled()).thenReturn(true);
+
+
+        assertFalse(mRegisteredAidCache.isPreferredServicePackageNameForUser(packageName, USER_ID));
+    }
+
+    @Test
+    public void testisPreferredServicePackageNameForUserWithPreferredPaymentService()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String packageName = PAYMENT_SERVICE.getPackageName();
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredForegroundService");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, null);
+        Field fieldService = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredPaymentService");
+        fieldService.setAccessible(true);
+        fieldService.set(mRegisteredAidCache, PAYMENT_SERVICE);
+        Field fieldWalletHolder = RegisteredAidCache.class.getDeclaredField(
+                "mUserIdPreferredPaymentService");
+        fieldWalletHolder.setAccessible(true);
+        fieldWalletHolder.set(mRegisteredAidCache, USER_ID);
+        when(mWalletRoleObserver.isWalletRoleFeatureEnabled()).thenReturn(false);
+
+        assertTrue(mRegisteredAidCache.isPreferredServicePackageNameForUser(packageName, USER_ID));
+    }
+
+    @Test
+    public void testisPreferredServicePackageNameForUserWithNonDefaultService()
+            throws NoSuchFieldException, IllegalAccessException {
+        mRegisteredAidCache = new RegisteredAidCache(mContext, mWalletRoleObserver,
+                mAidRoutingManager);
+        String packageName = PAYMENT_SERVICE.getPackageName();
+        Field fieldNfcEnable = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredForegroundService");
+        fieldNfcEnable.setAccessible(true);
+        fieldNfcEnable.set(mRegisteredAidCache, null);
+        Field fieldService = RegisteredAidCache.class.getDeclaredField(
+                "mPreferredPaymentService");
+        fieldService.setAccessible(true);
+        fieldService.set(mRegisteredAidCache, null);
+        when(mWalletRoleObserver.isWalletRoleFeatureEnabled()).thenReturn(false);
+
+        assertFalse(mRegisteredAidCache.isPreferredServicePackageNameForUser(packageName, USER_ID));
     }
 }
