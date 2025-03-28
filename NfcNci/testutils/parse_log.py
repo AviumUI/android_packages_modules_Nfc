@@ -14,7 +14,7 @@
 
 # Lint as: python3
 
-"""Parses the snoop log to extract polling loop data and APDU exchanges."""
+"""Parses the bug report to extract polling loop data and APDU exchanges."""
 
 import base64
 import dataclasses
@@ -25,8 +25,8 @@ import zlib
 
 PREAMBLE_LENGTH = 9
 HEADER_LENGTH = 7
-SNOOP_LOG_START = "BEGIN:NFCSNOOP_"
-SNOOP_LOG_END = "END:NFCSNOOP_"
+SNOOP_LOG_START = "BEGIN:NFCSNOOP_VS_LOG_SUMMARY"
+SNOOP_LOG_END = "END:NFCSNOOP_VS_LOG_SUMMARY"
 
 # Bytes identifying the starts of polling loop and APDU transactions
 POLLING_LOOP_START_BYTES = bytes.fromhex("6f0c")
@@ -69,6 +69,15 @@ AID_START_BYTES = bytes.fromhex("00A40400")
 SELECT_AID_FIRST = bytes.fromhex("00A4040008A000000151000000")
 SELECT_AID_SECOND = bytes.fromhex("00A4040008A000000003000000")
 
+# parsing device information from NFC dump section
+DUMP_HEADER = "DUMP OF SERVICE nfc:"
+SCREEN_STATE_HEADING = "mScreenState="
+SECURE_NFC_HEADING = "mIsSecureNfcEnabled"
+READER_OPTION_HEADING = "mIsReaderOptionEnabled"
+ALWAYS_ON_HEADING = "mIsAlwaysOnSupported"
+OBSERVE_MODE_SUPPORTED_HEADING = "mIsObserveModeSupported"
+OBSERVE_MODE_ENABLED_HEADING = "mIsObserveModeEnabled"
+
 
 class NfcType(enum.Enum):
   NFC_A = 0
@@ -104,6 +113,16 @@ class FullApduEntry:
   command: list[bytes] = dataclasses.field(default_factory=lambda: [])
   response: list[bytes] = dataclasses.field(default_factory=lambda: [])
   error: str | None = None
+
+
+@dataclasses.dataclass
+class DumpNfcInfo:
+  is_screen_on: bool = False
+  is_secure_nfc_enabled: bool = False
+  is_reader_option_enabled: bool = False
+  is_always_on_supported: bool = False
+  is_observe_mode_supported: bool = False
+  is_observe_mode_enabled: bool = False
 
 
 def replace_aids(
@@ -234,31 +253,84 @@ def parse_file(data: bytes) -> list[PollingLoopEntry | PartialApduEntry]:
 
 def open_and_parse_file(
     file_path: str,
-) -> list[PollingLoopEntry | FullApduEntry]:
-  """Opens the file that contains the unparsed snoop log and parses it.
+):
+  """Opens the file that contains the unparsed bug report and parses it.
 
   Args:
-    file_path: The path of the file containing the unparsed snoop log.
+    file_path: The path of the file containing the unparsed bug report.
 
   Returns:
-    A list of polling loop entries and APDU exchanges parsed from the file.
+    Device properties, as well as a list of polling loop entries and APDU
+    exchanges parsed from the file.
 
   Raises:
     RuntimeError: If the file cannot be found.
   """
-  snoop_file = open_read_file(file_path)
-  str_data = ""
-  found_log = False
-  while line := snoop_file.readline():
-    if not found_log and SNOOP_LOG_START in line:
-      found_log = True
-    elif found_log:
+  raw_bug_report = open_read_file(file_path)
+  found_snoop_log = False
+  found_dump = False
+  snoop_data = list()
+  cur_snoop_data = ""
+  dump_data = list()
+  while line := raw_bug_report.readline():
+    if not found_dump and DUMP_HEADER in line:
+      found_dump = True
+    elif found_dump:
+      if line == "\n":
+        found_dump = False
+      else:
+        dump_data.append(line)
+
+    if not found_snoop_log and SNOOP_LOG_START in line:
+      found_snoop_log = True
+    elif found_snoop_log:
       if SNOOP_LOG_END in line:
-        break
-      str_data += line
-  snoop_bytes = inflate(base64.b64decode(str_data))
-  parsed = parse_file(snoop_bytes)
-  return standardize_log(parsed)
+        found_snoop_log = False
+        snoop_data.append(cur_snoop_data.replace("\n", ""))
+        cur_snoop_data = ""
+      else:
+        cur_snoop_data += line
+
+  parsed_snoop_log = list()
+  # parse snoop log data
+  for cur_log in snoop_data:
+    snoop_bytes = inflate(base64.b64decode(cur_log))
+    parsed_snoop_log.extend(parse_file(snoop_bytes))
+
+  # parse dump data
+  dump_nfc_info = parse_dump_data(dump_data)
+
+  return dump_nfc_info, standardize_log(parsed_snoop_log)
+
+
+def parse_dump_data(data: list[str]) -> DumpNfcInfo:
+  dump_nfc_info = DumpNfcInfo()
+  for entry in data:
+    if entry.startswith(SCREEN_STATE_HEADING):
+      if "ON_" in entry:
+        dump_nfc_info.is_screen_on = True
+      continue
+    if entry.startswith(SECURE_NFC_HEADING):
+      if "true" in entry:
+        dump_nfc_info.is_secure_nfc_enabled = True
+      continue
+    if entry.startswith(READER_OPTION_HEADING):
+      if "true" in entry:
+        dump_nfc_info.is_reader_option_enabled = True
+      continue
+    if entry.startswith(ALWAYS_ON_HEADING):
+      if "true" in entry:
+        dump_nfc_info.is_always_on_supported = True
+      continue
+    if entry.startswith(OBSERVE_MODE_SUPPORTED_HEADING):
+      if "true" in entry:
+        dump_nfc_info.is_observe_mode_supported = True
+      continue
+    if entry.startswith(OBSERVE_MODE_ENABLED_HEADING):
+      if "true" in entry:
+        dump_nfc_info.is_observe_mode_enabled = True
+      continue
+  return dump_nfc_info
 
 
 def find_apdu_transactions(data: bytes, ts: int) -> list[PartialApduEntry]:

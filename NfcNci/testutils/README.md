@@ -1,7 +1,7 @@
 ### NFC Replay Utility
 
 The NFC Replay tool allows a PN 532 module to reenact a NFC transaction from a
-snoop log. Currently, the tool is capable of replaying polling loop transactions
+raw bug report. Currently, the tool is capable of replaying polling loop transactions
 and APDU exchanges. Once the transaction has been replayed, a test can
 optionally be generated based on the interaction between the module and
 emulator.
@@ -12,31 +12,33 @@ The detailed design for this feature can be found at go/nfc-replay-utility-dd.
 
 #### Generating and replaying a test
 
-1\. Obtain a snoop log from the device (see instructions below for how to do this).
+1\. Obtain a bug report from the device. You will need to locate the raw bug
+report file (which will likely have the title "bugreport-...txt") and keep
+track of its path.
 
 2\. Connect the PN532 module via a serial port.
 
-3\. To replay the transaction, substitute the name of the snoop file and the
-serial port that the PN 532 module is using.
+3\. To replay the transaction, substitute the path of the bug report file and
+the serial port that the PN 532 module is using.
 
 ```
-python3 nfcreplay.py -f $SNOOP_FILE -p $READER_PATH
+python3 nfcreplay.py -f $BUG_REPORT_FILE -p $READER_PATH
 ```
 
-Alternatively, to replay a specific section of the snoop log, additional
+Alternatively, to replay a specific section of the bug report, additional
 arguments should be added to denote the desired start and end time frame of the
 transaction. For instance:
 
 ```
-python3 nfcreplay.py -f $SNOOP_FILE -p $READER_PATH --start "2024-07-17 12:00:00" --end "2024-07-17 15:00:00"
+python3 nfcreplay.py -f $BUG_REPORT_FILE -p $READER_PATH --start "2024-07-17 12:00:00" --end "2024-07-17 15:00:00"
 ```
 
 Information about the transaction will be printed out to console, including a
 list of all polling loop and APDU exchanges that took place.
 
-5\. To generate and run a test from the snoop log, use the command:
+5\. To generate and run a test from the bug report, use the command:
 ```
-python3 nfcreplay.py -f $SNOOP_FILE -p $READER_PATH --generate_and_replay_test
+python3 nfcreplay.py -f $BUG_REPORT_FILE -p $READER_PATH --generate_and_replay_test
 ```
 
 A Python file will be created, representing the test, along with a JSON file
@@ -58,10 +60,10 @@ the emulator app.
 
 To use the emulator app outside of a generated test, perform the following steps:
 
-1\. To prepare a snoop log to be replayed with the app:
+1\. To prepare a bug report to be replayed with the app:
 
 ```
-python3 nfcreplay.py -f $SNOOP_FILE --parse_only
+python3 nfcreplay.py -f $BUG_REPORT_FILE --parse_only
 ```
 
 The script will produce the name of the parsed log, which will be located within
@@ -77,12 +79,12 @@ adb install -r -g ~/aosp-main-with-phones/out/target/product/raven/system/app/em
 
 ```
 
-3\. Start the activity. Make sure that $PARSED_SNOOP_FILE is the name of the
-file, rather than its path. It is assumed that this file is located within
+3\. Start the activity. Make sure that $$PARSED_FILE is the name of
+the file, rather than its path. It is assumed that this file is located within
 emulatorapp/parsed_files, where it was originally created.
 
 ```
-adb shell am start -n com.android.nfc.emulatorapp/.MainActivity --es "snoop_file" "$PARSED_SNOOP_FILE"
+adb shell am start -n com.android.nfc.emulatorapp/.MainActivity --es "snoop_file" "$PARSED_FILE"
 ```
 
 When you are ready to start the transaction, press the "Start Host APDU Service"
@@ -96,16 +98,3 @@ When the transaction is replayed, you should be able to see a list of APDU
 commands and responses received and sent by the Host APDU service displayed on
 the emulator app. Additionally, the replay script will output similar
 information.
-
-### Creating a Snoop Log
-
-To create a snoop log from your Android device, you should first go to Developer
-Options in Settings to make sure that "NFC NCI unfiltered log" is enabled. This
-will ensure that the data packets sent during NFC transactions are not truncated
-in the snoop log.
-
-After the NFC transaction is complete, enter the command `adb shell dumpsys
-nfc`. This will output the snoop log, which will begin with the line `---
-BEGIN:NFCSNOOP_VS_LOG_SUMMARY` and end with the line `---
-END:NFCSNOOP_VS_LOG_SUMMARY ---`. Copy the snoop log into a text file, and make
-sure to include both the start and end lines.
