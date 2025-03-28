@@ -122,6 +122,7 @@ public class CardEmulationTest {
     @After
     public void tearDown() throws Exception {
         if (mAdapter != null && mContext != null) {
+            mAdapter.notifyHceDeactivated();
             Assert.assertTrue("Failed to enable NFC in test cleanup",
                 NfcUtils.enableNfc(mAdapter, mContext));
         } else {
