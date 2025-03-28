@@ -234,7 +234,11 @@ public final class NfcCardEmulationOccurredTest {
         when(mockAidCache.getPreferredService())
                 .thenReturn(new ComponentNameAndUser(0, componentName));
         IBinder iBinder = new Binder();
-        ServiceConnection serviceConnection = mHostEmulation.getServiceConnection();
+        mHostEmulation.bindServiceIfNeededLocked(0, componentName);
+
+        ServiceConnection serviceConnection =
+                mHostEmulation.mComponentNameToConnectionsMap.get(
+                        new ComponentNameAndUser(0, componentName)).mServiceConnection;
         serviceConnection.onServiceConnected(componentName, iBinder);
         mHostEmulation.onPollingLoopDetected(pollingLoopTypeOnFrames);
         mHostEmulation.onPollingLoopDetected(pollingLoopTypeOnFrames);
@@ -249,9 +253,8 @@ public final class NfcCardEmulationOccurredTest {
     public void testOnPollingLoopDetectedSTATE_XFER() {
         ComponentName componentName = mock(ComponentName.class);
         when(componentName.getPackageName()).thenReturn("com.android.nfc");
-        IBinder iBinder = new Binder();
+        mHostEmulation.bindServiceIfNeededLocked(0, componentName);
         ServiceConnection serviceConnection = mHostEmulation.getServiceConnection();
-        serviceConnection.onServiceConnected(componentName, iBinder);
         int state = mHostEmulation.getState();
         Log.d(TAG, "testOnPollingLoopDetectedSTATE_XFER() - state = " + state);
 
