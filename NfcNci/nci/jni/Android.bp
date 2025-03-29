@@ -178,4 +178,7 @@ cc_test {
         },
     },
     auto_gen_config: true,
+    visibility: [
+        "//platform_testing:__subpackages__",
+    ],
 }

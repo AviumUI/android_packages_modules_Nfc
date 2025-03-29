@@ -2479,6 +2479,124 @@ public class CardEmulationTest {
                         "test");
     }
 
+    @Test
+    public void testDontThrashObserveMode() {
+        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
+        assumeObserveModeSupported(adapter);
+        adapter.notifyHceDeactivated();
+        Activity activity = createAndResumeActivity();
+        final CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
+        runWithRole(mContext, WALLET_HOLDER_PACKAGE_NAME, () -> {
+            try {
+                final Intent intent = new Intent();
+                intent.setAction("com.cts.SetShouldDefaultToObserveModeForService");
+                intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+                intent.setComponent(
+                        new ComponentName("com.android.test.walletroleholder",
+                                "com.android.test.walletroleholder.WalletRoleBroadcastReceiver"));
+                mContext.sendBroadcast(intent);
+                ComponentName backgroundService =
+                        new ComponentName(mContext, CustomHostApduService.class);
+                assertTrue(cardEmulation.setShouldDefaultToObserveModeForService(
+                                backgroundService, true));
+
+                assertTrue(cardEmulation.setPreferredService(activity, backgroundService));
+                ensurePreferredService(CustomHostApduService.class);
+
+                assertTrue(adapter.isObserveModeEnabled());
+                ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>(1);
+                frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
+                        HexFormat.of().parseHex("7f71156b")));
+                notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
+                assertFalse(adapter.isObserveModeEnabled());
+                adapter.notifyHceDeactivated();
+                activity.finish();
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                assertFalse(adapter.isObserveModeEnabled());
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                assertTrue(adapter.isObserveModeEnabled());
+            } finally {
+                cardEmulation.unsetPreferredService(activity);
+                activity.finish();
+                adapter.notifyHceDeactivated();
+                final Intent intent = new Intent();
+                intent.setAction("com.cts.UnsetShouldDefaultToObserveModeForService");
+                intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+                intent.setComponent(
+                        new ComponentName("com.android.test.walletroleholder",
+                                "com.android.test.walletroleholder.WalletRoleBroadcastReceiver"));
+                mContext.sendBroadcast(intent);
+            }
+        });
+    }
+
+    @Test
+    public void testDontOverrideObserveMode() {
+        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
+        assumeObserveModeSupported(adapter);
+        adapter.notifyHceDeactivated();
+        Activity activity = createAndResumeActivity();
+        final CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
+        runWithRole(mContext, WALLET_HOLDER_PACKAGE_NAME, () -> {
+            try {
+                final Intent intent = new Intent();
+                intent.setAction("com.cts.UnsetShouldDefaultToObserveModeForService");
+                intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+                intent.setComponent(
+                        new ComponentName("com.android.test.walletroleholder",
+                                "com.android.test.walletroleholder.WalletRoleBroadcastReceiver"));
+                mContext.sendBroadcast(intent);
+                ComponentName backgroundService =
+                        new ComponentName(mContext, CustomHostApduService.class);
+                assertTrue(cardEmulation.setShouldDefaultToObserveModeForService(
+                                backgroundService, true));
+
+                assertTrue(cardEmulation.setPreferredService(activity, backgroundService));
+                ensurePreferredService(CustomHostApduService.class);
+
+                assertTrue(adapter.isObserveModeEnabled());
+                ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>(1);
+                frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
+                        HexFormat.of().parseHex("7f71156b")));
+                notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
+                assertFalse(adapter.isObserveModeEnabled());
+                adapter.notifyHceDeactivated();
+                activity.finish();
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                assertFalse(adapter.isObserveModeEnabled());
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                assertFalse(adapter.isObserveModeEnabled());
+            } finally {
+                cardEmulation.unsetPreferredService(activity);
+                activity.finish();
+                adapter.notifyHceDeactivated();
+                final Intent intent = new Intent();
+                intent.setAction("com.cts.UnsetShouldDefaultToObserveModeForService");
+                intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+                intent.setComponent(
+                        new ComponentName("com.android.test.walletroleholder",
+                                "com.android.test.walletroleholder.WalletRoleBroadcastReceiver"));
+                mContext.sendBroadcast(intent);
+            }
+        });
+    }
+
     private Activity createAndResumeActivity() {
         ensureUnlocked();
         Intent intent

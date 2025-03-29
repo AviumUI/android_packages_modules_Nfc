@@ -14,32 +14,34 @@
 
 # Lint as: python3
 
-"""Generates a Python test case from a snoop log."""
+"""Generates a Python test case from a bug report."""
 
 import json
 import math
 import os
 
-from parse_log import FullApduEntry, NfcType, PollingLoopEntry
+from parse_log import DumpNfcInfo, FullApduEntry, NfcType, PollingLoopEntry
 
 INDENT_SIZE = 4
 
 
 def generate_test(
-    log: list[FullApduEntry | PollingLoopEntry], name: str
+    log: list[FullApduEntry | PollingLoopEntry],
+    name: str,
+    nfc_dump: DumpNfcInfo,
 ) -> str:
-  """Generates a Python test case from a snoop log parsed by the replay tool.
+  """Generates a Python test case from a bug report parsed by the replay tool.
 
   The generated test will be placed in the current directory.
 
   Args:
-    log: The parsed snoop log.
-    name: The name of the file containing the snoop log.
+    log: The parsed snoop log from the bug report.
+    name: The name of the file containing the bug report.
 
   Returns:
     The name of the JSON file containing APDUs needed to run the test.
   """
-  # The name of the test file is based on the name of the snoop log
+  # The name of the test file is based on the name of the bug report
   python_local_file = name + "_test.py"
   file_path = (
       os.path.dirname(os.path.realpath(__file__)) + "/" + python_local_file
@@ -54,7 +56,7 @@ def generate_test(
   file.write(create_imports())
   file.write(create_polling_loop_methods())
   file.write(create_apdu_exchange_method())
-  file.write(create_setup())
+  file.write(create_setup(nfc_dump))
   file.write(create_test_opening(name))
 
   last_timestamp = log[0].ts
@@ -81,7 +83,9 @@ def generate_test(
   print()
   print(
       "Test generated at {}. To run the test, copy the test file to"
-      " packages/modules/Nfc/NfcNci/tests/testcases/multidevices/.".format(file_path)
+      " packages/modules/Nfc/NfcNci/tests/testcases/multidevices/.".format(
+          file_path
+      )
   )
   update_android_bp(python_local_file, name)
 
@@ -102,10 +106,10 @@ def update_android_bp(local_file_path, test_name):
   s += create_line('main: "{}",'.format(local_file_path), indent=1)
   s += create_line('srcs: ["{}"],'.format(local_file_path), indent=1)
   s += create_line('test_config: "AndroidTest.xml",', indent=1)
-  s += create_line('device_common_data: [', indent=1)
+  s += create_line("device_common_data: [", indent=1)
   s += create_line('":NfcEmulatorApduApp",', indent=2)
   s += create_line('"config.yaml",', indent=2)
-  s += create_line('],', indent=1)
+  s += create_line("],", indent=1)
   s += create_line("test_options: {", indent=1)
   s += create_line("unit_test: false,", indent=2)
   s += create_line('runner: "mobly",', indent=2)
@@ -144,7 +148,9 @@ def create_test_opening(name: str):
   s += create_line("apdu_rsps = []", indent=2)
   s += create_line("if file_path_name:", indent=2)
   s += create_line('with open(file_path_name, "r") as json_str:', indent=3)
-  s += create_line('self.emulator.nfc_emulator.startMainActivity(json_str.read())', indent=4)
+  s += create_line(
+      "self.emulator.nfc_emulator.startMainActivity(json_str.read())", indent=4
+  )
   s += create_line()
   s += create_line('with open(file_path_name, "r") as json_data:', indent=3)
   s += create_line("d = json.load(json_data)", indent=4)
@@ -248,6 +254,7 @@ def create_imports():
   s += create_line()
   return s
 
+
 def create_polling_loop_methods():
   """Create methods that send polling loops to the reader.
 
@@ -311,28 +318,30 @@ def create_apdu_exchange_method():
   s += create_line(
       '"""Conducts an APDU exchange with the PN532 reader."""', indent=1
   )
-  s += create_line('for _ in range(_NUM_POLLING_LOOPS):', indent=1)
-  s += create_line('tag = reader.poll_a()', indent=2)
-  s += create_line('if tag is not None:', indent=2)
-  s += create_line('transacted = tag.transact(commands, responses)', indent=3)
-  s += create_line('reader.mute()', indent=3)
-  s += create_line('# edge case: expect no response', indent=3)
-  s += create_line('if not responses or responses[0] == bytearray.fromhex(""):', indent=3)
-  s += create_line('return tag, True', indent=4)
-  s += create_line('return tag, transacted', indent=3)
-  s += create_line('reader.mute()', indent=2)
-  s += create_line('return None, False', indent=1)
+  s += create_line("for _ in range(_NUM_POLLING_LOOPS):", indent=1)
+  s += create_line("tag = reader.poll_a()", indent=2)
+  s += create_line("if tag is not None:", indent=2)
+  s += create_line("transacted = tag.transact(commands, responses)", indent=3)
+  s += create_line("reader.mute()", indent=3)
+  s += create_line("# edge case: expect no response", indent=3)
+  s += create_line(
+      'if not responses or responses[0] == bytearray.fromhex(""):', indent=3
+  )
+  s += create_line("return tag, True", indent=4)
+  s += create_line("return tag, transacted", indent=3)
+  s += create_line("reader.mute()", indent=2)
+  s += create_line("return None, False", indent=1)
   return s
 
 
-def create_setup():
+def create_setup(nfc_dump: DumpNfcInfo):
   """Creates methods to prepare the PN532 reader and emulator before the test.
 
   This involves checking to ensure that the raeder and emulator are both
   present, and enabling NFC on the emulator.
 
   Args:
-    name: The name of the original snoop log file.
+    name: The name of the original bug report file.
   """
   s = create_line()
   s += create_line()
@@ -345,14 +354,25 @@ def create_setup():
       "self.emulator = self.register_controller(android_device)[0]", indent=2
   )
   s += create_line('self.emulator.debug_tag = "emulator"', indent=2)
-  s += create_line('if (hasattr(self.emulator, "dimensions") and "pn532_serial_path" in self.emulator.dimensions):', indent=2)
-  s += create_line('pn532_serial_path = self.emulator.dimensions["pn532_serial_path"]', indent=3)
-  s += create_line('else:', indent=2)
+  s += create_line(
+      'if (hasattr(self.emulator, "dimensions") and "pn532_serial_path" in'
+      " self.emulator.dimensions):",
+      indent=2,
+  )
+  s += create_line(
+      'pn532_serial_path = self.emulator.dimensions["pn532_serial_path"]',
+      indent=3,
+  )
+  s += create_line("else:", indent=2)
   s += create_line(
       'pn532_serial_path = self.user_params.get("pn532_serial_path", "")',
       indent=3,
   )
-  s += create_line('self.emulator.load_snippet("nfc_emulator", "com.android.nfc.emulatorapp")', indent=2)
+  s += create_line(
+      'self.emulator.load_snippet("nfc_emulator",'
+      ' "com.android.nfc.emulatorapp")',
+      indent=2,
+  )
   s += create_line(
       'self.emulator.adb.shell(["svc", "nfc", "disable"])', indent=2
   )
@@ -362,12 +382,67 @@ def create_setup():
   s += create_line("self.reader = pn532.PN532(pn532_serial_path)", indent=2)
   s += create_line("self.reader.mute()", indent=2)
   s += create_line()
+
+  s += create_line("self.emulator.nfc_emulator.adoptPermissions()", indent=2)
+
+  if nfc_dump.is_screen_on:
+    s += create_line("self.emulator.nfc_emulator.turnScreenOn()", indent=2)
+  else:
+    s += create_line("self.emulator.nfc_emulator.turnScreenOff()", indent=2)
+
+  s += create_line(
+      "if self.emulator.nfc_emulator.isSecureNfcSupported():", indent=2
+  )
+  if nfc_dump.is_secure_nfc_enabled:
+    s += create_line("self.emulator.nfc_emulator.setSecureNfc(True)", indent=3)
+  else:
+    s += create_line("self.emulator.nfc_emulator.setSecureNfc(False)", indent=3)
+
+  s += create_line(
+      "if self.emulator.nfc_emulator.isReaderOptionSupported():", indent=2
+  )
+  if nfc_dump.is_reader_option_enabled:
+    s += create_line(
+        "self.emulator.nfc_emulator.setReaderOption(True)", indent=3
+    )
+  else:
+    s += create_line(
+        "self.emulator.nfc_emulator.setReaderOption(False)", indent=3
+    )
+
+  s += create_line(
+      "if self.emulator.nfc_emulator.isControllerAlwaysOnSupported():", indent=2
+  )
+  if nfc_dump.is_always_on_supported:
+    s += create_line(
+        "self.emulator.nfc_emulator.setControllerAlwaysOn(True)", indent=3
+    )
+  else:
+    s += create_line(
+        "self.emulator.nfc_emulator.setControllerAlwaysOn(False)", indent=3
+    )
+
+  if nfc_dump.is_observe_mode_supported:
+    s += create_line(
+        "if self.emulator.nfc_emulator.isObserveModeSupported():", indent=2
+    )
+    if nfc_dump.is_observe_mode_enabled:
+      s += create_line(
+          "self.emulator.nfc_emulator.setObserveMode(True)", indent=3
+      )
+    else:
+      s += create_line(
+          "self.emulator.nfc_emulator.setObserveMode(False)", indent=3
+      )
+
+  s += create_line()
   return s
 
 
 def create_teardown_test():
   s = create_line("def teardown_test(self):", indent=1)
   s += create_line("self.reader.mute()", indent=2)
+  s += create_line("self.emulator.nfc_emulator.dropPermissions()", indent=2)
   return s
 
 

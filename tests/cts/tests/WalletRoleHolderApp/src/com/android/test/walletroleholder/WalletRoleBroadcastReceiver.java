@@ -40,6 +40,14 @@ public class WalletRoleBroadcastReceiver extends BroadcastReceiver
             case "com.cts.UnregisterEventListener":
                 cardEmulation.unregisterNfcEventCallback(this);
                 break;
+            case "com.cts.SetShouldDefaultToObserveModeForService":
+                cardEmulation.setShouldDefaultToObserveModeForService(
+                    new ComponentName(mContext, WalletRoleHolderApduService.class), true);
+                break;
+            case "com.cts.UnsetShouldDefaultToObserveModeForService":
+                cardEmulation.setShouldDefaultToObserveModeForService(
+                    new ComponentName(mContext, WalletRoleHolderApduService.class), false);
+                break;
         }
     }
 
