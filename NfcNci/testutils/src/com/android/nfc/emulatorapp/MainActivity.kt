@@ -68,10 +68,23 @@ class MainActivity : AppCompatActivity() {
     startHostApduService()
   }
 
+  override fun onDestroy() {
+    super.onDestroy()
+    stopHostApduService()
+  }
+
   private fun startHostApduService() {
     packageManager.setComponentEnabledSetting(
       ComponentName(this, EmulatorHostApduService::class.java),
       PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+      PackageManager.DONT_KILL_APP,
+    )
+  }
+
+  private fun stopHostApduService() {
+    packageManager.setComponentEnabledSetting(
+      ComponentName(this, EmulatorHostApduService::class.java),
+      PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
       PackageManager.DONT_KILL_APP,
     )
   }
