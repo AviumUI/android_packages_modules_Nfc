@@ -66,11 +66,12 @@ APDU_ORDER_SECOND_ALT = bytes([0x0B, 0x00])
 AID_START_BYTES = bytes.fromhex("00A40400")
 
 # AID groups that are used by the emulator app
-SELECT_AID_FIRST = bytes.fromhex("00A4040008A000000151000000")
-SELECT_AID_SECOND = bytes.fromhex("00A4040008A000000003000000")
+SELECT_AID_FIRST = bytes.fromhex("00A4040008A000000004101017")
+SELECT_AID_SECOND = bytes.fromhex("00A4040008A000000004101020")
 
 # parsing device information from NFC dump section
 DUMP_HEADER = "DUMP OF SERVICE nfc:"
+
 SCREEN_STATE_HEADING = "mScreenState="
 SECURE_NFC_HEADING = "mIsSecureNfcEnabled"
 READER_OPTION_HEADING = "mIsReaderOptionEnabled"
