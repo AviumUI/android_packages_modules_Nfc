@@ -66,6 +66,7 @@ public class PollingLoopEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         IntentFilter filter = new IntentFilter(PollingLoopService.POLLING_FRAME_ACTION);
         registerReceiver(mFieldStateReceiver, filter, RECEIVER_EXPORTED);
         mNfcTech = getIntent().getIntExtra(NFC_TECH_KEY, NfcAdapter.FLAG_READER_NFC_A);
@@ -102,7 +103,6 @@ public class PollingLoopEmulatorActivity extends BaseEmulatorActivity {
     @Override
     public void onPause() {
         super.onPause();
-        Log.e(TAG, "onPause");
         unregisterReceiver(mFieldStateReceiver);
         mCardEmulation.unsetPreferredService(this);
     }

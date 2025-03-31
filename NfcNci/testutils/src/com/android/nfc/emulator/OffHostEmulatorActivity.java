@@ -33,7 +33,6 @@ public class OffHostEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
         if (getIntent().getBooleanExtra(EXTRA_ENABLE_OBSERVE_MODE, false)) {
             // Still need to set a preferred service to be able to set observe mode.
             mCardEmulation.setPreferredService(

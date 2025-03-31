@@ -25,6 +25,7 @@ public class AccessServiceTurnObserveModeOnProcessApduEmulatorActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupServices(AccessServiceTurnObserveModeOnProcessApdu.COMPONENT);
     }
 
     @Override
@@ -37,11 +38,6 @@ public class AccessServiceTurnObserveModeOnProcessApduEmulatorActivity
     @Override
     protected void onResume() {
         super.onResume();
-        setupServices(AccessServiceTurnObserveModeOnProcessApdu.COMPONENT);
-    }
-
-    @Override
-    protected void onServicesSetup() {
         mCardEmulation.setPreferredService(
                 this, AccessServiceTurnObserveModeOnProcessApdu.COMPONENT);
     }

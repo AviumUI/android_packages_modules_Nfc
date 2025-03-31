@@ -72,7 +72,7 @@ public class TwoPollingFrameEmulatorActivity extends BaseEmulatorActivity {
     @Override
     public void onPause() {
         super.onPause();
-        Log.e(TAG, "onPause");
+        Log.d(TAG, "onPause");
         unregisterReceiver(mFieldStateReceiver);
         mCardEmulation.unsetPreferredService(this);
     }
