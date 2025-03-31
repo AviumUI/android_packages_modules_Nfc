@@ -38,3 +38,17 @@ java_aconfig_library {
         "//packages/modules/Nfc:__subpackages__",
     ],
 }
+
+cc_aconfig_library {
+    name: "com.android.nfc.module.flags-aconfig-cpp",
+    aconfig_declarations: "com.android.nfc.module.flags-aconfig",
+    min_sdk_version: "35",
+    host_supported: true,
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.nfcservices",
+    ],
+    visibility: [
+        "//packages/modules/Nfc:__subpackages__",
+    ],
+}

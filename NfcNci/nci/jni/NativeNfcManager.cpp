@@ -39,6 +39,7 @@
 #include "SyncEvent.h"
 #include "android_nfc.h"
 #include "ce_api.h"
+#include "com_android_nfc_module_flags.h"
 #include "debug_lmrt.h"
 #include "nfa_api.h"
 #include "nfa_ee_api.h"
@@ -48,6 +49,8 @@
 #include "rw_api.h"
 
 using android::base::StringPrintf;
+
+using com::android::nfc::module::flags::reader_mode_ignore_frame;
 
 extern tNFA_DM_DISC_FREQ_CFG* p_nfa_dm_rf_disc_freq_cfg;  // defined in stack
 namespace android {
@@ -1877,7 +1880,7 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
                                         (const uint8_t*)annotationBytes.get(),
                                         annotationBytes.size());
         }
-      } else {
+      } else if (reader_mode_ignore_frame()) {
         uint8_t ignoreFrame[] = {0x6a, 0x01, 0xcf, 0x00, 0x00};
         setTechAPollingLoopAnnotation(e, 0, ignoreFrame, 5);
       }
