@@ -31,16 +31,21 @@ import java.util.List;
 public class EventListenerEmulatorActivity extends BaseEmulatorActivity {
 
     private ArrayList<Boolean> mFieldChanged = new ArrayList<>();
-    private ArrayList<String> mAidNotRouted = new ArrayList<>();
+    private ArrayList<Boolean> mPreferredServiceChanged = new ArrayList<>();
 
     private CardEmulation.NfcEventCallback mEventListener = new CardEmulation.NfcEventCallback() {
         @Override
         public void onRemoteFieldChanged(boolean isDetected) {
             mFieldChanged.add(isDetected);
+
+            if (!isDetected) {
+                finishTest();
+            }
         }
 
-        public void onAidNotRouted(@NonNull String aid) {
-            mAidNotRouted.add(aid);
+        @Override
+        public void onPreferredServiceChanged(boolean isPreferred) {
+            mPreferredServiceChanged.add(isPreferred);
         }
     };
 
@@ -53,28 +58,30 @@ public class EventListenerEmulatorActivity extends BaseEmulatorActivity {
 
     public void onResume() {
         super.onResume();
+        mFieldChanged.clear();
+        registerEventListener(mEventListener);
+
         ComponentName serviceName =
                 new ComponentName(this.getApplicationContext(), TransportService1.class);
         mCardEmulation.setPreferredService(this, serviceName);
         waitForPreferredService();
-
-        mFieldChanged.clear();
-        mAidNotRouted.clear();
-        registerEventListener(mEventListener);
     }
 
     @Override
     public void onPause() {
         super.onPause();
 
+        mCardEmulation.unregisterNfcEventCallback(mEventListener);
         mCardEmulation.unsetPreferredService(this);
     }
 
-    @Override
-    public void onApduSequenceComplete(ComponentName component, long duration) {
-        boolean success = mAidNotRouted.equals(Arrays.asList(HceUtils.ACCESS_AID));
-        success = success && TransportService1.COMPONENT.equals(component);
-        success = success && mFieldChanged.equals(Arrays.asList(true, false, true));
+    private void finishTest() {
+        Log.d("EventListenerEmulatorActivity",
+                "Preferred service changed: " + mPreferredServiceChanged);
+        Log.d("EventListenerEmulatorActivity", "Field changed: " + mFieldChanged);
+
+        boolean success = mPreferredServiceChanged.equals(Arrays.asList(true));
+        success = success && mFieldChanged.equals(Arrays.asList(true, false));
 
         if (success) {
             setTestPassed();
@@ -84,7 +91,6 @@ public class EventListenerEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mCardEmulation.unregisterNfcEventCallback(mEventListener);
     }
 
     @Override
