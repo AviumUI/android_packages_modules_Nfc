@@ -366,6 +366,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     public void onBootCompleted() {
         mHostEmulationManager.onBootCompleted();
+        mServiceCache.onBootCompleted();
     }
 
     public void onUserSwitched(int userId) {

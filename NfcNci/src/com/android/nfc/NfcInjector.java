@@ -360,6 +360,14 @@ public class NfcInjector {
     }
 
     /**
+     * Returns whether boot completed or not (used to detect if NFC stack crashed and came back up).
+     * @return
+     */
+    public boolean isBootCompleted() {
+        return "1".equals(SystemProperties.get("sys.boot_completed"));
+    }
+
+    /**
      * Returns whether the uid is signed with the same key as the platform.
      */
     public boolean isSignedWithPlatformKey(int uid) {
