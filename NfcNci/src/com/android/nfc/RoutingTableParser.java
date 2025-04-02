@@ -363,8 +363,8 @@ public class RoutingTableParser {
                 default -> null;
             };
             entries.add(new Entry(entry, info.mType, info.mNfceeId,
-                    RoutingOptionManager.getInstance().getSecureElementForRoute(info.mNfceeId),
-                    info.mPowerState));
+                    RoutingOptionManager.getInstance()
+                    .getSecureElementForRoute((int) (info.mNfceeId & 0xFF)), info.mPowerState));
         }
         return entries;
     }
