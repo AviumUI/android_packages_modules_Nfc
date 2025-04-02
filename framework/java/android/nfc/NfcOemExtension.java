@@ -18,6 +18,7 @@ package android.nfc;
 
 import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_DH;
 import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE;
+import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE;
 import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC;
 import static android.nfc.cardemulation.CardEmulation.routeIntToString;
 
@@ -1219,6 +1220,8 @@ public final class NfcOemExtension {
             return PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE;
         } else if (route.startsWith("SIM")) {
             return PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC;
+        } else if (route.startsWith("NDEF-NFCEE")) {
+            return PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE;
         } else {
             throw new IllegalStateException("Unexpected value: " + route);
         }

@@ -239,6 +239,7 @@ package android.nfc.cardemulation {
     field @FlaggedApi("android.nfc.nfc_override_recover_routing_table") public static final int PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT = 3; // 0x3
     field @FlaggedApi("android.nfc.nfc_override_recover_routing_table") public static final int PROTOCOL_AND_TECHNOLOGY_ROUTE_DH = 0; // 0x0
     field @FlaggedApi("android.nfc.nfc_override_recover_routing_table") public static final int PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE = 1; // 0x1
+    field @FlaggedApi("com.android.nfc.module.flags.oem_extension_25q4") public static final int PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE = 4; // 0x4
     field @FlaggedApi("android.nfc.nfc_override_recover_routing_table") public static final int PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC = 2; // 0x2
     field @FlaggedApi("android.nfc.nfc_override_recover_routing_table") public static final int PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET = -1; // 0xffffffff
     field public static final int SELECTION_MODE_ALWAYS_ASK = 1; // 0x1
