@@ -726,7 +726,7 @@ public class NativeNfcManager implements DeviceHost {
     }
 
     private  boolean isReaderModeAnnotationSupportedCaps() {
-        return mProprietaryCaps.isReaderModeAnnotationSupported();
+        return mProprietaryCaps != null && mProprietaryCaps.isReaderModeAnnotationSupported();
     }
 
     @Override
