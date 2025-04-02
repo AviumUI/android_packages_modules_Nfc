@@ -55,9 +55,15 @@ void* p_oem_extn_handle = NULL;
 
 namespace {
   std::string searchLibPath(std::string file_name) {
+#if (defined(__arm64__) || defined(__aarch64__) || defined(_M_ARM64))
     const std::vector<std::string> search_path = {
-        "/system/lib/", "/system/lib64/"
+        "/system/lib64/"
     };
+#else
+    const std::vector<std::string> search_path = {
+        "/system/lib/"
+    };
+#endif
     for (std::string path : search_path) {
       path.append(file_name);
       struct stat file_stat;
