@@ -159,11 +159,13 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     @Nullable
     private final StatsdUtils mStatsdUtils;
     private final DeviceConfigFacade mDeviceConfigFacade;
+    private final NfcInjector mNfcInjector;
 
     // TODO: Move this object instantiation and dependencies to NfcInjector.
     public CardEmulationManager(Context context, NfcInjector nfcInjector,
         DeviceConfigFacade deviceConfigFacade) {
         mContext = context;
+        mNfcInjector = nfcInjector;
         mCardEmulationInterface = new CardEmulationInterface();
         mNfcFCardEmulationInterface = new NfcFCardEmulationInterface();
         mForegroundUtils = ForegroundUtils.getInstance(
@@ -217,8 +219,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             NfcEventLog nfcEventLog,
             PreferredSubscriptionService preferredSubscriptionService,
             StatsdUtils statsdUtils,
-            DeviceConfigFacade deviceConfigFacade) {
+            DeviceConfigFacade deviceConfigFacade,
+            NfcInjector nfcInjector) {
         mContext = context;
+        mNfcInjector = nfcInjector;
         mCardEmulationInterface = new CardEmulationInterface();
         mNfcFCardEmulationInterface = new NfcFCardEmulationInterface();
         mForegroundUtils = foregroundUtils;
@@ -1179,7 +1183,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             int callingUid = Binder.getCallingUid();
             if (android.nfc.Flags.nfcOverrideRecoverRoutingTable()) {
                 if (!isPreferredServicePackageNameForUser(pkg,
-                        UserHandle.getUserHandleForUid(callingUid).getIdentifier())) {
+                        UserHandle.getUserHandleForUid(callingUid).getIdentifier())
+                        && !mNfcInjector.isSignedWithPlatformKey(callingUid)) {
                     Log.e(TAG, "overrideRoutingTable: Caller not preferred NFC service.");
                     throw new SecurityException("Caller not preferred NFC service");
                 }
