@@ -23,6 +23,7 @@ import android.app.KeyguardManager;
 import android.app.backup.BackupManager;
 import android.content.ApexEnvironment;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.nfc.Constants;
 import android.nfc.NfcFrameworkInitializer;
@@ -356,5 +357,13 @@ public class NfcInjector {
             || (android.app.Flags.deviceUnlockListener() && Flags.useDeviceLockListener()))
                             ? mKeyguardManager.isDeviceLocked()
                             : mKeyguardManager.isKeyguardLocked();
+    }
+
+    /**
+     * Returns whether the uid is signed with the same key as the platform.
+     */
+    public boolean isSignedWithPlatformKey(int uid) {
+        return mContext.getPackageManager().checkSignatures(uid, Process.SYSTEM_UID)
+                == PackageManager.SIGNATURE_MATCH;
     }
 }

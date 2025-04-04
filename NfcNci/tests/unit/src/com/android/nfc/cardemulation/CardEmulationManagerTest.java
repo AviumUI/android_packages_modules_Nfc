@@ -189,6 +189,8 @@ public class CardEmulationManagerTest {
     private StatsdUtils mStatsdUtils;
     @Mock
     private DeviceConfigFacade mDeviceConfigFacade;
+    @Mock
+    private NfcInjector mNfcInjector;
     @Captor
     private ArgumentCaptor<List<PollingFrame>> mPollingLoopFrameCaptor;
     @Captor
@@ -2275,7 +2277,8 @@ public class CardEmulationManagerTest {
                 mNfcEventLog,
                 mPreferredSubscriptionService,
                 mStatsdUtils,
-                mDeviceConfigFacade);
+                mDeviceConfigFacade,
+                mNfcInjector);
     }
 
     @Test
