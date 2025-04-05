@@ -439,6 +439,7 @@ public class NativeNfcManager implements DeviceHost {
 
     @Override
     public void dump(PrintWriter pw, FileDescriptor fd) {
+        pw.println("Firmware version=" + NfcProperties.fw_version().orElse("<Unknown>"));
         pw.println("Native Proprietary Caps=" + mProprietaryCaps);
         doDump(fd);
     }
