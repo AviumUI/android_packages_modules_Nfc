@@ -122,6 +122,7 @@ public class CardEmulationTest {
     @After
     public void tearDown() throws Exception {
         if (mAdapter != null && mContext != null) {
+            mAdapter.notifyHceDeactivated();
             Assert.assertTrue("Failed to enable NFC in test cleanup",
                 NfcUtils.enableNfc(mAdapter, mContext));
         } else {
@@ -1277,14 +1278,23 @@ public class CardEmulationTest {
             frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
                     HexFormat.of().parseHex(annotationStringHex2)));
 
-            notifyPollingLoopAndWait(frames, /* serviceName = */ null);
-            assertTrue(cardEmulation.removePollingLoopFilterForService(
-                backgroundServiceName, annotationStringHex1));
-            assertTrue(cardEmulation.removePollingLoopFilterForService(
-                customServiceName, annotationStringHex2));
+            sCurrentPollLoopReceiver = new PollLoopReceiver(frames, null);
+            for (PollingFrame frame : frames) {
+                adapter.notifyPollingLoop(frame);
+            }
+            synchronized (sCurrentPollLoopReceiver) {
+                try {
+                    sCurrentPollLoopReceiver.wait(5000);
+                } catch (InterruptedException ie) {
+                    Assert.assertNull(ie);
+                }
+            }
+            Assert.assertEquals(frames.size(), sCurrentPollLoopReceiver.mReceivedFrames.size());
+            Assert.assertEquals(2, sCurrentPollLoopReceiver.mReceivedServiceNames.size());
         } finally {
             cardEmulation.unsetPreferredService(activity);
             activity.finish();
+            sCurrentPollLoopReceiver = null;
             adapter.notifyHceDeactivated();
         }
     }
@@ -2507,22 +2517,32 @@ public class CardEmulationTest {
                 ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>(1);
                 frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
                         HexFormat.of().parseHex("7f71156b")));
+                ExecutorService pool = Executors.newFixedThreadPool(1);
+                CountDownLatch latch = new CountDownLatch(1);
+                CardEmulation.NfcEventCallback nfcCallback =
+                        new CardEmulation.NfcEventCallback() {
+                            @Override
+                            public void onObserveModeStateChanged(boolean isEnabled) {
+                                synchronized (this) {
+                                    if (!isEnabled) {
+                                        latch.countDown();
+                                    }
+                                }
+                            }
+                        };
+                cardEmulation.registerNfcEventCallback(pool, nfcCallback);
                 notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
+                Assert.assertTrue("NFC didn't autotransact within 200ms",
+                        latch.await(200, TimeUnit.MILLISECONDS));
                 assertFalse(adapter.isObserveModeEnabled());
                 adapter.notifyHceDeactivated();
                 activity.finish();
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                Thread.sleep(200);
                 assertFalse(adapter.isObserveModeEnabled());
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                Thread.sleep(2000);
                 assertTrue(adapter.isObserveModeEnabled());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             } finally {
                 cardEmulation.unsetPreferredService(activity);
                 activity.finish();
@@ -2566,22 +2586,32 @@ public class CardEmulationTest {
                 ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>(1);
                 frames.add(createFrameWithData(PollingFrame.POLLING_LOOP_TYPE_UNKNOWN,
                         HexFormat.of().parseHex("7f71156b")));
+                ExecutorService pool = Executors.newFixedThreadPool(1);
+                CountDownLatch latch = new CountDownLatch(1);
+                CardEmulation.NfcEventCallback nfcCallback =
+                        new CardEmulation.NfcEventCallback() {
+                            @Override
+                            public void onObserveModeStateChanged(boolean isEnabled) {
+                                synchronized (this) {
+                                    if (!isEnabled) {
+                                        latch.countDown();
+                                    }
+                                }
+                            }
+                        };
+                cardEmulation.registerNfcEventCallback(pool, nfcCallback);
                 notifyPollingLoopAndWait(frames, CustomHostApduService.class.getName());
+                Assert.assertTrue("NFC didn't autotransact within 200ms",
+                        latch.await(200, TimeUnit.MILLISECONDS));
                 assertFalse(adapter.isObserveModeEnabled());
                 adapter.notifyHceDeactivated();
                 activity.finish();
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                Thread.sleep(200);
                 assertFalse(adapter.isObserveModeEnabled());
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                Thread.sleep(2000);
                 assertFalse(adapter.isObserveModeEnabled());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             } finally {
                 cardEmulation.unsetPreferredService(activity);
                 activity.finish();

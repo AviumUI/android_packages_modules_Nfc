@@ -14,3 +14,6 @@ flag {
     description: "Enable exit frames to improve autotransact performance."
     bug: "380455428"
 }
+
+# Don't add any new flags for Android 16+ targeting features. Use the flags
+# in com.android.nfc.module.flags (packages/modules/Nfc/flags) instead.

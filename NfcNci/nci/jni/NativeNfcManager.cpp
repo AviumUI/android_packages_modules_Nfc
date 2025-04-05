@@ -39,6 +39,7 @@
 #include "SyncEvent.h"
 #include "android_nfc.h"
 #include "ce_api.h"
+#include "com_android_nfc_module_flags.h"
 #include "debug_lmrt.h"
 #include "nfa_api.h"
 #include "nfa_ee_api.h"
@@ -48,6 +49,8 @@
 #include "rw_api.h"
 
 using android::base::StringPrintf;
+
+using com::android::nfc::module::flags::reader_mode_ignore_frame;
 
 extern tNFA_DM_DISC_FREQ_CFG* p_nfa_dm_rf_disc_freq_cfg;  // defined in stack
 namespace android {
@@ -1844,6 +1847,7 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
                                        jbyteArray tech_a_polling_loop_annotation,
                                        jboolean restart) {
   if (sIsShuttingDown) return;
+  if (sIsRecovering) return;
   tNFA_TECHNOLOGY_MASK tech_mask = DEFAULT_TECH_MASK;
   struct nfc_jni_native_data* nat = getNative(e, o);
 
@@ -1877,7 +1881,7 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
                                         (const uint8_t*)annotationBytes.get(),
                                         annotationBytes.size());
         }
-      } else {
+      } else if (reader_mode_ignore_frame()) {
         uint8_t ignoreFrame[] = {0x6a, 0x01, 0xcf, 0x00, 0x00};
         setTechAPollingLoopAnnotation(e, 0, ignoreFrame, 5);
       }
@@ -1953,6 +1957,7 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
 *******************************************************************************/
 void nfcManager_disableDiscovery(JNIEnv* e, jobject o) {
   if (sIsShuttingDown) return;
+  if (sIsRecovering) return;
   tNFA_STATUS status = NFA_STATUS_OK;
   LOG(DEBUG) << StringPrintf("%s: enter;", __func__);
 

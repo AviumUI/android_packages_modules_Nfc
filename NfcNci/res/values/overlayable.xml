@@ -70,6 +70,7 @@
             <!-- Waiting time for removal detection -->
             <item name="removal_detection_waiting_time" type="integer" />
             <item name="inactive_presence_check_allowed_time" type="integer" />
+            <item name="ce_disable_other_services_on_managed_profiles" type="bool" />
           <!-- Params from config.xml that can be overlaid -->
 
           <!-- Params from strings.xml that can be overlaid -->

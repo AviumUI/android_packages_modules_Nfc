@@ -27,7 +27,6 @@ import android.annotation.RequiresPermission;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.annotation.SystemApi;
-import android.annotation.TestApi;
 import android.annotation.UserHandleAware;
 import android.annotation.UserIdInt;
 import android.app.Activity;
@@ -187,6 +186,12 @@ public final class CardEmulation {
     @FlaggedApi(Flags.FLAG_NFC_OVERRIDE_RECOVER_ROUTING_TABLE)
     public static final int PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT = 3;
 
+    /**
+     * Route to T4T NDEF-NCEE emulation.
+     * @see android.nfc.T4tNdefNfcee
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public static final int PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE = 4;
     /**
      * Route unset.
      */
@@ -1008,7 +1013,8 @@ public final class CardEmulation {
                     PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE,
                     PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC,
                     PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET,
-                    PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT
+                    PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT,
+                    PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface ProtocolAndTechnologyRoute {}
@@ -1282,6 +1288,7 @@ public final class CardEmulation {
             case PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC -> "SIM";
             case PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET -> null;
             case PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT -> "default";
+            case PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE-> "NDEF-NFCEE";
             default -> throw new IllegalStateException("Unexpected value: " + route);
         };
     }

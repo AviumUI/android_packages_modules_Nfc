@@ -42,6 +42,7 @@ import android.nfc.cardemulation.CardEmulation;
 import android.nfc.cardemulation.HostApduService;
 import android.nfc.cardemulation.PollingFrame;
 import android.nfc.cardemulation.Utils;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -154,10 +155,6 @@ public class HostEmulationManager {
 
     // All variables below protected by mLock
 
-    // Variables below are for a non-payment service,
-    // that is typically only bound in the STATE_XFER state.
-    Messenger mService;
-
     static class HostEmulationConnection {
         @UserIdInt int mUserId;
         ComponentName mComponentName;
@@ -190,9 +187,6 @@ public class HostEmulationManager {
 
     Map<ComponentNameAndUser, HostEmulationConnection> mComponentNameToConnectionsMap =
             new HashMap<>();
-    boolean mServiceBound = false;
-    ComponentName mServiceName = null;
-    @UserIdInt int mServiceUserId; // The UserId of the non-payment service
     ArrayList<PollingFrame> mPendingPollingLoopFrames = null;
     ArrayList<PollingFrame> mUnprocessedPollingFrames = null;
     Map<ComponentName, ArrayList<PollingFrame>> mPollingFramesToSend = null;
@@ -256,38 +250,67 @@ public class HostEmulationManager {
                             // Skip in active state
                             rescheduleInactivityChecks();
                         } else {
-                            unbindInactiveServicesLocked();
+                            unbindInactiveServicesLocked(false);
                         }
                     }
                 }
+            };
 
-                void unbindInactiveServicesLocked() {
-                    ComponentNameAndUser preferredNameAndUser = mAidCache.getPreferredService();
-                    Map<ComponentNameAndUser, HostEmulationConnection> retainedConnections =
-                            new HashMap<>();
-                    mComponentNameToConnectionsMap.keySet().forEach((key) -> {
-                        if (preferredNameAndUser == null || !preferredNameAndUser.equals(key)) {
-                            HostEmulationConnection connection =
-                                mComponentNameToConnectionsMap.get(key);
-                            if (connection.mMessenger != null) {
+    private void unbindInactiveServicesLocked(boolean doCompatCheck) {
+        ComponentNameAndUser preferredNameAndUser = mAidCache.getPreferredService();
+        Map<ComponentNameAndUser, HostEmulationConnection> retainedConnections = new HashMap<>();
+        mComponentNameToConnectionsMap
+                .keySet()
+                .forEach(
+                        (key) -> {
+                            boolean unbindService = true;
+                            if (preferredNameAndUser == null
+                                    || preferredNameAndUser.getComponentName() == null) {
+                                unbindService = true;
+                            } else if (preferredNameAndUser.equals(key)) {
+                                unbindService = false;
+                            } else if (!doCompatCheck) {
+                                unbindService = true;
+                            } else {
+                                final long token = Binder.clearCallingIdentity();
+                                final String packageName =
+                                        preferredNameAndUser.getComponentName().getPackageName();
+                                final UserHandle userHandle =
+                                        UserHandle.of(preferredNameAndUser.getUserId());
                                 try {
-                                    mContext.unbindService(connection.mServiceConnection);
-                                } catch (IllegalArgumentException iae) {
-                                    Log.wtf(TAG,
-                                            "unbindInactiveServicesLocked: "
-                                                    + "Exception while unbinding "
-                                                    + key.getComponentName()
-                                                    + " service connection",
-                                            iae);
+                                    unbindService =
+                                            !CompatChanges.isChangeEnabled(
+                                                    DONT_IMMEDIATELY_UNBIND_SERVICES,
+                                                    packageName,
+                                                    userHandle);
+                                } finally {
+                                    Binder.restoreCallingIdentity(token);
                                 }
                             }
-                        } else {
-                            retainedConnections.put(key, mComponentNameToConnectionsMap.get(key));
-                        }
-                    });
-                    mComponentNameToConnectionsMap = retainedConnections;
-                }
-            };
+
+                            if (unbindService) {
+                                HostEmulationConnection connection =
+                                        mComponentNameToConnectionsMap.get(key);
+                                if (connection.mMessenger != null) {
+                                    try {
+                                        mContext.unbindService(connection.mServiceConnection);
+                                    } catch (IllegalArgumentException iae) {
+                                        Log.wtf(
+                                                TAG,
+                                                "unbindInactiveServicesLocked: "
+                                                        + "Exception while unbinding "
+                                                        + key.getComponentName()
+                                                        + " service connection",
+                                                iae);
+                                    }
+                                }
+                            } else {
+                                retainedConnections.put(
+                                        key, mComponentNameToConnectionsMap.get(key));
+                            }
+                        });
+        mComponentNameToConnectionsMap = retainedConnections;
+    }
 
     // Runnable to re-enable observe mode after a transaction. This should be delayed after
     // HCE is deactivated to ensure we don't receive another select AID.
@@ -802,29 +825,6 @@ public class HostEmulationManager {
         }
     }
 
-    static private class UnroutableAidBugReportRunnable implements Runnable {
-        List<String> mUnroutedAids;
-
-        UnroutableAidBugReportRunnable(String aid) {
-            mUnroutedAids = new ArrayList<String>(1);
-            mUnroutedAids.add(aid);
-        }
-
-        void addAid(String aid) {
-            mUnroutedAids.add(aid);
-        }
-        @Override
-        public void run() {
-            NfcService.getInstance().mNfcDiagnostics.takeBugReport(
-                    "NFC tap failed."
-                        + " (If you weren't using NFC, "
-                        + "no need to submit this report.)",
-                    "Couldn't route " + String.join(", ", mUnroutedAids));
-        }
-    }
-
-    UnroutableAidBugReportRunnable mUnroutableAidBugReportRunnable = null;
-
     public void onHostEmulationData(byte[] data) {
         Log.d(TAG, "onHostEmulationData");
         mHandler.removeCallbacks(mEnableObserveModeAfterTransactionRunnable);
@@ -861,15 +861,6 @@ public class HostEmulationManager {
                         if (android.nfc.Flags.nfcEventListener()) {
                             notifyAidNotRoutedListener(selectAid);
                         }
-                        if (mUnroutableAidBugReportRunnable != null) {
-                            mUnroutableAidBugReportRunnable.addAid(selectAid);
-                        } else {
-                            mUnroutableAidBugReportRunnable =
-                                    new UnroutableAidBugReportRunnable(selectAid);
-                            /* Wait 1s to see if there is an alternate AID we can route before
-                             * taking a bug report */
-                            mHandler.postDelayed(mUnroutableAidBugReportRunnable, 1000);
-                        }
                     }
                     NfcInjector.getInstance().getNfcEventLog().logEvent(
                             NfcEventProto.EventType.newBuilder()
@@ -881,10 +872,6 @@ public class HostEmulationManager {
                     // Tell the remote we don't handle this AID
                     NfcService.getInstance().sendData(AID_NOT_FOUND);
                     return;
-                } else if (mUnroutableAidBugReportRunnable != null) {
-                    /* If there is a pending bug report runnable, cancel it. */
-                    mHandler.removeCallbacks(mUnroutableAidBugReportRunnable);
-                    mUnroutableAidBugReportRunnable = null;
                 }
                 mLastSelectedAid = selectAid;
                 if (resolveInfo.defaultService != null) {
@@ -1148,8 +1135,7 @@ public class HostEmulationManager {
             Intent aidIntent = new Intent(HostApduService.SERVICE_INTERFACE);
             aidIntent.setComponent(service);
             try {
-                ServiceConnection connection;
-                connection = new HostEmulationServiceConnection(userId);
+                ServiceConnection connection = new HostEmulationServiceConnection(userId);
                 mComponentNameToConnectionsMap.put(
                     new ComponentNameAndUser(userId, service),
                     new HostEmulationConnection(userId, service, connection));
@@ -1165,8 +1151,6 @@ public class HostEmulationManager {
                         Trace.endAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
                     }
                     Log.e(TAG, "bindServiceIfNeededLocked: Could not bind service.");
-                } else {
-                    mServiceUserId = userId;
                 }
             } catch (SecurityException e) {
                 if (nfcHceLatencyEvents()) {
@@ -1177,6 +1161,13 @@ public class HostEmulationManager {
             }
             return null;
         }
+    }
+
+    private ComponentNameAndUser getComponentNameAndUserForService(Messenger service) {
+        if (service == null) {
+            return null;
+        }
+        return getComponentNameAndUserForBinder(service.getBinder());
     }
 
     private int generateApduAckCookie() {
@@ -1201,13 +1192,12 @@ public class HostEmulationManager {
                 mActiveServiceName = mPaymentServiceName;
                 mActiveServiceUserId = mPaymentServiceUserId;
             } else {
-                for (Map.Entry<ComponentNameAndUser, HostEmulationConnection> entry :
-                        mComponentNameToConnectionsMap.entrySet()) {
-                    if (service.equals(entry.getValue().mMessenger)) {
-                        mActiveServiceName = entry.getKey().getComponentName();
-                        mActiveServiceUserId = entry.getKey().getUserId();
-                        break;
-                    }
+                ComponentNameAndUser activeService = getComponentNameAndUserForService(service);
+                if (activeService != null) {
+                    mActiveServiceName = activeService.getComponentName();
+                    mActiveServiceUserId = activeService.getUserId();
+                } else {
+                    Log.e(TAG, "Sending data to a service that isn't in our service map.");
                 }
             }
         }
@@ -1246,8 +1236,14 @@ public class HostEmulationManager {
                 mActiveServiceName = mPaymentServiceName;
                 mActiveServiceUserId = mPaymentServiceUserId;
             } else {
-                mActiveServiceName = mServiceName;
-                mActiveServiceUserId = mServiceUserId;
+                ComponentNameAndUser activeService = getComponentNameAndUserForService(service);
+                if (activeService != null) {
+                    mActiveServiceName = activeService.getComponentName();
+                    mActiveServiceUserId = activeService.getUserId();
+                } else {
+                    Log.e(TAG,
+                            "Sending polling frames to a service that isn't in our service map.");
+                }
             }
         }
         Message msg = Message.obtain(null, HostApduService.MSG_POLLING_LOOP);
@@ -1343,34 +1339,7 @@ public class HostEmulationManager {
     }
 
     void unbindServiceIfNeededLocked() {
-        if (mServiceName == null
-                || CompatChanges.isChangeEnabled(
-                    DONT_IMMEDIATELY_UNBIND_SERVICES,
-                    mServiceName.getPackageName(),
-                    UserHandle.of(mServiceUserId))) {
-            return;
-        }
-        if (mServiceName != null) {
-            ComponentNameAndUser serviceNameAndUser =
-                    new ComponentNameAndUser(mServiceUserId, mServiceName);
-            ServiceConnection connection =
-                    mComponentNameToConnectionsMap.get(serviceNameAndUser).mServiceConnection;
-            mComponentNameToConnectionsMap.remove(serviceNameAndUser);
-
-            if (mServiceBound) {
-                Log.d(TAG, "unbindServiceIfNeededLocked: service " + mServiceName);
-                try {
-                    mContext.unbindService(connection);
-                } catch (Exception e) {
-                    Log.w(TAG, "unbindServiceIfNeededLocked: Failed to unbind " + mServiceName, e);
-                }
-            }
-        }
-
-        mServiceBound = false;
-        mService = null;
-        mServiceName = null;
-        mServiceUserId = -1;
+        unbindInactiveServicesLocked(true);
     }
 
     void launchTapAgain(ApduServiceInfo service, String category) {
@@ -1616,7 +1585,6 @@ public class HostEmulationManager {
                     mComponentNameToConnectionsMap.put(key,
                         new HostEmulationConnection(mUserId, name, this, messenger));
                 }
-
                 if (nfcHceLatencyEvents()) {
                     Trace.endAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
                 }
@@ -1667,15 +1635,44 @@ public class HostEmulationManager {
             }
         }
     };
+    private ComponentNameAndUser getComponentNameAndUserForBinder(IBinder binder) {
+        for (Map.Entry<ComponentNameAndUser, HostEmulationConnection> entry :
+                mComponentNameToConnectionsMap.entrySet()) {
+            if (binder.equals(entry.getValue().mMessenger.getBinder())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
 
     class MessageHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             synchronized(mLock) {
                 if (mActiveService == null) {
-                    Log.d(TAG, "handleMessage: Dropping service response message; "
-                            + "service no longer active.");
-                    return;
+                    ComponentNameAndUser nameAndUser =
+                            getComponentNameAndUserForBinder(msg.replyTo.getBinder());
+                    if (nameAndUser == null) {
+                        Log.d(TAG, "handleMessage: Dropping service response message; "
+                                + "service no longer active.");
+                        return;
+                    }
+                    HostEmulationConnection  hec = mComponentNameToConnectionsMap.get(nameAndUser);
+                    mActiveServiceUserId = nameAndUser.getUserId();
+                    mActiveServiceName = nameAndUser.getComponentName();
+                    if (hec == null) {
+                        mActiveService = new Messenger(msg.replyTo.getBinder());
+                        HostEmulationServiceConnection connection =
+                                new HostEmulationServiceConnection(mActiveServiceUserId);
+                        mComponentNameToConnectionsMap.put(
+                            new ComponentNameAndUser(mActiveServiceUserId, mActiveServiceName),
+                            new HostEmulationConnection(mActiveServiceUserId, mActiveServiceName,
+                                    connection));
+                    } else if (hec.mMessenger == null) {
+                        mActiveService = new Messenger(msg.replyTo.getBinder());
+                    } else {
+                        mActiveService = hec.mMessenger;
+                    }
                 } else if (!msg.replyTo.getBinder().equals(mActiveService.getBinder())) {
                     Log.d(TAG, "handleMessage: Dropping service response message; "
                             + "service no longer bound.");
@@ -1768,8 +1765,6 @@ public class HostEmulationManager {
                mComponentNameToConnectionsMap.entrySet()) {
                 pw.println("            " + entry.getKey());
             }
-        } else if (mServiceBound) {
-            pw.println("    other: " + mServiceName);
         }
     }
 
@@ -1787,10 +1782,13 @@ public class HostEmulationManager {
             Utils.dumpDebugComponentName(
                     mPaymentServiceName, proto, HostEmulationManagerProto.PAYMENT_SERVICE_NAME);
         }
-        // TODO make this a repeated field and return all the services
-        if (mServiceBound) {
-            Utils.dumpDebugComponentName(
-                    mServiceName, proto, HostEmulationManagerProto.SERVICE_NAME);
+        if (!mComponentNameToConnectionsMap.isEmpty()) {
+            for (Map.Entry<ComponentNameAndUser, HostEmulationConnection> entry :
+                    mComponentNameToConnectionsMap.entrySet()) {
+                Utils.dumpDebugComponentName(
+                        entry.getKey().getComponentName(), proto,
+                        HostEmulationManagerProto.SERVICE_NAME);
+            }
         }
     }
 
@@ -1803,7 +1801,7 @@ public class HostEmulationManager {
     @VisibleForTesting
     public ServiceConnection getServiceConnection() {
         ComponentNameAndUser serviceNameAndUser =
-                new ComponentNameAndUser(mServiceUserId, mServiceName);
+                new ComponentNameAndUser(mActiveServiceUserId, mActiveServiceName);
         HostEmulationConnection connection = mComponentNameToConnectionsMap.get(serviceNameAndUser);
         return connection == null ? null : connection.mServiceConnection;
     }
