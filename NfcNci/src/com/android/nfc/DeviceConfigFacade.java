@@ -67,6 +67,7 @@ public class DeviceConfigFacade {
     private int mUnknownTagPollingDelay;
     private int mUnknownTagPollingDelayMax;
     private int mUnknownTagPollingDelayLong;
+    private boolean mCeDisableOtherServicesOnManagedProfiles;
 
     private static DeviceConfigFacade sInstance;
     public static DeviceConfigFacade getInstance(Context context, Handler handler) {
@@ -185,7 +186,9 @@ public class DeviceConfigFacade {
         mUnknownTagPollingDelayLong = DeviceConfig.getInt(DEVICE_CONFIG_NAMESPACE_NFC,
                 "unknown_tag_polling_delay_long",
                 mContext.getResources().getInteger(R.integer.unknown_tag_polling_delay_long));
-
+        mCeDisableOtherServicesOnManagedProfiles = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
+                "ce_disable_other_services_on_managed_profiles",
+                mContext.getResources().getBoolean(R.bool.ce_disable_other_services_on_managed_profiles));
     }
 
     private boolean isSecureNfcCapableDefault() {
@@ -252,4 +255,8 @@ public class DeviceConfigFacade {
     public int getUnknownTagPollingDelay() { return mUnknownTagPollingDelay; }
     public int getUnknownTagPollingDelayMax() { return mUnknownTagPollingDelayMax; }
     public int getUnknownTagPollingDelayLong() { return mUnknownTagPollingDelayLong; }
+
+    public boolean getCeDisableOtherServicesOnManagedProfiles() {
+        return mCeDisableOtherServicesOnManagedProfiles;
+    }
 }
