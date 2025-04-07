@@ -19,7 +19,6 @@ package com.android.nfc.cardemulation;
 import static com.android.nfc.module.flags.Flags.nfcHceLatencyEvents;
 
 import android.annotation.FlaggedApi;
-import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.TargetApi;
 import android.annotation.UserIdInt;
@@ -88,7 +87,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-public class HostEmulationManager {
+/**
+ * Current HEM implementation, fork this class for any major refactors and then rename back
+ * once the flag is fully ramped to before starting the next refactor.
+ */
+public class HostEmulationManager implements HostEmulationManagerBase {
     static final String TAG = "HostEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
 
@@ -1405,17 +1408,11 @@ public class HostEmulationManager {
         return null;
     }
 
-    @FlaggedApi(android.nfc.Flags.FLAG_NFC_EVENT_LISTENER)
-    interface NfcAidRoutingListener {
-        void onAidConflict(@NonNull String aid);
-        void onAidNotRouted(@NonNull String aid);
-    }
-
     @Nullable
     private NfcAidRoutingListener mAidRoutingListener = null;
 
     @FlaggedApi(android.nfc.Flags.FLAG_NFC_EVENT_LISTENER)
-    void setAidRoutingListener(@Nullable NfcAidRoutingListener listener) {
+    public void setAidRoutingListener(@Nullable NfcAidRoutingListener listener) {
         mAidRoutingListener = listener;
     }
 
@@ -1777,7 +1774,7 @@ public class HostEmulationManager {
      * {@link ProtoOutputStream#end(long)} after.
      * Never reuse a proto field number. When removing a field, mark it as reserved.
      */
-    void dumpDebug(ProtoOutputStream proto) {
+    public void dumpDebug(ProtoOutputStream proto) {
         if (mPaymentServiceBound) {
             Utils.dumpDebugComponentName(
                     mPaymentServiceName, proto, HostEmulationManagerProto.PAYMENT_SERVICE_NAME);
