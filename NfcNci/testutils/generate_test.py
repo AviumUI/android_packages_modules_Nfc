@@ -107,7 +107,7 @@ def update_android_bp(local_file_path, test_name):
   s += create_line('srcs: ["{}"],'.format(local_file_path), indent=1)
   s += create_line('test_config: "AndroidTest.xml",', indent=1)
   s += create_line("device_common_data: [", indent=1)
-  s += create_line('":NfcEmulatorApduApp",', indent=2)
+  s += create_line('":EmulatorApduApp",', indent=2)
   s += create_line('"config.yaml",', indent=2)
   s += create_line("],", indent=1)
   s += create_line("test_options: {", indent=1)

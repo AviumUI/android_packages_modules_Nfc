@@ -69,13 +69,11 @@ python3 nfcreplay.py -f $BUG_REPORT_FILE --parse_only
 The script will produce the name of the parsed log, which will be located within
 the folder emulatorapp/parsed_files. Save the name for Step 3.
 
-2\. Build and install the emulator app. The following commands are specific to
-the Pixel 6 Pro (Raven). Non-Raven devices should substitute "raven" for the
-appropriate value.
+2\. Build and install the emulator app.
 
 ```
-mma NfcEmulatorApduAppNonTest
-adb install -r -g ~/aosp-main-with-phones/out/target/product/raven/system/app/emulatorapp/NfcEmulatorApduAppNonTest.apk
+mma EmulatorApduAppNonTest
+adb install -r -g $PATH_TO_EMULATOR_APP_APK
 
 ```
 
