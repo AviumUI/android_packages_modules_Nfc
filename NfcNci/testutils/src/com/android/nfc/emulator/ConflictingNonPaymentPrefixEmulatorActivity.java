@@ -41,7 +41,6 @@ public class ConflictingNonPaymentPrefixEmulatorActivity extends BaseEmulatorAct
         super.onCreate(savedInstanceState);
         setupServices(
                 PrefixTransportService1.COMPONENT, PrefixTransportService2.COMPONENT);
-
         registerEventListener(mEventListener);
     }
 

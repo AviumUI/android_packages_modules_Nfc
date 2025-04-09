@@ -16,6 +16,7 @@
 package com.android.nfc.emulator;
 
 import android.content.ComponentName;
+import android.os.Bundle;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,9 +33,8 @@ public class SimpleEmulatorActivity extends BaseEmulatorActivity {
     private ComponentName mPreferredService = null;
 
     @Override
-    protected void onResume() {
-        super.onResume();
-
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         List<ComponentName> components =
                 getIntent().getExtras().getParcelableArrayList(EXTRA_SERVICES, ComponentName.class);
         if (components != null) {
@@ -44,10 +44,13 @@ public class SimpleEmulatorActivity extends BaseEmulatorActivity {
         if (getIntent().getBooleanExtra(EXTRA_IS_PAYMENT_ACTIVITY, false)) {
             makeDefaultWalletRoleHolder();
         }
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
         mPreferredService =
                 getIntent().getExtras().getParcelable(EXTRA_PREFERRED_SERVICE, ComponentName.class);
-
         if (mPreferredService != null) {
             mCardEmulation.setPreferredService(this, mPreferredService);
         }
