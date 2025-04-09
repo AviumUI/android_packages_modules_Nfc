@@ -32,7 +32,6 @@ public class DualNonPaymentPrefixEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
         setupServices(PrefixTransportService1.COMPONENT, PrefixAccessService.COMPONENT);
     }
 

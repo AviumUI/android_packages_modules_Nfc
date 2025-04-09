@@ -82,7 +82,7 @@ public abstract class BaseEmulatorActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
+
         mAdapter = NfcAdapter.getDefaultAdapter(this);
         mCardEmulation = CardEmulation.getInstance(mAdapter);
         mRoleManager = getSystemService(RoleManager.class);
@@ -96,11 +96,6 @@ public abstract class BaseEmulatorActivity extends Activity {
             Log.d(TAG, "registering event listener...");
             mCardEmulation.registerNfcEventCallback(getMainExecutor(), eventListener);
         }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
     }
 
     @Override
