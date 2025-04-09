@@ -370,7 +370,7 @@ def create_setup(nfc_dump: DumpNfcInfo):
   )
   s += create_line(
       'self.emulator.load_snippet("nfc_emulator",'
-      ' "com.android.nfc.emulatorapp")',
+      ' "com.android.nfc.emulatorapduapp")',
       indent=2,
   )
   s += create_line(
