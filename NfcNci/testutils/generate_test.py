@@ -107,7 +107,7 @@ def update_android_bp(local_file_path, test_name):
   s += create_line('srcs: ["{}"],'.format(local_file_path), indent=1)
   s += create_line('test_config: "AndroidTest.xml",', indent=1)
   s += create_line("device_common_data: [", indent=1)
-  s += create_line('":NfcEmulatorApduApp",', indent=2)
+  s += create_line('":EmulatorApduApp",', indent=2)
   s += create_line('"config.yaml",', indent=2)
   s += create_line("],", indent=1)
   s += create_line("test_options: {", indent=1)
@@ -370,7 +370,7 @@ def create_setup(nfc_dump: DumpNfcInfo):
   )
   s += create_line(
       'self.emulator.load_snippet("nfc_emulator",'
-      ' "com.android.nfc.emulatorapp")',
+      ' "com.android.nfc.emulatorapduapp")',
       indent=2,
   )
   s += create_line(

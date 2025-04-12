@@ -47,7 +47,7 @@ _ERROR_STR = "     ERROR: {}"
 _COLUMN_WIDTH = 80
 
 # Directory for generated test cases and files for the emulator app.
-_EMULATOR_APP_PARSED_DIR = "src/com/android/nfc/emulatorapp/parsed_files/"
+_EMULATOR_APP_PARSED_DIR = "tests/testcases/hostsidetests/src/com/android/nfc/emulatorapduapp/parsed_files/"
 
 
 def send_nfc_a_data(reader: PN532) -> str | None:
@@ -273,7 +273,8 @@ def create_file_for_emulator_app(
       name of the bug report file.
   """
   local_path = _EMULATOR_APP_PARSED_DIR + filename.replace("/", "_")
-  full_path = os.path.dirname(os.path.realpath(__file__)) + "/" + local_path
+  full_path = os.path.dirname(os.path.realpath(__file__)).replace("testutils", "") + local_path
+
   try:
     file = open(full_path, "wt")
   except Exception as e:
@@ -363,8 +364,6 @@ def main():
           "--testparam",
           "file_path=" + apdu_local_file,
       ]
-      if args.replay_with_app:
-        test_command += ["--testparam", "with_emulator_app=True"]
       subprocess.run(test_command)
     else:  # Default: replay the transaction
       replay_transaction(parsed_snoop_log, args.path)

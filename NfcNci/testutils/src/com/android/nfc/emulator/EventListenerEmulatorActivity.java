@@ -52,7 +52,6 @@ public class EventListenerEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setupServices(TransportService1.COMPONENT);
     }
 
@@ -70,7 +69,6 @@ public class EventListenerEmulatorActivity extends BaseEmulatorActivity {
     @Override
     public void onPause() {
         super.onPause();
-
         mCardEmulation.unregisterNfcEventCallback(mEventListener);
         mCardEmulation.unsetPreferredService(this);
     }

@@ -16,6 +16,7 @@
 package com.android.nfc.emulator;
 
 import android.content.ComponentName;
+import android.os.Bundle;
 
 import com.android.nfc.service.PrefixPaymentService1;
 import com.android.nfc.service.PrefixPaymentService2;
@@ -28,8 +29,8 @@ public class PrefixPaymentEmulator2Activity extends BaseEmulatorActivity {
     private int mState = STATE_IDLE;
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         mState = STATE_SERVICE2_SETTING_UP;
         setupServices(PrefixPaymentService2.COMPONENT);
     }

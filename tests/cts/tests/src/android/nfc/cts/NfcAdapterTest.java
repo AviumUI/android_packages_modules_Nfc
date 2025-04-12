@@ -72,7 +72,6 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.RequiresDevice;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -441,23 +440,32 @@ public class NfcAdapterTest {
         CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
         cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                 CtsMyHostApduService.class), true);
+        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
+                CustomHostApduService.class), false);
         WalletRoleTestUtils.runWithRole(mContext, WalletRoleTestUtils.CTS_PACKAGE_NAME, () -> {
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-            assertTrue(adapter.isObserveModeEnabled());
-            assertTrue(adapter.setObserveModeEnabled(false));
-            assertFalse(adapter.isObserveModeEnabled());
+            assertTrue("observe mode isn't enabled after setting preferred service to one that"
+                    + " defaults it on", adapter.isObserveModeEnabled());
+            assertTrue("set observe mode to false failed", adapter.setObserveModeEnabled(false));
+            assertFalse("observe mode is still enabled after setting it to false",
+                    adapter.isObserveModeEnabled());
             try {
                 Activity activity = createAndResumeActivity();
                 assertTrue(cardEmulation.setPreferredService(activity,
                         new ComponentName(mContext, CtsMyHostApduService.class)));
                 CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-                assertFalse(adapter.isObserveModeEnabled());
-                assertTrue(adapter.setObserveModeEnabled(true));
-                assertTrue(adapter.isObserveModeEnabled());
-                assertTrue(cardEmulation.setPreferredService(activity,
+                assertFalse("observe mode enabled after setting preferred service to one that"
+                        + " defaults it enabled, even though preferred service didn't change",
+                        adapter.isObserveModeEnabled());
+                assertTrue("set observe mode enabled failed", adapter.setObserveModeEnabled(true));
+                assertTrue("observe mode disabled after enabling it",
+                        adapter.isObserveModeEnabled());
+                assertTrue("setting preferred service failed",
+                        cardEmulation.setPreferredService(activity,
                         new ComponentName(mContext, CustomHostApduService.class)));
                 CardEmulationTest.ensurePreferredService(CustomHostApduService.class, mContext);
-                assertFalse(adapter.isObserveModeEnabled());
+                assertFalse("observe mode enabled after setting preferred service that disables it",
+                        adapter.isObserveModeEnabled());
             } finally {
                 cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                         CustomHostApduService.class), false);
