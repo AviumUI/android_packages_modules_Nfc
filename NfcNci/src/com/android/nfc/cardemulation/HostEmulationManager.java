@@ -88,8 +88,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Current HEM implementation, fork this class for any major refactors and then rename back
- * once the flag is fully ramped to before starting the next refactor.
+ * Current HEM implementation, fork this class for any major refactors and then rename back once the
+ * flag is fully ramped to before starting the next refactor.
  */
 public class HostEmulationManager implements HostEmulationManagerBase {
     static final String TAG = "HostEmulationManager";
@@ -108,20 +108,18 @@ public class HostEmulationManager implements HostEmulationManagerBase {
     /** Length of Select APDU header including length byte */
     static final int SELECT_APDU_HDR_LENGTH = 5;
 
-    static final byte INSTR_SELECT = (byte)0xA4;
+    static final byte INSTR_SELECT = (byte) 0xA4;
 
     static final String ANDROID_HCE_AID = "A000000476416E64726F6964484345";
     static final String NDEF_V1_AID = "D2760000850100";
     static final String NDEF_V2_AID = "D2760000850101";
-    static final byte[] ANDROID_HCE_RESPONSE = {0x14, (byte)0x81, 0x00, 0x00, (byte)0x90, 0x00};
+    static final byte[] ANDROID_HCE_RESPONSE = {0x14, (byte) 0x81, 0x00, 0x00, (byte) 0x90, 0x00};
 
-    static final byte[] AID_NOT_FOUND = {0x6A, (byte)0x82};
+    static final byte[] AID_NOT_FOUND = {0x6A, (byte) 0x82};
     static final byte[] UNKNOWN_ERROR = {0x6F, 0x00};
 
-    static final int CE_HCE_PAYMENT =
-            NfcStatsLog.NFC_CARDEMULATION_OCCURRED__CATEGORY__HCE_PAYMENT;
-    static final int CE_HCE_OTHER =
-            NfcStatsLog.NFC_CARDEMULATION_OCCURRED__CATEGORY__HCE_OTHER;
+    static final int CE_HCE_PAYMENT = NfcStatsLog.NFC_CARDEMULATION_OCCURRED__CATEGORY__HCE_PAYMENT;
+    static final int CE_HCE_OTHER = NfcStatsLog.NFC_CARDEMULATION_OCCURRED__CATEGORY__HCE_OTHER;
     static final String DATA_KEY = "data";
     static final int FIELD_OFF_IDLE_DELAY_MS = 2000;
     static final int RE_ENABLE_OBSERVE_MODE_DELAY_MS = 2000;
@@ -136,15 +134,14 @@ public class HostEmulationManager implements HostEmulationManagerBase {
 
     final Context mContext;
     final RegisteredAidCache mAidCache;
-    final Messenger mMessenger = new Messenger (new MessageHandler());
+    final Messenger mMessenger = new Messenger(new MessageHandler());
     final KeyguardManager mKeyguard;
     final Object mLock;
     final PowerManager mPowerManager;
     private final Looper mLooper;
     final DeviceConfigFacade mDeviceConfig;
 
-    @Nullable
-    private final StatsdUtils mStatsdUtils;
+    @Nullable private final StatsdUtils mStatsdUtils;
 
     private final Random mCookieRandom = new Random(System.currentTimeMillis());
 
@@ -164,14 +161,15 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         ServiceConnection mServiceConnection;
         Messenger mMessenger;
 
-        HostEmulationConnection(@UserIdInt int userId,
-                                ComponentName componentName,
-                                ServiceConnection serviceConnection) {
+        HostEmulationConnection(
+                @UserIdInt int userId,
+                ComponentName componentName,
+                ServiceConnection serviceConnection) {
             this(userId, componentName, serviceConnection, null);
         }
 
         HostEmulationConnection(
-            @UserIdInt int userId,
+                @UserIdInt int userId,
                 ComponentName componentName,
                 ServiceConnection serviceConnection,
                 Messenger messenger) {
@@ -183,8 +181,15 @@ public class HostEmulationManager implements HostEmulationManagerBase {
 
         @Override
         public String toString() {
-            return "{" + mComponentName + "(" + mUserId + "): "
-                + mMessenger + ", " + mServiceConnection + "}";
+            return "{"
+                    + mComponentName
+                    + "("
+                    + mUserId
+                    + "): "
+                    + mMessenger
+                    + ", "
+                    + mServiceConnection
+                    + "}";
         }
     }
 
@@ -223,7 +228,6 @@ public class HostEmulationManager implements HostEmulationManagerBase {
     byte[] mSelectApdu;
     Handler mHandler;
 
-
     enum PollingLoopState {
         EVALUATING_POLLING_LOOP,
         FILTER_MATCHED,
@@ -234,15 +238,16 @@ public class HostEmulationManager implements HostEmulationManagerBase {
 
     // Runnable to return to an IDLE_STATE and reset preferred service. This should be run after we
     // have left a field and gone a period of time without any HCE or polling frame data.
-    Runnable mReturnToIdleStateRunnable = new Runnable() {
-        @Override
-        public void run() {
-            synchronized (mLock) {
-                Log.d(TAG, "Have been outside field, returning to idle state");
-                returnToIdleStateLocked();
-            }
-        }
-    };
+    Runnable mReturnToIdleStateRunnable =
+            new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (mLock) {
+                        Log.d(TAG, "Have been outside field, returning to idle state");
+                        returnToIdleStateLocked();
+                    }
+                }
+            };
 
     Runnable mUnbindInactiveServicesRunnable =
             new Runnable() {
@@ -317,37 +322,50 @@ public class HostEmulationManager implements HostEmulationManagerBase {
 
     // Runnable to re-enable observe mode after a transaction. This should be delayed after
     // HCE is deactivated to ensure we don't receive another select AID.
-    Runnable mEnableObserveModeAfterTransactionRunnable = new Runnable() {
-        @Override
-        public void run() {
-            synchronized (mLock) {
-                Log.d(TAG, "mEnableObserveModeAfterTransactionRunnable.run");
-                if (!mEnableObserveModeAfterTransaction && !mEnableObserveModeOnFieldOff) {
-                    return;
+    Runnable mEnableObserveModeAfterTransactionRunnable =
+            new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (mLock) {
+                        Log.d(TAG, "mEnableObserveModeAfterTransactionRunnable.run");
+                        if (!mEnableObserveModeAfterTransaction && !mEnableObserveModeOnFieldOff) {
+                            return;
+                        }
+                        mEnableObserveModeAfterTransaction = false;
+                        mEnableObserveModeOnFieldOff = false;
+                    }
+                    NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
+                    if (adapter == null) {
+                        Log.e(
+                                TAG,
+                                "mEnableObserveModeAfterTransactionRunnable.run: "
+                                        + "adapter is null, returning");
+                        return;
+                    }
+                    adapter.setObserveModeEnabled(true);
                 }
-                mEnableObserveModeAfterTransaction = false;
-                mEnableObserveModeOnFieldOff = false;
-            }
-            NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
-            if (adapter == null) {
-                Log.e(TAG, "mEnableObserveModeAfterTransactionRunnable.run: "
-                        + "adapter is null, returning");
-                return;
-            }
-            adapter.setObserveModeEnabled(true);
-        }
-    };
+            };
 
-    public HostEmulationManager(Context context, Looper looper, RegisteredAidCache aidCache,
-            NfcInjector nfcInjector) {
-        this(context, looper, aidCache, nfcInjector.getStatsdUtilsContext() != null ?
-            new StatsdUtils(StatsdUtils.SE_NAME_HCE, nfcInjector.getStatsdUtilsContext()) : null,
-            nfcInjector);
+    public HostEmulationManager(
+            Context context, Looper looper, RegisteredAidCache aidCache, NfcInjector nfcInjector) {
+        this(
+                context,
+                looper,
+                aidCache,
+                nfcInjector.getStatsdUtilsContext() != null
+                        ? new StatsdUtils(
+                                StatsdUtils.SE_NAME_HCE, nfcInjector.getStatsdUtilsContext())
+                        : null,
+                nfcInjector);
     }
 
     @VisibleForTesting
-    HostEmulationManager(Context context, Looper looper, RegisteredAidCache aidCache,
-                         StatsdUtils statsdUtils, NfcInjector nfcInjector) {
+    HostEmulationManager(
+            Context context,
+            Looper looper,
+            RegisteredAidCache aidCache,
+            StatsdUtils statsdUtils,
+            NfcInjector nfcInjector) {
         mContext = context;
         mLooper = looper;
         mHandler = new Handler(looper);
@@ -382,24 +400,26 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         }
     }
 
-    /**
-     *  Preferred payment service changed
-     */
+    /** Preferred payment service changed */
     public void onPreferredPaymentServiceChanged(final ComponentNameAndUser service) {
-        mHandler.post(() -> {
-            synchronized (mLock) {
-                if (!isHostCardEmulationActivated()) {
-                    Log.d(TAG, "onPreferredPaymentServiceChanged: resetting active service");
-                    resetActiveService();
-                }
+        mHandler.post(
+                () -> {
+                    synchronized (mLock) {
+                        if (!isHostCardEmulationActivated()) {
+                            Log.d(
+                                    TAG,
+                                    "onPreferredPaymentServiceChanged: resetting active service");
+                            resetActiveService();
+                        }
 
-                if (service != null && service.getComponentName() != null) {
-                    bindPaymentServiceLocked(service.getUserId(), service.getComponentName());
-                } else {
-                    unbindPaymentServiceLocked();
-                }
-            }
-        });
+                        if (service != null && service.getComponentName() != null) {
+                            bindPaymentServiceLocked(
+                                    service.getUserId(), service.getComponentName());
+                        } else {
+                            unbindPaymentServiceLocked();
+                        }
+                    }
+                });
     }
 
     private Messenger getForegroundServiceOrDefault() {
@@ -419,10 +439,10 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             return null;
         }
 
-        return new Pair<>(bindServiceIfNeededLocked(preferredServiceUserId, preferredServiceName),
-            preferredServiceName);
+        return new Pair<>(
+                bindServiceIfNeededLocked(preferredServiceUserId, preferredServiceName),
+                preferredServiceName);
     }
-
 
     @TargetApi(35)
     public void updateForShouldDefaultToObserveMode(boolean enabled) {
@@ -445,7 +465,6 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         adapter.setObserveModeEnabled(enabled);
     }
 
-
     @TargetApi(35)
     public void updatePollingLoopFilters(@UserIdInt int userId, List<ApduServiceInfo> services) {
         HashMap<String, List<ApduServiceInfo>> pollingLoopFilters =
@@ -458,15 +477,13 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                         pollingLoopFilters.getOrDefault(plf, new ArrayList<ApduServiceInfo>());
                 list.add(serviceInfo);
                 pollingLoopFilters.putIfAbsent(plf, list);
-
             }
             for (Pattern plpf : serviceInfo.getPollingLoopPatternFilters()) {
                 List<ApduServiceInfo> list =
-                        pollingLoopPatternFilters.getOrDefault(plpf,
-                        new ArrayList<ApduServiceInfo>());
+                        pollingLoopPatternFilters.getOrDefault(
+                                plpf, new ArrayList<ApduServiceInfo>());
                 list.add(serviceInfo);
                 pollingLoopPatternFilters.putIfAbsent(plpf, list);
-
             }
         }
         mPollingLoopFilters.put(Integer.valueOf(userId), pollingLoopFilters);
@@ -474,7 +491,7 @@ public class HostEmulationManager implements HostEmulationManagerBase {
     }
 
     public void onObserveModeStateChange(boolean enabled) {
-        synchronized(mLock) {
+        synchronized (mLock) {
             if (!enabled && mAutoDisableObserveModeRunnable != null) {
                 mHandler.removeCallbacks(mAutoDisableObserveModeRunnable);
                 mAutoDisableObserveModeRunnable = null;
@@ -484,6 +501,7 @@ public class HostEmulationManager implements HostEmulationManagerBase {
 
     class AutoDisableObserveModeRunnable implements Runnable {
         Set<String> mServicePackageNames;
+
         AutoDisableObserveModeRunnable(ComponentName componentName) {
             mServicePackageNames = new ArraySet<>(1);
             addServiceToList(componentName);
@@ -491,7 +509,7 @@ public class HostEmulationManager implements HostEmulationManagerBase {
 
         @Override
         public void run() {
-            synchronized(mLock) {
+            synchronized (mLock) {
                 NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
                 if (!adapter.isObserveModeEnabled()) {
                     return;
@@ -499,7 +517,8 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 if (arePackagesInForeground()) {
                     return;
                 }
-                Log.w(TAG,
+                Log.w(
+                        TAG,
                         "AutoDisableObserveModeRunnable: Observe mode not disabled and "
                                 + "no application from the following "
                                 + "packages are in the foreground: "
@@ -507,7 +526,6 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 allowOneTransaction();
             }
         }
-
 
         void addServiceToList(ComponentName service) {
             mServicePackageNames.add(service.getPackageName());
@@ -531,7 +549,7 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 for (Integer uid : uids) {
                     String[] packageNames = packageManager.getPackagesForUid(uid);
                     if (packageNames != null) {
-                        for (String packageName :  packageNames) {
+                        for (String packageName : packageNames) {
                             if (packageName != null) {
                                 for (String servicePackageName : mServicePackageNames) {
                                     if (Objects.equals(servicePackageName, packageName)) {
@@ -547,13 +565,13 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         }
     }
 
-    private void sendFrameToServiceLocked(Messenger service, ComponentName name,
-        PollingFrame frame) {
+    private void sendFrameToServiceLocked(
+            Messenger service, ComponentName name, PollingFrame frame) {
         sendFramesToServiceLocked(service, name, Arrays.asList(frame));
     }
 
-    private void sendFramesToServiceLocked(Messenger service, ComponentName name,
-            List<PollingFrame> frames) {
+    private void sendFramesToServiceLocked(
+            Messenger service, ComponentName name, List<PollingFrame> frames) {
         if (service != null) {
             sendPollingFramesToServiceLocked(service, new ArrayList<>(frames));
         } else {
@@ -613,16 +631,14 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             for (PollingFrame pollingFrame : pollingFrames) {
                 if (mUnprocessedPollingFrames != null) {
                     mUnprocessedPollingFrames.add(pollingFrame);
-                } else if (pollingFrame.getType()
-                        == PollingFrame.POLLING_LOOP_TYPE_F) {
+                } else if (pollingFrame.getType() == PollingFrame.POLLING_LOOP_TYPE_F) {
                     Pair<Messenger, ComponentName> serviceAndName =
-                        getForegroundServiceAndNameOrDefault();
+                            getForegroundServiceAndNameOrDefault();
                     if (serviceAndName != null) {
-                        sendFrameToServiceLocked(serviceAndName.first, serviceAndName.second,
-                            pollingFrame);
+                        sendFrameToServiceLocked(
+                                serviceAndName.first, serviceAndName.second, pollingFrame);
                     }
-                } else if (pollingFrame.getType()
-                        == PollingFrame.POLLING_LOOP_TYPE_UNKNOWN) {
+                } else if (pollingFrame.getType() == PollingFrame.POLLING_LOOP_TYPE_UNKNOWN) {
                     byte[] data = pollingFrame.getData();
                     String dataStr = HexFormat.of().formatHex(data).toUpperCase(Locale.ROOT);
                     List<ApduServiceInfo> serviceInfos =
@@ -630,8 +646,8 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                     Map<Pattern, List<ApduServiceInfo>> patternMappingForUser =
                             mPollingLoopPatternFilters.get(ActivityManager.getCurrentUser());
                     Set<Pattern> patternSet = patternMappingForUser.keySet();
-                    List<Pattern> matchedPatterns = patternSet.stream()
-                            .filter(p -> p.matcher(dataStr).matches()).toList();
+                    List<Pattern> matchedPatterns =
+                            patternSet.stream().filter(p -> p.matcher(dataStr).matches()).toList();
                     if (!matchedPatterns.isEmpty()) {
                         if (serviceInfos == null) {
                             serviceInfos = new ArrayList<ApduServiceInfo>();
@@ -648,22 +664,24 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                             serviceInfo = mAidCache.resolvePollingLoopFilterConflict(serviceInfos);
                             if (serviceInfo == null) {
                                 /*  If neither the foreground or payments service can handle the plf,
-                                *  pick the first in the list. */
+                                 *  pick the first in the list. */
                                 serviceInfo = serviceInfos.get(0);
                             }
                         }
                         if (serviceInfo.getShouldAutoTransact(dataStr)) {
                             if (mStatsdUtils != null) {
                                 mStatsdUtils.logAutoTransactReported(
-                                    StatsdUtils.PROCESSOR_HOST, data);
+                                        StatsdUtils.PROCESSOR_HOST, data);
                                 mStatsdUtils.setNextObserveModeTriggerSource(
-                                    StatsdUtils.TRIGGER_SOURCE_AUTO_TRANSACT);
+                                        StatsdUtils.TRIGGER_SOURCE_AUTO_TRANSACT);
                             }
-                            if (mFirmwareExitFrame != null && Arrays.equals(
-                                    mFirmwareExitFrame.getData(), pollingFrame.getData())) {
+                            if (mFirmwareExitFrame != null
+                                    && Arrays.equals(
+                                            mFirmwareExitFrame.getData(), pollingFrame.getData())) {
                                 mFirmwareExitFrame = null;
                                 mEnableObserveModeAfterTransaction = true;
-                                Log.d(TAG,
+                                Log.d(
+                                        TAG,
                                         "Polling frame matches exit frame, leaving observe mode "
                                                 + "disabled");
                             } else {
@@ -673,18 +691,19 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                         }
                         UserHandle user = UserHandle.getUserHandleForUid(serviceInfo.getUid());
                         if (serviceInfo.isOnHost()) {
-                            Messenger service = bindServiceIfNeededLocked(user.getIdentifier(),
-                                    serviceInfo.getComponent());
+                            Messenger service =
+                                    bindServiceIfNeededLocked(
+                                            user.getIdentifier(), serviceInfo.getComponent());
                             setPollingLoopStateLocked(PollingLoopState.FILTER_MATCHED);
-                            sendFrameToServiceLocked(service, serviceInfo.getComponent(),
-                                pollingFrame);
+                            sendFrameToServiceLocked(
+                                    service, serviceInfo.getComponent(), pollingFrame);
                         }
                     } else {
                         Pair<Messenger, ComponentName> serviceAndName =
                                 getForegroundServiceAndNameOrDefault();
                         if (serviceAndName != null) {
-                            sendFrameToServiceLocked(serviceAndName.first, serviceAndName.second,
-                                pollingFrame);
+                            sendFrameToServiceLocked(
+                                    serviceAndName.first, serviceAndName.second, pollingFrame);
                         }
                     }
 
@@ -725,7 +744,7 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                             case PollingFrame.POLLING_LOOP_TYPE_OFF:
                                 // Send the loop data if we've seen at least one on before an off.
                                 offCount++;
-                                if (onCount >= 2 && offCount >=2) {
+                                if (onCount >= 2 && offCount >= 2) {
                                     setPollingLoopStateLocked(
                                             PollingLoopState.DELIVERING_TO_PREFERRED);
                                 }
@@ -743,12 +762,14 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 Pair<Messenger, ComponentName> serviceAndName =
                         getForegroundServiceAndNameOrDefault();
                 if (serviceAndName != null) {
-                    sendFramesToServiceLocked(serviceAndName.first, serviceAndName.second,
-                        mPendingPollingLoopFrames);
+                    sendFramesToServiceLocked(
+                            serviceAndName.first, serviceAndName.second, mPendingPollingLoopFrames);
                     mPendingPollingLoopFrames = null;
                 } else {
-                    Log.i(TAG, "onPollingLoopDetected: No preferred service to deliver "
-                            + "polling frames to, allowing transaction");
+                    Log.i(
+                            TAG,
+                            "onPollingLoopDetected: No preferred service to deliver "
+                                    + "polling frames to, allowing transaction");
                     allowOneTransaction();
                 }
             }
@@ -765,15 +786,13 @@ public class HostEmulationManager implements HostEmulationManagerBase {
     /**
      * Observe mode was disabled in firmware, we shouldn't autotransact on the next frame.
      *
-     * This assumes the exit frame will be in the next batch of processed polling frames.
+     * <p>This assumes the exit frame will be in the next batch of processed polling frames.
      */
     public void onObserveModeDisabledInFirmware(PollingFrame exitFrame) {
         mFirmwareExitFrame = exitFrame;
     }
 
-    /**
-     *  Preferred foreground service changed
-     */
+    /** Preferred foreground service changed */
     public void onPreferredForegroundServiceChanged(ComponentNameAndUser serviceAndUser) {
         synchronized (mLock) {
             int userId = serviceAndUser.getUserId();
@@ -790,8 +809,8 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             } else {
                 unbindServiceIfNeededLocked();
             }
-         }
-     }
+        }
+    }
 
     public void onFieldChangeDetected(boolean fieldOn) {
         rescheduleInactivityChecks();
@@ -800,8 +819,8 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         }
         if (!fieldOn && mEnableObserveModeOnFieldOff && mEnableObserveModeAfterTransaction) {
             Log.d(TAG, "onFieldChangeDetected: re-enable observe mode");
-            mHandler.postDelayed(mEnableObserveModeAfterTransactionRunnable,
-                RE_ENABLE_OBSERVE_MODE_DELAY_MS);
+            mHandler.postDelayed(
+                    mEnableObserveModeAfterTransactionRunnable, RE_ENABLE_OBSERVE_MODE_DELAY_MS);
         }
 
         if (fieldOn && nfcHceLatencyEvents()) {
@@ -852,26 +871,33 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 resolveInfo = mAidCache.resolveAid(selectAid);
                 if (resolveInfo == null || resolveInfo.services.size() == 0) {
                     if (selectAid.equals(NDEF_V1_AID) || selectAid.equals(NDEF_V2_AID)) {
-                        Log.w(TAG,
+                        Log.w(
+                                TAG,
                                 "onHostEmulationData: Can't route NDEF AID, sending AID_NOT_FOUND");
                     } else if (!mPowerManager.isScreenOn()) {
-                      Log.i(TAG,
-                              "onHostEmulationData: Screen is off, sending AID_NOT_FOUND, "
-                                      + "but not triggering bug report");
+                        Log.i(
+                                TAG,
+                                "onHostEmulationData: Screen is off, sending AID_NOT_FOUND, "
+                                        + "but not triggering bug report");
                     } else {
-                        Log.w(TAG, "onHostEmulationData: Can't handle AID " + selectAid
-                                + " sending AID_NOT_FOUND");
+                        Log.w(
+                                TAG,
+                                "onHostEmulationData: Can't handle AID "
+                                        + selectAid
+                                        + " sending AID_NOT_FOUND");
                         if (android.nfc.Flags.nfcEventListener()) {
                             notifyAidNotRoutedListener(selectAid);
                         }
                     }
-                    NfcInjector.getInstance().getNfcEventLog().logEvent(
-                            NfcEventProto.EventType.newBuilder()
-                                    .setCeUnroutableAid(
-                                        NfcEventProto.NfcCeUnroutableAid.newBuilder()
-                                            .setAid(selectAid)
-                                            .build())
-                                    .build());
+                    NfcInjector.getInstance()
+                            .getNfcEventLog()
+                            .logEvent(
+                                    NfcEventProto.EventType.newBuilder()
+                                            .setCeUnroutableAid(
+                                                    NfcEventProto.NfcCeUnroutableAid.newBuilder()
+                                                            .setAid(selectAid)
+                                                            .build())
+                                            .build());
                     // Tell the remote we don't handle this AID
                     NfcService.getInstance().sendData(AID_NOT_FOUND);
                     return;
@@ -886,8 +912,8 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                         mStatsdUtils.setCardEmulationEventUid(defaultServiceInfo.getUid());
                     }
                     if ((defaultServiceInfo.requiresUnlock()
-                            || NfcService.getInstance().isSecureNfcEnabled())
-                          && NfcInjector.getInstance().isDeviceLocked()) {
+                                    || NfcService.getInstance().isSecureNfcEnabled())
+                            && NfcInjector.getInstance().isDeviceLocked()) {
                         NfcService.getInstance().sendRequireUnlockIntent();
                         NfcService.getInstance().sendData(AID_NOT_FOUND);
                         if (DBG) Log.d(TAG, "onHostEmulationData: requiresUnlock()! show toast");
@@ -908,8 +934,10 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                     // In no circumstance should this be an OffHostService -
                     // we should never get this AID on the host in the first place
                     if (!defaultServiceInfo.isOnHost()) {
-                        Log.e(TAG, "onHostEmulationData: AID that was meant to go off-host was "
-                                + "routed to host. Check routing table configuration.");
+                        Log.e(
+                                TAG,
+                                "onHostEmulationData: AID that was meant to go off-host was "
+                                        + "routed to host. Check routing table configuration.");
                         NfcService.getInstance().sendData(AID_NOT_FOUND);
                         if (mStatsdUtils != null) {
                             mStatsdUtils.logCardEmulationNoRoutingEvent();
@@ -940,8 +968,11 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                         mStatsdUtils.setCardEmulationEventCategory(CardEmulation.CATEGORY_OTHER);
                         mStatsdUtils.logCardEmulationWrongSettingEvent();
                     }
-                    launchResolver(selectAid, (ArrayList<ApduServiceInfo>)resolveInfo.services,
-                        null, resolveInfo.category);
+                    launchResolver(
+                            selectAid,
+                            (ArrayList<ApduServiceInfo>) resolveInfo.services,
+                            null,
+                            resolveInfo.category);
                     return;
                 }
             }
@@ -953,26 +984,27 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                             mStatsdUtils.setCardEmulationEventUid(uid);
                             mStatsdUtils.setCardEmulationEventCategory(resolveInfo.category);
                         }
-                        UserHandle user =
-                                UserHandle.getUserHandleForUid(uid);
+                        UserHandle user = UserHandle.getUserHandleForUid(uid);
                         Messenger existingService =
                                 bindServiceIfNeededLocked(user.getIdentifier(), resolvedService);
                         if (existingService != null) {
                             Log.d(TAG, "onHostEmulationData: Send data to existing service");
-                            NfcInjector.getInstance().getNfcEventLog().logEvent(
-                                    NfcEventProto.EventType.newBuilder()
-                                            .setCeRoutedAid(
-                                                NfcEventProto.NfcCeRoutedAid.newBuilder()
-                                                    .setAid(selectAid)
-                                                    .setComponentInfo(
-                                                        NfcEventProto.NfcComponentInfo.newBuilder()
-                                                            .setPackageName(
-                                                                resolvedService.getPackageName())
-                                                            .setClassName(
-                                                                resolvedService.getClassName())
-                                                            .build())
-                                                    .build())
-                                            .build());
+                            NfcEventProto.NfcComponentInfo componentInfo =
+                                    NfcEventProto.NfcComponentInfo
+                                            .newBuilder()
+                                            .setPackageName(resolvedService.getPackageName())
+                                            .setClassName(resolvedService.getClassName())
+                                            .build();
+                            NfcInjector.getInstance()
+                                    .getNfcEventLog()
+                                    .logEvent(NfcEventProto.EventType.newBuilder()
+                                                    .setCeRoutedAid(
+                                                            NfcEventProto.NfcCeRoutedAid
+                                                                    .newBuilder()
+                                                                    .setAid(selectAid)
+                                                                    .setComponentInfo(componentInfo)
+                                                                    .build())
+                                                    .build());
                             sendDataToServiceLocked(existingService, data);
                         } else {
                             // Waiting for service to be bound
@@ -995,8 +1027,10 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                                     uid);
                         }
                     } else {
-                        Log.d(TAG, "onHostEmulationData: Dropping non-select APDU "
-                                + "in STATE_W4_SELECT");
+                        Log.d(
+                                TAG,
+                                "onHostEmulationData: Dropping non-select APDU "
+                                        + "in STATE_W4_SELECT");
                         NfcService.getInstance().sendData(UNKNOWN_ERROR);
                     }
                     break;
@@ -1032,8 +1066,10 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         Log.d(TAG, "onHostEmulationDeactivated");
         synchronized (mLock) {
             if (mState == STATE_IDLE) {
-                Log.e(TAG, "onHostEmulationDeactivated: Got deactivation "
-                        + "event while in idle state");
+                Log.e(
+                        TAG,
+                        "onHostEmulationDeactivated: Got deactivation "
+                                + "event while in idle state");
             }
             sendDeactivateToActiveServiceLocked(HostApduService.DEACTIVATION_LINK_LOSS);
             unbindServiceIfNeededLocked();
@@ -1046,8 +1082,9 @@ public class HostEmulationManager implements HostEmulationManagerBase {
 
             if (mEnableObserveModeAfterTransaction) {
                 Log.d(TAG, "onHostEmulationDeactivated: re-enable observe mode.");
-                mHandler.postDelayed(mEnableObserveModeAfterTransactionRunnable,
-                    RE_ENABLE_OBSERVE_MODE_DELAY_MS);
+                mHandler.postDelayed(
+                        mEnableObserveModeAfterTransactionRunnable,
+                        RE_ENABLE_OBSERVE_MODE_DELAY_MS);
             }
 
             if (mStatsdUtils != null) {
@@ -1083,15 +1120,17 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 sendDeactivateToActiveServiceLocked(HostApduService.DEACTIVATION_DESELECTED);
             }
             if (mEnableObserveModeAfterTransaction) {
-                Log.i(TAG, "onOffHostAidSelected: OffHost AID selected, "
-                        + "waiting for Field off to reenable observe mode");
+                Log.i(
+                        TAG,
+                        "onOffHostAidSelected: OffHost AID selected, "
+                                + "waiting for Field off to reenable observe mode");
                 mEnableObserveModeOnFieldOff = true;
             }
             resetActiveService();
             unbindServiceIfNeededLocked();
             mState = STATE_W4_SELECT;
 
-            //close the TapAgainDialog
+            // close the TapAgainDialog
             Intent intent = new Intent(TapAgainDialog.ACTION_CLOSE);
             intent.setPackage(NfcInjector.getInstance().getNfcPackageName());
             mContext.sendBroadcastAsUser(intent, UserHandle.ALL);
@@ -1109,25 +1148,36 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         ComponentName preferredPaymentServiceName = preferredPaymentService.getComponentName();
         ComponentNameAndUser newServiceAndUser = new ComponentNameAndUser(userId, service);
 
-        if (mPaymentServiceName != null && mPaymentServiceName.equals(service)
+        if (mPaymentServiceName != null
+                && mPaymentServiceName.equals(service)
                 && mPaymentServiceUserId == userId) {
             Log.d(TAG, "bindServiceIfNeededLocked: Service already bound as payment service.");
             return mPaymentService;
-        } else if (!mPaymentServiceBound && preferredPaymentServiceName != null
+        } else if (!mPaymentServiceBound
+                && preferredPaymentServiceName != null
                 && preferredPaymentServiceName.equals(service)
                 && preferredPaymentUserId == userId) {
-            Log.d(TAG, "bindServiceIfNeededLocked: Service should be bound as "
-                    + "payment service but is not, binding now");
+            Log.d(
+                    TAG,
+                    "bindServiceIfNeededLocked: Service should be bound as "
+                            + "payment service but is not, binding now");
             bindPaymentServiceLocked(userId, preferredPaymentServiceName);
             return null;
         } else if (mComponentNameToConnectionsMap.containsKey(newServiceAndUser)
                 && mComponentNameToConnectionsMap.get(newServiceAndUser).mMessenger != null) {
-            Log.d(TAG, "bindServiceIfNeededLocked: Service" + service
-                    + " already bound as regular service.");
+            Log.d(
+                    TAG,
+                    "bindServiceIfNeededLocked: Service"
+                            + service
+                            + " already bound as regular service.");
             return mComponentNameToConnectionsMap.get(newServiceAndUser).mMessenger;
         } else {
-            Log.d(TAG, "bindServiceIfNeededLocked: Binding to service " + service + " for userId:"
-                    + userId);
+            Log.d(
+                    TAG,
+                    "bindServiceIfNeededLocked: Binding to service "
+                            + service
+                            + " for userId:"
+                            + userId);
             if (nfcHceLatencyEvents()) {
                 Trace.beginAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
             }
@@ -1140,8 +1190,8 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             try {
                 ServiceConnection connection = new HostEmulationServiceConnection(userId);
                 mComponentNameToConnectionsMap.put(
-                    new ComponentNameAndUser(userId, service),
-                    new HostEmulationConnection(userId, service, connection));
+                        new ComponentNameAndUser(userId, service),
+                        new HostEmulationConnection(userId, service, connection));
                 boolean serviceBound =
                         mContext.bindServiceAsUser(
                                 aidIntent,
@@ -1159,8 +1209,10 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 if (nfcHceLatencyEvents()) {
                     Trace.endAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
                 }
-                Log.e(TAG, "bindServiceIfNeededLocked: Could not bind service "
-                        + "due to security exception.");
+                Log.e(
+                        TAG,
+                        "bindServiceIfNeededLocked: Could not bind service "
+                                + "due to security exception.");
             }
             return null;
         }
@@ -1213,17 +1265,22 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             msg.arg1 = cookie;
         }
         try {
-            NfcService.getInstance().notifyOemLogEvent(new OemLogItems
-                    .Builder(OemLogItems.LOG_ACTION_HCE_DATA)
-                    .setApduCommand(data)
-                    .build());
+            NfcService.getInstance()
+                    .notifyOemLogEvent(
+                            new OemLogItems.Builder(OemLogItems.LOG_ACTION_HCE_DATA)
+                                    .setApduCommand(data)
+                                    .build());
             mActiveService.send(msg);
         } catch (RemoteException e) {
             if (nfcHceLatencyEvents()) {
                 Trace.endAsyncSection(EVENT_HCE_COMMAND_APDU, cookie);
             }
-            Log.e(TAG, "sendDataToServiceLocked: Remote service " + mActiveServiceName
-                    + " has died, dropping APDU", e);
+            Log.e(
+                    TAG,
+                    "sendDataToServiceLocked: Remote service "
+                            + mActiveServiceName
+                            + " has died, dropping APDU",
+                    e);
             if (Objects.equals(mActiveService, mPaymentService)) {
                 Log.wtf(TAG, "sendDataToServiceLocked: Rebinding payment service", e);
                 bindPaymentServiceLocked(mPaymentServiceUserId, mLastBoundPaymentServiceName);
@@ -1231,8 +1288,8 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         }
     }
 
-    void sendPollingFramesToServiceLocked(Messenger service,
-            ArrayList<PollingFrame> pollingFrames) {
+    void sendPollingFramesToServiceLocked(
+            Messenger service, ArrayList<PollingFrame> pollingFrames) {
         if (!Objects.equals(service, mActiveService)) {
             mActiveService = service;
             if (service.equals(mPaymentService)) {
@@ -1244,15 +1301,16 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                     mActiveServiceName = activeService.getComponentName();
                     mActiveServiceUserId = activeService.getUserId();
                 } else {
-                    Log.e(TAG,
+                    Log.e(
+                            TAG,
                             "Sending polling frames to a service that isn't in our service map.");
                 }
             }
         }
         Message msg = Message.obtain(null, HostApduService.MSG_POLLING_LOOP);
         Bundle msgData = new Bundle();
-        msgData.putParcelableArrayList(HostApduService.KEY_POLLING_LOOP_FRAMES_BUNDLE,
-                pollingFrames);
+        msgData.putParcelableArrayList(
+                HostApduService.KEY_POLLING_LOOP_FRAMES_BUNDLE, pollingFrames);
         msg.setData(msgData);
         msg.replyTo = mMessenger;
         if (mState == STATE_IDLE) {
@@ -1266,8 +1324,12 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         try {
             mActiveService.send(msg);
         } catch (RemoteException e) {
-            Log.e(TAG, "sendPollingFramesToServiceLocked: Remote service " + mActiveServiceName
-                    + " has died, dropping frames", e);
+            Log.e(
+                    TAG,
+                    "sendPollingFramesToServiceLocked: Remote service "
+                            + mActiveServiceName
+                            + " has died, dropping frames",
+                    e);
             allowOneTransaction();
             if (Objects.equals(mActiveService, mPaymentService)) {
                 Log.wtf(TAG, "sendPollingFramesToServiceLocked: Rebinding payment service", e);
@@ -1293,9 +1355,11 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             try {
                 mContext.unbindService(mPaymentConnection);
                 mComponentNameToConnectionsMap.remove(
-                    new ComponentNameAndUser(mPaymentServiceUserId, mPaymentServiceName));
+                        new ComponentNameAndUser(mPaymentServiceUserId, mPaymentServiceName));
             } catch (Exception e) {
-                Log.w(TAG, "unbindPaymentServiceLocked: Failed to unbind: " + mPaymentServiceName,
+                Log.w(
+                        TAG,
+                        "unbindPaymentServiceLocked: Failed to unbind: " + mPaymentServiceName,
                         e);
             }
             mPaymentServiceBound = false;
@@ -1319,7 +1383,9 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             mComponentNameToConnectionsMap.put(
                     new ComponentNameAndUser(userId, serviceName),
                     new HostEmulationConnection(userId, serviceName, mPaymentConnection));
-            if (mContext.bindServiceAsUser(intent, mPaymentConnection,
+            if (mContext.bindServiceAsUser(
+                    intent,
+                    mPaymentConnection,
                     Context.BIND_AUTO_CREATE | Context.BIND_ALLOW_BACKGROUND_ACTIVITY_STARTS,
                     UserHandle.of(userId))) {
                 mPaymentServiceBound = true;
@@ -1329,15 +1395,19 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 if (nfcHceLatencyEvents()) {
                     Trace.endAsyncSection(EVENT_HCE_BIND_PAYMENT_SERVICE, 0);
                 }
-                Log.e(TAG, "bindPaymentServiceLocked: Could not bind (persistent) "
-                        + "payment service");
+                Log.e(
+                        TAG,
+                        "bindPaymentServiceLocked: Could not bind (persistent) "
+                                + "payment service");
             }
         } catch (SecurityException e) {
             if (nfcHceLatencyEvents()) {
                 Trace.endAsyncSection(EVENT_HCE_BIND_PAYMENT_SERVICE, 0);
             }
-            Log.e(TAG, "bindPaymentServiceLocked: Could not bind service "
-                    + "due to security exception");
+            Log.e(
+                    TAG,
+                    "bindPaymentServiceLocked: Could not bind service "
+                            + "due to security exception");
         }
     }
 
@@ -1358,16 +1428,19 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         dialogIntent.putExtra(TapAgainDialog.EXTRA_CATEGORY, category);
         dialogIntent.putExtra(TapAgainDialog.EXTRA_APDU_SERVICE, service);
         dialogIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        mContext.startActivityAsUser(dialogIntent,
-                UserHandle.getUserHandleForUid(service.getUid()));
+        mContext.startActivityAsUser(
+                dialogIntent, UserHandle.getUserHandleForUid(service.getUid()));
     }
 
-    void launchResolver(String selectedAid, ArrayList<ApduServiceInfo> services,
-        ComponentName failedComponent, String category) {
+    void launchResolver(
+            String selectedAid,
+            ArrayList<ApduServiceInfo> services,
+            ComponentName failedComponent,
+            String category) {
         if (mNfcOemExtensionCallback != null) {
             try {
                 mNfcOemExtensionCallback.onLaunchHceAppChooserActivity(
-                    selectedAid, services, failedComponent, category);
+                        selectedAid, services, failedComponent, category);
                 return;
             } catch (RemoteException e) {
                 Log.e(TAG, "launchResolver: onLaunchHceAppChooserActivity failed", e);
@@ -1396,8 +1469,10 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         //     and we only support "first or only occurrence".
         if (data[0] == 0x00 && data[1] == INSTR_SELECT && data[2] == 0x04) {
             if (data[3] != 0x00) {
-                Log.d(TAG, "findSelectAid: Selecting next, last or previous "
-                        + "AID occurrence is not supported");
+                Log.d(
+                        TAG,
+                        "findSelectAid: Selecting next, last or previous "
+                                + "AID occurrence is not supported");
             }
             int aidLength = Byte.toUnsignedInt(data[4]);
             if (data.length < SELECT_APDU_HDR_LENGTH + aidLength) {
@@ -1408,8 +1483,7 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         return null;
     }
 
-    @Nullable
-    private NfcAidRoutingListener mAidRoutingListener = null;
+    @Nullable private NfcAidRoutingListener mAidRoutingListener = null;
 
     @FlaggedApi(android.nfc.Flags.FLAG_NFC_EVENT_LISTENER)
     public void setAidRoutingListener(@Nullable NfcAidRoutingListener listener) {
@@ -1445,116 +1519,137 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         mActiveServiceUserId = -1;
     }
 
-    private ServiceConnection mPaymentConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            ComponentName paymentServiceName = new ComponentName("", "");
-            synchronized (mLock) {
-                /* Preferred Payment Service has been changed. */
-                if (!mLastBoundPaymentServiceName.equals(name)) {
-                    Log.i(TAG, "onServiceConnected: Ignoring bound payment service, " + name
-                            + " != " + mLastBoundPaymentServiceName);
-                    return;
-                }
-                mPaymentServiceName = name;
-                mPaymentService = new Messenger(service);
-                paymentServiceName = mPaymentServiceName;
-                if (mComponentNameToConnectionsMap.containsKey(
-                    new ComponentNameAndUser(mPaymentServiceUserId, name))) {
-                        mComponentNameToConnectionsMap.get(
-                            new ComponentNameAndUser(mPaymentServiceUserId, name)).mMessenger =
-                        mPaymentService;
-                } else {
-                    mComponentNameToConnectionsMap.put(
-                        new ComponentNameAndUser(mPaymentServiceUserId, name),
-                        new HostEmulationConnection(mPaymentServiceUserId, name,
-                                this, mPaymentService));
-                }
-                Log.i(TAG, "onServiceConnected: Payment service bound: " + name);
-                if (nfcHceLatencyEvents()) {
-                    Trace.endAsyncSection(EVENT_HCE_BIND_PAYMENT_SERVICE, 0);
-                }
-            }
-            NfcInjector.getInstance().getNfcEventLog().logEvent(
-                    NfcEventProto.EventType.newBuilder()
-                            .setPaymentServiceBindState(
-                                NfcEventProto.NfcPaymentServiceBindState.newBuilder()
-                                    .setBindState(NfcEventProto.BindState.SERVICE_CONNECTED)
-                                    .setComponentInfo(
-                                        NfcEventProto.NfcComponentInfo.newBuilder()
-                                            .setPackageName(
-                                                paymentServiceName.getPackageName())
-                                            .setClassName(
-                                                paymentServiceName.getClassName())
-                                            .build())
-                                    .build())
-                            .build());
+    private ServiceConnection mPaymentConnection =
+            new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    ComponentName paymentServiceName = new ComponentName("", "");
+                    synchronized (mLock) {
+                        /* Preferred Payment Service has been changed. */
+                        if (!mLastBoundPaymentServiceName.equals(name)) {
+                            Log.i(
+                                    TAG,
+                                    "onServiceConnected: Ignoring bound payment service, "
+                                            + name
+                                            + " != "
+                                            + mLastBoundPaymentServiceName);
+                            return;
+                        }
+                        mPaymentServiceName = name;
+                        mPaymentService = new Messenger(service);
+                        paymentServiceName = mPaymentServiceName;
+                        if (mComponentNameToConnectionsMap.containsKey(
+                                new ComponentNameAndUser(mPaymentServiceUserId, name))) {
+                            mComponentNameToConnectionsMap.get(
+                                                    new ComponentNameAndUser(
+                                                            mPaymentServiceUserId, name))
+                                            .mMessenger =
+                                    mPaymentService;
+                        } else {
+                            mComponentNameToConnectionsMap.put(
+                                    new ComponentNameAndUser(mPaymentServiceUserId, name),
+                                    new HostEmulationConnection(
+                                            mPaymentServiceUserId, name, this, mPaymentService));
+                        }
+                        Log.i(TAG, "onServiceConnected: Payment service bound: " + name);
+                        if (nfcHceLatencyEvents()) {
+                            Trace.endAsyncSection(EVENT_HCE_BIND_PAYMENT_SERVICE, 0);
+                        }
+                    }
+                    NfcEventProto.NfcComponentInfo componentInfo =
+                            NfcEventProto.NfcComponentInfo
+                                    .newBuilder()
+                                    .setPackageName(paymentServiceName.getPackageName())
+                                    .setClassName(paymentServiceName.getClassName())
+                                    .build();
+                    NfcInjector.getInstance()
+                            .getNfcEventLog()
+                            .logEvent(NfcEventProto.EventType.newBuilder()
+                                    .setPaymentServiceBindState(
+                                            NfcEventProto.NfcPaymentServiceBindState
+                                                    .newBuilder()
+                                                    .setBindState(
+                                                            NfcEventProto.BindState
+                                                                    .SERVICE_CONNECTED)
+                                                    .setComponentInfo(componentInfo)
+                                                    .build())
+                                    .build());
 
-            if (mPollingFramesToSend != null && mPollingFramesToSend.containsKey(name)) {
-                sendPollingFramesToServiceLocked(mPaymentService, mPollingFramesToSend.get(name));
-                mPollingFramesToSend.remove(name);
-                if (mUnprocessedPollingFrames != null) {
-                    ArrayList unprocessedPollingFrames = mUnprocessedPollingFrames;
-                    mUnprocessedPollingFrames = null;
-                    onPollingLoopDetected(unprocessedPollingFrames);
+                    if (mPollingFramesToSend != null && mPollingFramesToSend.containsKey(name)) {
+                        sendPollingFramesToServiceLocked(
+                                mPaymentService, mPollingFramesToSend.get(name));
+                        mPollingFramesToSend.remove(name);
+                        if (mUnprocessedPollingFrames != null) {
+                            ArrayList unprocessedPollingFrames = mUnprocessedPollingFrames;
+                            mUnprocessedPollingFrames = null;
+                            onPollingLoopDetected(unprocessedPollingFrames);
+                        }
+                    }
                 }
-            }
-        }
 
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            Log.i(TAG, "onServiceDisconnected: " + name);
-            ComponentName paymentServiceName = new ComponentName("", "");
-            synchronized (mLock) {
-                ComponentNameAndUser nameAndUser =
-                        new ComponentNameAndUser(mPaymentServiceUserId, name);
-                mComponentNameToConnectionsMap.remove(nameAndUser);
-                paymentServiceName = mPaymentServiceName;
-                mPaymentService = null;
-                mPaymentServiceName = null;
-            }
-            NfcInjector.getInstance().getNfcEventLog().logEvent(
-                    NfcEventProto.EventType.newBuilder()
-                            .setPaymentServiceBindState(
-                                NfcEventProto.NfcPaymentServiceBindState.newBuilder()
-                                    .setBindState(NfcEventProto.BindState.SERVICE_DISCONNECTED)
-                                    .setComponentInfo(
-                                        NfcEventProto.NfcComponentInfo.newBuilder()
-                                            .setPackageName(
-                                                paymentServiceName.getPackageName())
-                                            .setClassName(
-                                                paymentServiceName.getClassName())
-                                            .build())
-                                    .build())
-                            .build());
-        }
-
-        @Override
-        public void onBindingDied(ComponentName name) {
-            Log.i(TAG, "onBindingDied: " + name);
-            ComponentName paymentServiceName = new ComponentName("", "");
-            synchronized (mLock) {
-                if (mPaymentServiceName != null) paymentServiceName = mPaymentServiceName;
-                if (mPaymentServiceUserId >= 0) {
-                    bindPaymentServiceLocked(mPaymentServiceUserId, mLastBoundPaymentServiceName);
+                @Override
+                public void onServiceDisconnected(ComponentName name) {
+                    Log.i(TAG, "onServiceDisconnected: " + name);
+                    ComponentName paymentServiceName = new ComponentName("", "");
+                    synchronized (mLock) {
+                        ComponentNameAndUser nameAndUser =
+                                new ComponentNameAndUser(mPaymentServiceUserId, name);
+                        mComponentNameToConnectionsMap.remove(nameAndUser);
+                        paymentServiceName = mPaymentServiceName;
+                        mPaymentService = null;
+                        mPaymentServiceName = null;
+                    }
+                    NfcEventProto.NfcComponentInfo componentInfo =
+                            NfcEventProto.NfcComponentInfo
+                                    .newBuilder()
+                                    .setPackageName(paymentServiceName.getPackageName())
+                                    .setClassName(paymentServiceName.getClassName())
+                                    .build();
+                    NfcInjector.getInstance()
+                            .getNfcEventLog()
+                            .logEvent(NfcEventProto.EventType.newBuilder()
+                                    .setPaymentServiceBindState(
+                                            NfcEventProto.NfcPaymentServiceBindState
+                                                    .newBuilder()
+                                                    .setBindState(
+                                                            NfcEventProto.BindState
+                                                                    .SERVICE_DISCONNECTED)
+                                                    .setComponentInfo(componentInfo)
+                                                    .build())
+                                    .build());
                 }
-            }
-            NfcInjector.getInstance().getNfcEventLog().logEvent(
-                    NfcEventProto.EventType.newBuilder()
-                            .setPaymentServiceBindState(
-                                NfcEventProto.NfcPaymentServiceBindState.newBuilder()
-                                    .setBindState(NfcEventProto.BindState.SERVICE_BINDING_DIED)
-                                    .setComponentInfo(
-                                        NfcEventProto.NfcComponentInfo.newBuilder()
-                                            .setPackageName(
-                                                paymentServiceName.getPackageName())
-                                            .setClassName(
-                                                paymentServiceName.getClassName())
-                                            .build())
-                                    .build())
-                            .build());
-        }
-    };
+
+                @Override
+                public void onBindingDied(ComponentName name) {
+                    Log.i(TAG, "onBindingDied: " + name);
+                    ComponentName paymentServiceName = new ComponentName("", "");
+                    synchronized (mLock) {
+                        if (mPaymentServiceName != null) paymentServiceName = mPaymentServiceName;
+                        if (mPaymentServiceUserId >= 0) {
+                            bindPaymentServiceLocked(
+                                    mPaymentServiceUserId, mLastBoundPaymentServiceName);
+                        }
+                    }
+                    NfcEventProto.NfcComponentInfo componentInfo =
+                            NfcEventProto.NfcComponentInfo
+                                    .newBuilder()
+                                    .setPackageName(paymentServiceName.getPackageName())
+                                    .setClassName(paymentServiceName.getClassName())
+                                    .build();
+                    NfcInjector.getInstance()
+                            .getNfcEventLog()
+                            .logEvent(NfcEventProto.EventType.newBuilder()
+                                    .setPaymentServiceBindState(
+                                            NfcEventProto.NfcPaymentServiceBindState
+                                                    .newBuilder()
+                                                    .setBindState(
+                                                            NfcEventProto.BindState
+                                                                    .SERVICE_BINDING_DIED)
+                                                    .setComponentInfo(componentInfo)
+                                                    .build())
+                                    .build());
+                }
+            };
 
     class HostEmulationServiceConnection implements ServiceConnection {
         @UserIdInt int mUserId;
@@ -1568,8 +1663,9 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             synchronized (mLock) {
                 ComponentNameAndUser preferredUserAndService = mAidCache.getPreferredService();
                 ComponentName preferredServiceName =
-                        preferredUserAndService == null ? null :
-                                preferredUserAndService.getComponentName();
+                        preferredUserAndService == null
+                                ? null
+                                : preferredUserAndService.getComponentName();
                 /* Service is already deactivated and not preferred, don't bind */
                 if (mState == STATE_IDLE && !name.equals(preferredServiceName)) {
                     return;
@@ -1579,8 +1675,8 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 if (mComponentNameToConnectionsMap.containsKey(key)) {
                     mComponentNameToConnectionsMap.get(key).mMessenger = messenger;
                 } else {
-                    mComponentNameToConnectionsMap.put(key,
-                        new HostEmulationConnection(mUserId, name, this, messenger));
+                    mComponentNameToConnectionsMap.put(
+                            key, new HostEmulationConnection(mUserId, name, this, messenger));
                 }
                 if (nfcHceLatencyEvents()) {
                     Trace.endAsyncSection(EVENT_HCE_BIND_SERVICE, 0);
@@ -1592,21 +1688,26 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                     if (mStatsdUtils != null) {
                         mStatsdUtils.notifyCardEmulationEventServiceBound();
                     }
-                    NfcInjector.getInstance().getNfcEventLog().logEvent(
-                            NfcEventProto.EventType.newBuilder()
-                                    .setCeRoutedAid(
-                                        NfcEventProto.NfcCeRoutedAid.newBuilder()
-                                            .setAid(mLastSelectedAid == null
-                                                        ? "" : mLastSelectedAid)
-                                            .setComponentInfo(
-                                                NfcEventProto.NfcComponentInfo.newBuilder()
-                                                    .setPackageName(
-                                                        name.getPackageName())
-                                                    .setClassName(
-                                                        name.getClassName())
-                                                    .build())
-                                            .build())
-                                    .build());
+
+                    NfcEventProto.NfcComponentInfo componentInfo =
+                            NfcEventProto.NfcComponentInfo
+                                    .newBuilder()
+                                    .setPackageName(name.getPackageName())
+                                    .setClassName(name.getClassName())
+                                    .build();
+                    NfcInjector.getInstance()
+                            .getNfcEventLog()
+                            .logEvent(
+                                    NfcEventProto.EventType.newBuilder()
+                                            .setCeRoutedAid(
+                                                    NfcEventProto.NfcCeRoutedAid.newBuilder()
+                                                            .setAid(
+                                                                    mLastSelectedAid == null
+                                                                            ? ""
+                                                                            : mLastSelectedAid)
+                                                            .setComponentInfo(componentInfo)
+                                                            .build())
+                                            .build());
                     sendDataToServiceLocked(messenger, mSelectApdu);
                     mSelectApdu = null;
                 } else if (mPollingFramesToSend != null && mPollingFramesToSend.containsKey(name)) {
@@ -1631,7 +1732,9 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                 mComponentNameToConnectionsMap.remove(nameAndUser);
             }
         }
-    };
+    }
+    ;
+
     private ComponentNameAndUser getComponentNameAndUserForBinder(IBinder binder) {
         for (Map.Entry<ComponentNameAndUser, HostEmulationConnection> entry :
                 mComponentNameToConnectionsMap.entrySet()) {
@@ -1645,16 +1748,18 @@ public class HostEmulationManager implements HostEmulationManagerBase {
     class MessageHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            synchronized(mLock) {
+            synchronized (mLock) {
                 if (mActiveService == null) {
                     ComponentNameAndUser nameAndUser =
                             getComponentNameAndUserForBinder(msg.replyTo.getBinder());
                     if (nameAndUser == null) {
-                        Log.d(TAG, "handleMessage: Dropping service response message; "
-                                + "service no longer active.");
+                        Log.d(
+                                TAG,
+                                "handleMessage: Dropping service response message; "
+                                        + "service no longer active.");
                         return;
                     }
-                    HostEmulationConnection  hec = mComponentNameToConnectionsMap.get(nameAndUser);
+                    HostEmulationConnection hec = mComponentNameToConnectionsMap.get(nameAndUser);
                     mActiveServiceUserId = nameAndUser.getUserId();
                     mActiveServiceName = nameAndUser.getComponentName();
                     if (hec == null) {
@@ -1662,17 +1767,19 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                         HostEmulationServiceConnection connection =
                                 new HostEmulationServiceConnection(mActiveServiceUserId);
                         mComponentNameToConnectionsMap.put(
-                            new ComponentNameAndUser(mActiveServiceUserId, mActiveServiceName),
-                            new HostEmulationConnection(mActiveServiceUserId, mActiveServiceName,
-                                    connection));
+                                new ComponentNameAndUser(mActiveServiceUserId, mActiveServiceName),
+                                new HostEmulationConnection(
+                                        mActiveServiceUserId, mActiveServiceName, connection));
                     } else if (hec.mMessenger == null) {
                         mActiveService = new Messenger(msg.replyTo.getBinder());
                     } else {
                         mActiveService = hec.mMessenger;
                     }
                 } else if (!msg.replyTo.getBinder().equals(mActiveService.getBinder())) {
-                    Log.d(TAG, "handleMessage: Dropping service response message; "
-                            + "service no longer bound.");
+                    Log.d(
+                            TAG,
+                            "handleMessage: Dropping service response message; "
+                                    + "service no longer bound.");
                     return;
                 }
             }
@@ -1687,7 +1794,7 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                     return;
                 }
                 int state;
-                synchronized(mLock) {
+                synchronized (mLock) {
                     state = mState;
                 }
                 if (state == STATE_XFER) {
@@ -1697,14 +1804,15 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                         mStatsdUtils.notifyCardEmulationEventResponseReceived();
                     }
                 } else {
-                    Log.d(TAG,
+                    Log.d(
+                            TAG,
                             "handleMessage: Dropping data, wrong state " + Integer.toString(state));
                 }
 
                 if (nfcHceLatencyEvents()) {
                     try {
-                        Message ackMsg = Message.obtain(null,
-                                HostApduService.MSG_RESPONSE_APDU_ACK);
+                        Message ackMsg =
+                                Message.obtain(null, HostApduService.MSG_RESPONSE_APDU_ACK);
                         ackMsg.arg1 = msg.arg1;
                         ackMsg.replyTo = mMessenger;
                         msg.replyTo.send(ackMsg);
@@ -1722,9 +1830,11 @@ public class HostEmulationManager implements HostEmulationManagerBase {
                         if (android.nfc.Flags.nfcEventListener()) {
                             notifyAidConflictListener(mLastSelectedAid);
                         }
-                        launchResolver(mLastSelectedAid,
-                            (ArrayList<ApduServiceInfo>)resolveInfo.services,
-                            mActiveServiceName, resolveInfo.category);
+                        launchResolver(
+                                mLastSelectedAid,
+                                (ArrayList<ApduServiceInfo>) resolveInfo.services,
+                                mActiveServiceName,
+                                resolveInfo.category);
                     }
                 }
             } else if (msg.what == HostApduService.MSG_COMMAND_APDU_ACK) {
@@ -1740,7 +1850,9 @@ public class HostEmulationManager implements HostEmulationManagerBase {
     }
 
     static String bytesToString(byte[] bytes, int offset, int length) {
-        final char[] hexChars = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+        final char[] hexChars = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+        };
         char[] chars = new char[length * 2];
         int byteValue;
         for (int j = 0; j < length; j++) {
@@ -1759,7 +1871,7 @@ public class HostEmulationManager implements HostEmulationManagerBase {
         if (!mComponentNameToConnectionsMap.isEmpty()) {
             pw.println("    others: ");
             for (Map.Entry<ComponentNameAndUser, HostEmulationConnection> entry :
-               mComponentNameToConnectionsMap.entrySet()) {
+                    mComponentNameToConnectionsMap.entrySet()) {
                 pw.println("            " + entry.getKey());
             }
         }
@@ -1768,11 +1880,10 @@ public class HostEmulationManager implements HostEmulationManagerBase {
     /**
      * Dump debugging information as a HostEmulationManagerProto
      *
-     * Note:
-     * See proto definition in frameworks/base/core/proto/android/nfc/card_emulation.proto
+     * <p>Note: See proto definition in frameworks/base/core/proto/android/nfc/card_emulation.proto
      * When writing a nested message, must call {@link ProtoOutputStream#start(long)} before and
-     * {@link ProtoOutputStream#end(long)} after.
-     * Never reuse a proto field number. When removing a field, mark it as reserved.
+     * {@link ProtoOutputStream#end(long)} after. Never reuse a proto field number. When removing a
+     * field, mark it as reserved.
      */
     public void dumpDebug(ProtoOutputStream proto) {
         if (mPaymentServiceBound) {
@@ -1783,12 +1894,12 @@ public class HostEmulationManager implements HostEmulationManagerBase {
             for (Map.Entry<ComponentNameAndUser, HostEmulationConnection> entry :
                     mComponentNameToConnectionsMap.entrySet()) {
                 Utils.dumpDebugComponentName(
-                        entry.getKey().getComponentName(), proto,
+                        entry.getKey().getComponentName(),
+                        proto,
                         HostEmulationManagerProto.SERVICE_NAME);
             }
         }
     }
-
 
     @VisibleForTesting
     public int getState() {
