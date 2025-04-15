@@ -29,11 +29,12 @@ public class EntryTest {
     private final byte mType = 1;
     private final byte mNfceeId = 2;
     private final String mSampleRoutingType = "SampleRoutingType";
+    private final byte mPowerState = 1;
     private Entry mEntry;
 
     @Before
     public void setUp() {
-        mEntry = new Entry(mSampleEntry, mType, mNfceeId, mSampleRoutingType);
+        mEntry = new Entry(mSampleEntry, mType, mNfceeId, mSampleRoutingType, mPowerState);
     }
 
     @Test
@@ -65,7 +66,8 @@ public class EntryTest {
         byte type = 0;
         byte nfceeId = 0;
         String routingType = "";
-        Entry original = new Entry(entry, type, nfceeId, routingType);
+        byte powerState = 1;
+        Entry original = new Entry(entry, type, nfceeId, routingType, powerState);
         Parcel parcel = Parcel.obtain();
         original.writeToParcel(parcel, 0);
         parcel.setDataPosition(0);

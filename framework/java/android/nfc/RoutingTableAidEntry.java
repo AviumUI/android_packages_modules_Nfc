@@ -31,8 +31,8 @@ public class RoutingTableAidEntry extends NfcRoutingTableEntry {
 
     /** @hide */
     public RoutingTableAidEntry(int nfceeId, String value,
-            @CardEmulation.ProtocolAndTechnologyRoute int routeType) {
-        super(nfceeId, TYPE_AID, routeType);
+            @CardEmulation.ProtocolAndTechnologyRoute int routeType, int powerState) {
+        super(nfceeId, TYPE_AID, routeType, powerState);
         this.mValue = value;
     }
 

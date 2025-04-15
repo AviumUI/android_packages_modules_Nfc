@@ -79,8 +79,8 @@ public class RoutingTableTechnologyEntry extends NfcRoutingTableEntry {
 
     /** @hide */
     public RoutingTableTechnologyEntry(int nfceeId, @TechnologyValue int value,
-            @CardEmulation.ProtocolAndTechnologyRoute int routeType) {
-        super(nfceeId, TYPE_TECHNOLOGY, routeType);
+            @CardEmulation.ProtocolAndTechnologyRoute int routeType, int powerState) {
+        super(nfceeId, TYPE_TECHNOLOGY, routeType, powerState);
         this.mValue = value;
     }
 

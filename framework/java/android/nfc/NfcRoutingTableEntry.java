@@ -37,6 +37,7 @@ public abstract class NfcRoutingTableEntry {
     private final int mNfceeId;
     private final int mType;
     private final int mRouteType;
+    private final int mPowerState;
 
     /**
      * AID routing table type.
@@ -70,10 +71,11 @@ public abstract class NfcRoutingTableEntry {
 
     /** @hide */
     protected NfcRoutingTableEntry(int nfceeId, @RoutingTableType int type,
-            @CardEmulation.ProtocolAndTechnologyRoute int routeType) {
+            @CardEmulation.ProtocolAndTechnologyRoute int routeType, int powerState) {
         mNfceeId = nfceeId;
         mType = type;
         mRouteType = routeType;
+        mPowerState = powerState;
     }
 
     /**
@@ -101,5 +103,13 @@ public abstract class NfcRoutingTableEntry {
     @CardEmulation.ProtocolAndTechnologyRoute
     public int getRouteType() {
         return mRouteType;
+    }
+
+    /**
+     * Get the PowerState of this entry
+     * @hide
+     */
+    public int getPowerState() {
+        return mPowerState;
     }
 }
