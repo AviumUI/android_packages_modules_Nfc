@@ -75,6 +75,7 @@ import com.android.nfc.proto.NfcEventProto;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1666,6 +1667,19 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
 
         return TelephonyUtils.SIM_TYPE_UNKNOWN;
+    }
+
+    public byte[] getReaderByPreferredSim() {
+        Optional<SubscriptionInfo> optionalInfo =
+                mTelephonyUtils.getActiveSubscriptionInfoById(mPreferredSubscriptionService
+                        .getPreferredSubscriptionId());
+        if (optionalInfo.isPresent() && optionalInfo.get().isEmbedded()) {
+            SubscriptionInfo info = optionalInfo.get();
+            return (RoutingOptionManager.SE_PREFIX_SIM + (1 + info.getSimSlotIndex()))
+                    .getBytes(StandardCharsets.UTF_8);
+        } else {
+            return null;
+        }
     }
 
     public void updateForShouldDefaultToObserveMode(int userId) {
