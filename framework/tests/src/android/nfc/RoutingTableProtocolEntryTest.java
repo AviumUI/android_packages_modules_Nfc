@@ -28,9 +28,10 @@ public class RoutingTableProtocolEntryTest {
         int nfceeId = 1;
         int protocolValue = RoutingTableProtocolEntry.PROTOCOL_ISO_DEP;
         int routeType = PROTOCOL_AND_TECHNOLOGY_ROUTE_DH;
+        int powerState = 1;
 
         RoutingTableProtocolEntry entry = new RoutingTableProtocolEntry(nfceeId, protocolValue,
-                routeType);
+                routeType, powerState);
         assertEquals(protocolValue, entry.getProtocol());
         assertEquals(nfceeId, entry.getNfceeId());
         assertEquals(routeType, entry.getRouteType());

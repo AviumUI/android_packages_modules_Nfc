@@ -1285,9 +1285,24 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             List<Integer> routingList = new ArrayList<>();
 
             if (mRoutingOptionManager.isRoutingTableOverrided()) {
-                routingList.add(mRoutingOptionManager.getOverrideDefaultRoute());
-                routingList.add(mRoutingOptionManager.getOverrideDefaultIsoDepRoute());
-                routingList.add(mRoutingOptionManager.getOverrideDefaultOffHostRoute());
+                int overrideDefaultRoute = mRoutingOptionManager.getOverrideDefaultRoute();
+                if (overrideDefaultRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultRoute = mRoutingOptionManager.getDefaultRoute();
+                }
+                int overrideDefaultIsoDepRoute =
+                        mRoutingOptionManager.getOverrideDefaultIsoDepRoute();
+                if (overrideDefaultIsoDepRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultIsoDepRoute = mRoutingOptionManager.getDefaultIsoDepRoute();
+                }
+                int overrideDefaultOffHostRoute =
+                        mRoutingOptionManager.getOverrideDefaultOffHostRoute();
+                if (overrideDefaultOffHostRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultOffHostRoute =
+                        mRoutingOptionManager.getDefaultOffHostRoute();
+                }
+                routingList.add(overrideDefaultRoute);
+                routingList.add(overrideDefaultIsoDepRoute);
+                routingList.add(overrideDefaultOffHostRoute);
             }
             else {
                 routingList.add(mRoutingOptionManager.getDefaultRoute());

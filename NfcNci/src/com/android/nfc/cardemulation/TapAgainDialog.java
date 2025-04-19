@@ -124,7 +124,7 @@ public class TapAgainDialog extends AlertActivity implements DialogInterface.OnC
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mReceiver.get() != null) {
+        if (mReceiver != null && mReceiver.get() != null) {
             Log.e(TAG, "onDestroy: Failed to unregister receiver");
             close();
         }

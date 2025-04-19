@@ -1876,11 +1876,11 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         && mAlwaysOnState != NfcAdapter.STATE_TURNING_OFF)) {
                 /* Start polling loop */
                 applyRouting(true);
-            }
 
-            if (mIsHceCapable) {
-                // Generate the initial card emulation routing table
-                mCardEmulationManager.onNfcEnabled();
+                if (mIsHceCapable) {
+                    // Generate the initial card emulation routing table
+                    mCardEmulationManager.onNfcEnabled();
+                }
             }
 
             if (mIsRecovering) {
@@ -5191,7 +5191,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     Log.d(TAG, "handleMessage: MSG_RF_FIELD_DEACTIVATED");
                     notifyOemLogEvent(new OemLogItems
                             .Builder(OemLogItems.LOG_ACTION_RF_FIELD_STATE_CHANGED)
-                            .setRfFieldOnTime(Instant.now()).build());
+                            .setRfFieldOnTime(Instant.EPOCH).build());
                     if (mCardEmulationManager != null) {
                         mCardEmulationManager.onFieldChangeDetected(false);
                     }
