@@ -896,21 +896,26 @@ public final class NfcOemExtension {
                 case TYPE_TECHNOLOGY -> result.add(
                         new RoutingTableTechnologyEntry(entry.getNfceeId(),
                                 RoutingTableTechnologyEntry.techStringToInt(entry.getEntry()),
-                                routeStringToInt(entry.getRoutingType()))
+                                routeStringToInt(entry.getRoutingType()),
+                                entry.getPowerState()
+                        )
                 );
                 case TYPE_PROTOCOL -> result.add(
                         new RoutingTableProtocolEntry(entry.getNfceeId(),
                                 RoutingTableProtocolEntry.protocolStringToInt(entry.getEntry()),
-                                routeStringToInt(entry.getRoutingType()))
+                                routeStringToInt(entry.getRoutingType()),
+                                entry.getPowerState())
                 );
                 case TYPE_AID -> result.add(
                         new RoutingTableAidEntry(entry.getNfceeId(), entry.getEntry(),
-                                routeStringToInt(entry.getRoutingType()))
+                                routeStringToInt(entry.getRoutingType()),
+                                entry.getPowerState())
                 );
                 case TYPE_SYSTEMCODE -> result.add(
                         new RoutingTableSystemCodeEntry(entry.getNfceeId(),
                                 entry.getEntry().getBytes(StandardCharsets.UTF_8),
-                                routeStringToInt(entry.getRoutingType()))
+                                routeStringToInt(entry.getRoutingType()),
+                                entry.getPowerState())
                 );
             }
         }
