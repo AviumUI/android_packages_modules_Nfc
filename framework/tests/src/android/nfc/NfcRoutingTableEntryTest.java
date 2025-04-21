@@ -29,7 +29,7 @@ public final class NfcRoutingTableEntryTest {
     @Test
     public void testAidEntry_GetAid() {
         String expectedAid = "A00000061A02";
-        RoutingTableAidEntry entry = new RoutingTableAidEntry(1, expectedAid, 0);
+        RoutingTableAidEntry entry = new RoutingTableAidEntry(1, expectedAid, 0, 1);
 
         assertEquals(expectedAid, entry.getAid());
     }
@@ -37,7 +37,7 @@ public final class NfcRoutingTableEntryTest {
     @Test
     public void testProtocolEntry_GetProtocol() {
         RoutingTableProtocolEntry entry =
-                new RoutingTableProtocolEntry(1, RoutingTableProtocolEntry.PROTOCOL_T1T, 0);
+                new RoutingTableProtocolEntry(1, RoutingTableProtocolEntry.PROTOCOL_T1T, 0, 1);
 
         assertEquals(RoutingTableProtocolEntry.PROTOCOL_T1T, entry.getProtocol());
     }
@@ -46,7 +46,7 @@ public final class NfcRoutingTableEntryTest {
     public void testSystemCodeEntry_GetSystemCode() {
         byte[] expectedSystemCode = {0x01, 0x02, 0x03};
         RoutingTableSystemCodeEntry entry =
-                new RoutingTableSystemCodeEntry(1, expectedSystemCode, 0);
+                new RoutingTableSystemCodeEntry(1, expectedSystemCode, 0, 1);
 
         assertArrayEquals(expectedSystemCode, entry.getSystemCode());
     }
@@ -54,7 +54,7 @@ public final class NfcRoutingTableEntryTest {
     @Test
     public void testTechnologyEntry_GetTechnology_A() {
         RoutingTableTechnologyEntry entry =
-                new RoutingTableTechnologyEntry(1, RoutingTableTechnologyEntry.TECHNOLOGY_A, 0);
+                new RoutingTableTechnologyEntry(1, RoutingTableTechnologyEntry.TECHNOLOGY_A, 0, 1);
 
         assertEquals(RoutingTableTechnologyEntry.TECHNOLOGY_A, entry.getTechnology());
     }

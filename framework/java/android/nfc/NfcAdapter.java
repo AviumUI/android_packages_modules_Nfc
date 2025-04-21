@@ -2922,7 +2922,7 @@ public final class NfcAdapter {
     @FlaggedApi(Flags.FLAG_NFC_OEM_EXTENSION)
     @NonNull public NfcOemExtension getNfcOemExtension() {
         synchronized (sLock) {
-            if (!sHasNfcFeature) {
+            if (!sHasNfcFeature && !sHasCeFeature) {
                 throw new UnsupportedOperationException();
             }
         }

@@ -75,6 +75,7 @@ import com.android.nfc.proto.NfcEventProto;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1285,9 +1286,24 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             List<Integer> routingList = new ArrayList<>();
 
             if (mRoutingOptionManager.isRoutingTableOverrided()) {
-                routingList.add(mRoutingOptionManager.getOverrideDefaultRoute());
-                routingList.add(mRoutingOptionManager.getOverrideDefaultIsoDepRoute());
-                routingList.add(mRoutingOptionManager.getOverrideDefaultOffHostRoute());
+                int overrideDefaultRoute = mRoutingOptionManager.getOverrideDefaultRoute();
+                if (overrideDefaultRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultRoute = mRoutingOptionManager.getDefaultRoute();
+                }
+                int overrideDefaultIsoDepRoute =
+                        mRoutingOptionManager.getOverrideDefaultIsoDepRoute();
+                if (overrideDefaultIsoDepRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultIsoDepRoute = mRoutingOptionManager.getDefaultIsoDepRoute();
+                }
+                int overrideDefaultOffHostRoute =
+                        mRoutingOptionManager.getOverrideDefaultOffHostRoute();
+                if (overrideDefaultOffHostRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultOffHostRoute =
+                        mRoutingOptionManager.getDefaultOffHostRoute();
+                }
+                routingList.add(overrideDefaultRoute);
+                routingList.add(overrideDefaultIsoDepRoute);
+                routingList.add(overrideDefaultOffHostRoute);
             }
             else {
                 routingList.add(mRoutingOptionManager.getDefaultRoute());
@@ -1651,6 +1667,19 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
 
         return TelephonyUtils.SIM_TYPE_UNKNOWN;
+    }
+
+    public byte[] getReaderByPreferredSim() {
+        Optional<SubscriptionInfo> optionalInfo =
+                mTelephonyUtils.getActiveSubscriptionInfoById(mPreferredSubscriptionService
+                        .getPreferredSubscriptionId());
+        if (optionalInfo.isPresent() && optionalInfo.get().isEmbedded()) {
+            SubscriptionInfo info = optionalInfo.get();
+            return (RoutingOptionManager.SE_PREFIX_SIM + (1 + info.getSimSlotIndex()))
+                    .getBytes(StandardCharsets.UTF_8);
+        } else {
+            return null;
+        }
     }
 
     public void updateForShouldDefaultToObserveMode(int userId) {
