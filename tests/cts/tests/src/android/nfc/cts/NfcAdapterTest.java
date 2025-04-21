@@ -6,7 +6,11 @@ import static android.nfc.NfcRoutingTableEntry.TYPE_AID;
 import static android.nfc.NfcRoutingTableEntry.TYPE_PROTOCOL;
 import static android.nfc.NfcRoutingTableEntry.TYPE_SYSTEM_CODE;
 import static android.nfc.NfcRoutingTableEntry.TYPE_TECHNOLOGY;
+import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT;
+import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_DH;
 import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE;
+import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE;
+import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC;
 import static android.nfc.cardemulation.CardEmulation.PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET;
 import static android.nfc.cts.NfcUtils.assumeObserveModeSupported;
 import static android.nfc.cts.NfcUtils.assumeVsrApiGreaterThanUdc;
@@ -737,7 +741,14 @@ public class NfcAdapterTest {
                         break;
                     default:
                 }
-                entries.getFirst().getRouteType();
+                assertThat(entries.getFirst().getRouteType())
+                        .isAnyOf(
+                                PROTOCOL_AND_TECHNOLOGY_ROUTE_DH,
+                                PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE,
+                                PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC,
+                                PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET,
+                                PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT,
+                                PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE);
                 entries.getFirst().getNfceeId();
             }
             nfcOemExtension.forceRoutingTableCommit();

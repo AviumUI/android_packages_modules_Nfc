@@ -341,15 +341,23 @@ public class RegisteredServicesCache {
         synchronized (mLock) {
             readDynamicSettingsLocked();
             readOthersLocked();
-            for (UserHandle uh : mUserHandles) {
-                invalidateCache(uh.getIdentifier(), false);
+            if (NfcInjector.getInstance().isBootCompleted()) {
+                for (UserHandle uh : mUserHandles) {
+                    invalidateCache(uh.getIdentifier(), false);
+                }
             }
+        }
+    }
+
+    public void onBootCompleted() {
+        synchronized (mLock) {
+            refreshUserProfilesLocked(true);
         }
     }
 
     public void onUserSwitched() {
         synchronized (mLock) {
-            refreshUserProfilesLocked(false);
+            refreshUserProfilesLocked(true);
         }
     }
 
@@ -668,10 +676,10 @@ public class RegisteredServicesCache {
             boolean isManagedProfile = um.isManagedProfile(userId);
             Log.i(TAG, "invalidateOther: current user: " + ActivityManager.getCurrentUser()
                     + ", is managed profile : " + isManagedProfile);
-            boolean isChecked = !(isManagedProfile);
-            // TODO: b/313040065 temperatory set isChecked always true due to there's no UI in AOSP
-            isChecked = true;
-
+            boolean isChecked = true;
+            if (NfcInjector.getInstance().getDeviceConfigFacade().getCeDisableOtherServicesOnManagedProfiles()) {
+                isChecked = !(isManagedProfile);
+            }
             for (ApduServiceInfo service : validOtherServices) {
                 if (VDBG) {
                     Log.d(TAG, "invalidateOther: update valid otherService: "
