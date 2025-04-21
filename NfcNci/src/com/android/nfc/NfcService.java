@@ -6298,6 +6298,19 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     }
 
     public boolean setFirmwareExitFrameTable(List<ExitFrame> exitFrames, int timeoutMs) {
+        // Check if NFC is enabled
+        if (!isNfcEnabled()) {
+            Log.w(TAG, "setFirmwareExitFrameTable: NFC is not enabled");
+            return false;
+        }
+
+        if (mCardEmulationManager != null
+                && mCardEmulationManager.isHostCardEmulationActivated()) {
+            Log.w(TAG,"setFirmwareExitFrameTable: " +
+                "Cannot set exit rame table in during a transaction.");
+            return false;
+        }
+
         byte[] timeoutBytes = new byte[2];
         if (timeoutMs > 0xFFFF) {
             Log.w(TAG,

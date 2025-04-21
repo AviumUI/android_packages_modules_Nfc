@@ -806,29 +806,6 @@ public class HostEmulationManager {
         }
     }
 
-    static private class UnroutableAidBugReportRunnable implements Runnable {
-        List<String> mUnroutedAids;
-
-        UnroutableAidBugReportRunnable(String aid) {
-            mUnroutedAids = new ArrayList<String>(1);
-            mUnroutedAids.add(aid);
-        }
-
-        void addAid(String aid) {
-            mUnroutedAids.add(aid);
-        }
-        @Override
-        public void run() {
-            NfcService.getInstance().mNfcDiagnostics.takeBugReport(
-                    "NFC tap failed."
-                        + " (If you weren't using NFC, "
-                        + "no need to submit this report.)",
-                    "Couldn't route " + String.join(", ", mUnroutedAids));
-        }
-    }
-
-    UnroutableAidBugReportRunnable mUnroutableAidBugReportRunnable = null;
-
     public void onHostEmulationData(byte[] data) {
         Log.d(TAG, "onHostEmulationData");
         mHandler.removeCallbacks(mEnableObserveModeAfterTransactionRunnable);
@@ -865,15 +842,6 @@ public class HostEmulationManager {
                         if (android.nfc.Flags.nfcEventListener()) {
                             notifyAidNotRoutedListener(selectAid);
                         }
-                        if (mUnroutableAidBugReportRunnable != null) {
-                            mUnroutableAidBugReportRunnable.addAid(selectAid);
-                        } else {
-                            mUnroutableAidBugReportRunnable =
-                                    new UnroutableAidBugReportRunnable(selectAid);
-                            /* Wait 1s to see if there is an alternate AID we can route before
-                             * taking a bug report */
-                            mHandler.postDelayed(mUnroutableAidBugReportRunnable, 1000);
-                        }
                     }
                     NfcInjector.getInstance().getNfcEventLog().logEvent(
                             NfcEventProto.EventType.newBuilder()
@@ -885,10 +853,6 @@ public class HostEmulationManager {
                     // Tell the remote we don't handle this AID
                     NfcService.getInstance().sendData(AID_NOT_FOUND);
                     return;
-                } else if (mUnroutableAidBugReportRunnable != null) {
-                    /* If there is a pending bug report runnable, cancel it. */
-                    mHandler.removeCallbacks(mUnroutableAidBugReportRunnable);
-                    mUnroutableAidBugReportRunnable = null;
                 }
                 mLastSelectedAid = selectAid;
                 if (resolveInfo.defaultService != null) {
