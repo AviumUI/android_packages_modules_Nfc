@@ -82,7 +82,7 @@ the file, rather than its path. It is assumed that this file is located within
 emulatorapp/parsed_files, where it was originally created.
 
 ```
-adb shell am start -n com.android.nfc.emulatorapp/.MainActivity --es "snoop_file" "$PARSED_FILE"
+adb shell am start -n com.android.nfc.emulatorapduapp/.MainActivity --es "snoop_file" "$PARSED_FILE"
 ```
 
 When you are ready to start the transaction, press the "Start Host APDU Service"
