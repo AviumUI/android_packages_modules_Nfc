@@ -15,18 +15,34 @@
  */
 package com.android.nfc;
 
+import static com.android.nfc.RoutingTableParser.TYPE_AID;
+
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import android.nfc.Entry;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.nfc.cardemulation.RoutingOptionManager;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockitoSession;
+import org.mockito.quality.Strictness;
+
+import java.io.PrintWriter;
+import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
 public final class NfcRoutingTableParseTest {
-    private static final String TAG = NfcRoutingTableParseTest.class.getSimpleName();
     private RoutingTableParser mRoutingTableParser;
 
     // NFCEE-ID
@@ -40,16 +56,21 @@ public final class NfcRoutingTableParseTest {
     static final byte SWITCH_ON_SUB_2 = (byte) 0x10;
     static final byte SWITCH_ON_SUB_1 = (byte) 0x08;
     static final byte BATTERY_OFF = (byte) 0x04;
-    static final byte SWITCH_OFF = (byte) 0x02;
     static final byte SWITCH_ON = (byte) 0x01;
+    private MockitoSession mStaticMockSession;
 
     @Before
     public void setUp() {
+        mStaticMockSession = ExtendedMockito.mockitoSession()
+                .mockStatic(RoutingOptionManager.class)
+                .strictness(Strictness.LENIENT)
+                .startMocking();
         mRoutingTableParser = new RoutingTableParser();
     }
 
     @After
     public void tearDown() throws Exception {
+        mStaticMockSession.finishMocking();
     }
 
     @Test
@@ -135,7 +156,7 @@ public final class NfcRoutingTableParseTest {
          * where it is not supported
          */
         byte qualifier = (byte) 0x40;
-        byte type = RoutingTableParser.TYPE_AID;
+        byte type = TYPE_AID;
         byte eeId = EE_ID_UICC;
         byte pwrState = (byte) (APPLY_ALL ^ BATTERY_OFF);
         byte[] entry = hexStrToByteArray("6E6663746573743031");
@@ -154,7 +175,7 @@ public final class NfcRoutingTableParseTest {
          * where it is not supported
          */
         byte qualifier = (byte) 0x40;
-        byte type = RoutingTableParser.TYPE_AID;
+        byte type = TYPE_AID;
         byte eeId = EE_ID_UICC;
         byte pwrState = (byte) (APPLY_ALL ^ BATTERY_OFF);
         byte[] entry = hexStrToByteArray("6E66637465737430316E6663746573743031");
@@ -259,9 +280,148 @@ public final class NfcRoutingTableParseTest {
             if (value > 127) {
                 value -= 256;
             }
-            byteArr [i] = (byte) value;
+            byteArr[i] = (byte) value;
         }
 
         return byteArr;
+    }
+
+    @Test
+    public void testDump() {
+        byte qualifier = (byte) 0x40;
+        byte type = RoutingTableParser.TYPE_SYSTEMCODE;
+        byte eeId = EE_ID_ESE;
+        byte pwrState = (byte) (APPLY_ALL ^ BATTERY_OFF);
+        byte[] entryAll = hexStrToByteArray("FEFEEEEE");
+        byte[] rt = generateRoutingEntry(qualifier, type, eeId, pwrState, entryAll);
+        DeviceHost dh = mock(DeviceHost.class);
+        PrintWriter pw = mock(PrintWriter.class);
+        when(dh.getMaxRoutingTableSize()).thenReturn(1);
+        when(dh.getRoutingTable()).thenReturn(rt);
+
+        mRoutingTableParser.dump(dh, pw);
+        verify(dh).getRoutingTable();
+        verify(pw).println("--- dumpRoutingTable:  end  ---");
+    }
+
+    @Test
+    public void testGetRoutingEntryInfo() {
+        byte qualifier = (byte) 0x40;
+        byte type = TYPE_AID;
+        byte eeId = EE_ID_ESE;
+        byte pwrState = (byte) (APPLY_ALL ^ BATTERY_OFF);
+        byte[] entryAll = hexStrToByteArray("FEFEEEEE");
+        byte[] rt = generateRoutingEntry(qualifier, type, eeId, pwrState, entryAll);
+        DeviceHost dh = mock(DeviceHost.class);
+        when(dh.getMaxRoutingTableSize()).thenReturn(1);
+        when(dh.getRoutingTable()).thenReturn(rt);
+        RoutingOptionManager routingOptionManager = mock(RoutingOptionManager.class);
+        when(RoutingOptionManager.getInstance()).thenReturn(routingOptionManager);
+
+        List<Entry> entries = mRoutingTableParser.getRoutingTableEntryList(dh);
+        Entry entry = new Entry(getAidStr(entryAll), type, eeId,
+                routingOptionManager.getSecureElementForRoute(eeId), pwrState);
+        assertEquals(entry.getEntry(), entries.getFirst().getEntry());
+    }
+
+    @Test
+    public void testGetRoutingEntryInfoWithEmptyAid() {
+        byte qualifier = (byte) 0x40;
+        byte type = TYPE_AID;
+        byte eeId = EE_ID_ESE;
+        byte pwrState = (byte) (APPLY_ALL ^ BATTERY_OFF);
+        byte[] entryAll = hexStrToByteArray("");
+        byte[] rt = generateRoutingEntry(qualifier, type, eeId, pwrState, entryAll);
+        DeviceHost dh = mock(DeviceHost.class);
+        when(dh.getMaxRoutingTableSize()).thenReturn(1);
+        when(dh.getRoutingTable()).thenReturn(rt);
+        RoutingOptionManager routingOptionManager = mock(RoutingOptionManager.class);
+        when(RoutingOptionManager.getInstance()).thenReturn(routingOptionManager);
+
+        List<Entry> entries = mRoutingTableParser.getRoutingTableEntryList(dh);
+        Entry entry = new Entry(getAidStr(entryAll), type, eeId,
+                routingOptionManager.getSecureElementForRoute(eeId), pwrState);
+        assertEquals(entry.getEntry(), entries.getFirst().getEntry());
+    }
+
+    String getAidStr(byte[] aid) {
+        String aidStr = "";
+
+        for (byte b : aid) {
+            aidStr += String.format("%02X", b);
+        }
+
+        if (aidStr.length() == 0) {
+            return "Empty_AID";
+        }
+        return "AID_" + aidStr;
+    }
+
+    @Test
+    public void testGetBlockCtrlStr() {
+        assertEquals("True", mRoutingTableParser.accessGetBlockCtrlStr((byte) 0x40));
+        assertEquals("False", mRoutingTableParser.accessGetBlockCtrlStr((byte) 0x10));
+    }
+
+    @Test
+    public void testGetPrefixSubsetStrTypeNotAid() {
+        assertEquals("", mRoutingTableParser.accessGetPrefixSubsetStr((byte) 0x30, (byte) 0x01));
+    }
+
+    @Test
+    public void testGetPrefixSubsetStrMaskHasPrefixOnly() {
+        assertEquals("Prefix ",
+                mRoutingTableParser.accessGetPrefixSubsetStr((byte) 0x10, TYPE_AID));
+    }
+
+    @Test
+    public void testGetPrefixSubsetStrMaskHasSubsetOnly() {
+        assertEquals("Subset", mRoutingTableParser.accessGetPrefixSubsetStr((byte) 0x20, TYPE_AID));
+    }
+
+    @Test
+    public void testGetPrefixSubsetStrMaskHasBothPrefixAndSubset() {
+        assertEquals("Prefix Subset",
+                mRoutingTableParser.accessGetPrefixSubsetStr((byte) 0x30, TYPE_AID));
+    }
+
+    @Test
+    public void testGetPrefixSubsetStrMaskHasNeitherPrefixNorSubset() {
+        assertEquals("Exact", mRoutingTableParser.accessGetPrefixSubsetStr((byte) 0x0F, TYPE_AID));
+    }
+
+    @Test
+    public void testGetPrefixSubsetStrMaskIsZero() {
+        assertEquals("Exact", mRoutingTableParser.accessGetPrefixSubsetStr((byte) 0x00, TYPE_AID));
+    }
+
+    @Test
+    public void testGetSystemCodeStrEmptyByteArray() {
+        byte[] systemCode = {};
+        assertEquals("SYSTEMCODE_", mRoutingTableParser.accessGetSystemCodeStr(systemCode));
+    }
+
+    @Test
+    public void testGetSystemCodeStrSingleByte() {
+        byte[] systemCode = {0x01};
+        assertEquals("SYSTEMCODE_01", mRoutingTableParser.accessGetSystemCodeStr(systemCode));
+    }
+
+    @Test
+    public void testGetSystemCodeStrMultipleBytes() {
+        byte[] systemCode = {0x1A, 0x2B, 0x3C};
+        assertEquals("SYSTEMCODE_1A2B3C", mRoutingTableParser.accessGetSystemCodeStr(systemCode));
+    }
+
+    @Test
+    public void testGetSystemCodeStrBytesWithLeadingZeros() {
+        byte[] systemCode = {0x0A, 0x0B, 0x0C};
+        assertEquals("SYSTEMCODE_0A0B0C", mRoutingTableParser.accessGetSystemCodeStr(systemCode));
+    }
+
+    @Test
+    public void testGetSystemCodeStrBytesWithMaxHexValue() {
+        byte[] systemCode = {(byte) 0xFF, (byte) 0xFE};
+        assertEquals("SYSTEMCODE_FFFE", mRoutingTableParser.accessGetSystemCodeStr(systemCode));
     }
 }
