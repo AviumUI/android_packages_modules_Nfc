@@ -112,11 +112,27 @@ public class RoutingTableParser {
         return "SYSTEMCODE_" + systemCodeStr;
     }
 
+    /**
+     * Check SystemCode string by inputting systemCode
+     */
+    @VisibleForTesting
+    public String accessGetSystemCodeStr(byte[] sc) {
+        return getSystemCodeStr(sc);
+    }
+
     private String getBlockCtrlStr(byte mask) {
         if ((mask & 0x40) != 0) {
             return "True";
         }
         return "False";
+    }
+
+    /**
+     * Check BlockCtrl String by inputting mask
+     */
+    @VisibleForTesting
+    public String accessGetBlockCtrlStr(byte mask) {
+        return getBlockCtrlStr(mask);
     }
 
     private String getPrefixSubsetStr(byte mask, byte type) {
@@ -135,6 +151,14 @@ public class RoutingTableParser {
             return "Exact";
         }
         return prefix_subset_str;
+    }
+
+    /**
+     * Check Prefix String by inputting mask and type
+     */
+    @VisibleForTesting
+    public String accessGetPrefixSubsetStr(byte mask, byte type) {
+        return getPrefixSubsetStr(mask, type);
     }
 
     private String formatRow(String entry, String eeId,
