@@ -108,7 +108,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         RegisteredNfcFServicesCache.Callback, PreferredServices.Callback,
         EnabledNfcFServices.Callback, WalletRoleObserver.Callback,
         PreferredSubscriptionService.Callback,
-        HostEmulationManagerBase.NfcAidRoutingListener {
+        HostEmulationManager.NfcAidRoutingListener {
     static final String TAG = "CardEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
 
@@ -134,7 +134,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     final RegisteredT3tIdentifiersCache mT3tIdentifiersCache;
     final RegisteredServicesCache mServiceCache;
     final RegisteredNfcFServicesCache mNfcFServicesCache;
-    final HostEmulationManagerBase mHostEmulationManager;
+    final HostEmulationManager mHostEmulationManager;
     final HostNfcFEmulationManager mHostNfcFEmulationManager;
     final PreferredServices mPreferredServices;
 
@@ -1205,7 +1205,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                         + ", technologyRoute " + technologyRoute);
             }
 
-//            mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
+            mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultIsoDepRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultOffHostRoute(technologyRoute);
             int result = mAidCache.onRoutingOverridedOrRecovered();
@@ -1469,6 +1469,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     }
                     mForegroundUid = Process.INVALID_UID;
                     mRoutingOptionManager.recoverOverridedRoutingTable();
+                    if (mAidCache.onRoutingOverridedOrRecovered()
+                            != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
+                        Log.e(TAG, "recoverRoutingTable: onRoutingOverridedOrRecovered() failed");
+                    }
                 }
             }
         }
