@@ -1205,7 +1205,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                         + ", technologyRoute " + technologyRoute);
             }
 
-//            mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
+            mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultIsoDepRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultOffHostRoute(technologyRoute);
             int result = mAidCache.onRoutingOverridedOrRecovered();
@@ -1469,6 +1469,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     }
                     mForegroundUid = Process.INVALID_UID;
                     mRoutingOptionManager.recoverOverridedRoutingTable();
+                    if (mAidCache.onRoutingOverridedOrRecovered()
+                            != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
+                        Log.e(TAG, "recoverRoutingTable: onRoutingOverridedOrRecovered() failed");
+                    }
                 }
             }
         }
