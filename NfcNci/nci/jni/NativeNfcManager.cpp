@@ -1801,12 +1801,12 @@ static tNFA_STATUS setTechAPollingLoopAnnotation(JNIEnv* env, jobject o,
       command.push_back(0x00);
     } else {
       command.push_back(0x01);                 // Number of frame entries.
-      command.push_back(0x21);                 // Position and type.
+      command.push_back(0x20);                 // Position and type.
       command.push_back(annotation_size + 3);  // Length
       command.push_back(0x0a);                 // Waiting time
       command.insert(command.end(), annotation_data, annotation_data + annotation_size);
-      command.push_back(0x00);
-      command.push_back(0x00);
+      command.push_back(0x00);                 // Dummy bytes for HAL to populate CRC.
+      command.push_back(0x00);                 // Dummy bytes for HAL to populate CRC.
     }
     SyncEventGuard guard(gNfaVsCommand);
     tNFA_STATUS status =
