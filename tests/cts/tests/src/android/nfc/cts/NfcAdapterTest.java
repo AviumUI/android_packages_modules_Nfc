@@ -39,6 +39,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.nfc.Flags;
 import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcAntennaInfo;
 import android.nfc.NfcOemExtension;
@@ -709,8 +710,10 @@ public class NfcAdapterTest {
             T4tNdefNfcee ndefNfcee = nfcOemExtension.getT4tNdefNfcee();
             assertThat(ndefNfcee).isNotNull();
             if (ndefNfcee.isSupported()) {
-                byte[] ndefData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
-
+                String data = "0123456789012345678901234567890123456789";
+                NdefRecord record = NdefRecord.createTextRecord("en", data);
+                NdefMessage message = new NdefMessage(new NdefRecord[]{record});
+                byte[] ndefData = message.toByteArray();
                 byte[] FILE_ID_NDEF_TEST = new byte[]{(byte)0xE1, 0x04};
                 assertThat(ndefNfcee.writeData(bytesToInt(FILE_ID_NDEF_TEST), ndefData))
                                .isEqualTo(T4tNdefNfcee.WRITE_DATA_SUCCESS);
