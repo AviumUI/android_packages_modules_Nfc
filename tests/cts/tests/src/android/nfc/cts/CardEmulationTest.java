@@ -110,6 +110,11 @@ public class CardEmulationTest {
         return pm.hasSystemFeature(PackageManager.FEATURE_NFC_OFF_HOST_CARD_EMULATION_ESE);
     }
 
+    private boolean supportsTelephonySubscription() {
+        final PackageManager pm = InstrumentationRegistry.getContext().getPackageManager();
+        return pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION);
+    }
+
     @Before
     public void setUp() throws NoSuchFieldException, RemoteException, InterruptedException {
         assumeTrue("Device must support NFC HCE", supportsHardware());
@@ -2455,6 +2460,7 @@ public class CardEmulationTest {
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_CARD_EMULATION_EUICC)
     @Test
     public void testGetSetDefaultNfcSubscriptionId() {
+        assumeTrue(supportsTelephonySubscription());
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         assertTrue(NfcUtils.enableNfc(adapter, mContext));
         CardEmulation instance = CardEmulation.getInstance(adapter);
