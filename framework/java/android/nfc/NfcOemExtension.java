@@ -376,13 +376,22 @@ public final class NfcOemExtension {
         void onTagDispatch(@NonNull Consumer<Boolean> isSkipped);
 
         /**
-         * Notifies routing configuration is changed.
+         * Notifies routing configuration is changed. This indicates the start
+         * of a possible routing change procedure.
          * @param isCommitRoutingSkipped The {@link Consumer} to be
          * completed. If routing commit should be skipped,
          * the {@link Consumer#accept(Object)} should be called with
          * {@link Boolean#TRUE}, otherwise call with {@link Boolean#FALSE}.
          */
         void onRoutingChanged(@NonNull Consumer<Boolean> isCommitRoutingSkipped);
+
+        /**
+         * Notifies routing configuration change is completed. This indicates
+         * the end of a routing change procedure.
+         * @see #onRoutingChanged(Consumer<Boolean>)
+         */
+        @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+        default void onRoutingChangeCompleted() { }
 
         /**
          * API to activate start stop cpu boost on hce event.
@@ -1048,6 +1057,11 @@ public final class NfcOemExtension {
             mCallbackMap.forEach((cb, ex) ->
                     handleVoidCallback(
                             new ReceiverWrapper<>(isSkipped), cb::onRoutingChanged, ex));
+        }
+        @Override
+        public void onRoutingChangeCompleted() throws RemoteException {
+            mCallbackMap.forEach((cb, ex) ->
+                    handleVoidCallback(null, (Object input) -> cb.onRoutingChangeCompleted(), ex));
         }
         @Override
         public void onHceEventReceived(int action) throws RemoteException {
