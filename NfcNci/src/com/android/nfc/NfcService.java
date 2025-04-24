@@ -1854,6 +1854,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
             synchronized (NfcService.this) {
                 mObjectMap.clear();
+                if (mIsPowerSavingModeEnabled) {
+                    mDeviceHost.setPowerSavingMode(false);
+                    mIsPowerSavingModeEnabled = false;
+                }
                 updateState(NfcAdapter.STATE_ON);
 
                 onPreferredPaymentChanged(NfcAdapter.PREFERRED_PAYMENT_LOADED);
@@ -1892,11 +1896,6 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                  // Intents for all users
                 registerGlobalBroadcastsReceiver();
                 mIsRecovering = false;
-            }
-
-            if (mIsPowerSavingModeEnabled) {
-                mDeviceHost.setPowerSavingMode(false);
-                mIsPowerSavingModeEnabled = false;
             }
 
             if (DBG) Log.d(TAG, "EnableDisableTask.enableInternal: end");
@@ -2830,7 +2829,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             // Allow non-foreground callers with system uid or systemui
             privilegedCaller |= packageName.equals(SYSTEM_UI);
             Log.d(TAG, "setReaderMode: uid=" + callingUid + ", packageName: "
-                    + packageName + ", flags: " + flags);
+                    + packageName + ", flags: " + flags + ", annotation: "
+                    + (extras != null
+                        ? extras.getString(NfcAdapter.EXTRA_READER_TECH_A_POLLING_LOOP_ANNOTATION)
+                        : "null"));
             if (!privilegedCaller
                     && !mForegroundUtils.registerUidToBackgroundCallback(
                             NfcService.this, callingUid)) {

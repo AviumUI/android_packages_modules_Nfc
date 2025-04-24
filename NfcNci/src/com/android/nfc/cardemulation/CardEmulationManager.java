@@ -1248,10 +1248,18 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
             NfcPermissions.enforceAdminPermissions(mContext);
 
-            int aidRoute = getRouteForSecureElement(aids);
-            int protocolRoute = getRouteForSecureElement(protocol);
-            int technologyRoute = getRouteForSecureElement(technology);
-            int scRoute = getRouteForSecureElement(sc);
+            int aidRoute = (aids != null && aids.equals("default"))
+                    ? mRoutingOptionManager.getDefaultRoute()
+                    : getRouteForSecureElement(aids);
+            int protocolRoute = (protocol != null && protocol.equals("default"))
+                    ? mRoutingOptionManager.getDefaultIsoDepRoute()
+                    : getRouteForSecureElement(protocol);
+            int technologyRoute = (technology != null && technology.equals("default"))
+                    ? mRoutingOptionManager.getDefaultOffHostRoute()
+                    : getRouteForSecureElement(technology);
+            int scRoute = (sc != null && sc.equals("default"))
+                    ? mRoutingOptionManager.getDefaultScRoute()
+                    : getRouteForSecureElement(sc);
 
             if (DBG)  {
                 Log.d(TAG, "overwriteRoutingTable(): aidRoute: " + Integer.toHexString(aidRoute)
