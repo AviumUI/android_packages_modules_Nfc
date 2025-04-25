@@ -361,8 +361,15 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
     }
 
-    public void onOffHostAidSelected() {
-        mHostEmulationManager.onOffHostAidSelected();
+    public void onOffHostAidTransaction() {
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
+    }
+
+    public void onOffHostAidSelected(@NonNull String aid, @NonNull String eeName) {
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
+        if (android.nfc.Flags.nfcEventListener()) {
+            callNfcEventCallbacks(listener -> listener.onOffHostAidSelected(aid, eeName));
+        }
     }
 
     public void onBootCompleted() {

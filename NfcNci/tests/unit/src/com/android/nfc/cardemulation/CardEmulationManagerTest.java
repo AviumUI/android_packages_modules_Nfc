@@ -383,11 +383,19 @@ public class CardEmulationManagerTest {
     }
 
     @Test
-    public void testOnOffHostAidSelected() {
-        mCardEmulationManager.onOffHostAidSelected();
+    public void testOnOffHostTransaction() {
+        mCardEmulationManager.onOffHostAidTransaction();
 
         assertConstructorMethodCalls();
-        verify(mHostEmulationManager).onOffHostAidSelected();
+        verify(mHostEmulationManager).onOffHostAidSelectedOrTransaction();
+    }
+
+    @Test
+    public void testOnOffHostAidSelected() {
+        mCardEmulationManager.onOffHostAidSelected("056870", "eSE1");
+
+        assertConstructorMethodCalls();
+        verify(mHostEmulationManager).onOffHostAidSelectedOrTransaction();
     }
 
     @Test

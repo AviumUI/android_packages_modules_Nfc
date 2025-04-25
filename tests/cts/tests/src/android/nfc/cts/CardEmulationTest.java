@@ -515,6 +515,9 @@ public class CardEmulationTest {
                 }
             }
         }
+        @Override
+        public void onOffHostAidSelected(String aid, String offHostSecureElement) { }
+
 
         public void onListenersRegistered() {
             if (mLatch != null) {

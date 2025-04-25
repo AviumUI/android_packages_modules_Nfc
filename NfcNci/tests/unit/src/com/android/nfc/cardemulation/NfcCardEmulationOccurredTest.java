@@ -279,7 +279,7 @@ public final class NfcCardEmulationOccurredTest {
 
     @Test
     public void testOnOffHostAidSelected() {
-        mHostEmulation.onOffHostAidSelected();
+        mHostEmulation.onOffHostAidSelectedOrTransaction();
         int state = mHostEmulation.getState();
         assertEquals(STATE_W4_SELECT, state);
     }

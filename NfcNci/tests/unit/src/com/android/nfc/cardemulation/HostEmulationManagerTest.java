@@ -1043,7 +1043,7 @@ public class HostEmulationManagerTest {
         mHostEmulationManager.mServiceBound = false;
         mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
 
-        mHostEmulationManager.onOffHostAidSelected();
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
 
         assertNull(mHostEmulationManager.mActiveService);
         assertNull(mHostEmulationManager.mActiveServiceName);
@@ -1065,7 +1065,7 @@ public class HostEmulationManagerTest {
         mHostEmulationManager.mServiceBound = true;
         mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
 
-        mHostEmulationManager.onOffHostAidSelected();
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
 
         assertNull(mHostEmulationManager.mActiveService);
         assertNull(mHostEmulationManager.mActiveServiceName);
@@ -1092,7 +1092,7 @@ public class HostEmulationManagerTest {
         mHostEmulationManager.mServiceBound = true;
         mHostEmulationManager.mState = HostEmulationManager.STATE_IDLE;
 
-        mHostEmulationManager.onOffHostAidSelected();
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
 
         assertNull(mHostEmulationManager.mActiveService);
         assertNull(mHostEmulationManager.mActiveServiceName);
