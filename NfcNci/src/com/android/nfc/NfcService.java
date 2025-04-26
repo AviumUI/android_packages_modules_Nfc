@@ -5512,7 +5512,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
          * have access to NFC Events on any SE */
         private ArrayList<String> getNfcPreferredPaymentChangedSEAccessAllowedPackages(int userId) {
             synchronized (NfcService.this) {
-                if (!isSEServiceAvailable()
+                if (!isSEServiceAvailable() || mIsPowerSavingModeEnabled
                         || mNfcPreferredPaymentChangedInstalledPackages.get(userId).isEmpty()) {
                     return null;
                 }
