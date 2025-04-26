@@ -75,6 +75,7 @@ import com.android.nfc.proto.NfcEventProto;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -107,7 +108,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         RegisteredNfcFServicesCache.Callback, PreferredServices.Callback,
         EnabledNfcFServices.Callback, WalletRoleObserver.Callback,
         PreferredSubscriptionService.Callback,
-        HostEmulationManagerBase.NfcAidRoutingListener {
+        HostEmulationManager.NfcAidRoutingListener {
     static final String TAG = "CardEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
 
@@ -133,7 +134,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     final RegisteredT3tIdentifiersCache mT3tIdentifiersCache;
     final RegisteredServicesCache mServiceCache;
     final RegisteredNfcFServicesCache mNfcFServicesCache;
-    final HostEmulationManagerBase mHostEmulationManager;
+    final HostEmulationManager mHostEmulationManager;
     final HostNfcFEmulationManager mHostNfcFEmulationManager;
     final PreferredServices mPreferredServices;
 
@@ -1204,7 +1205,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                         + ", technologyRoute " + technologyRoute);
             }
 
-//            mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
+            mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultIsoDepRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultOffHostRoute(technologyRoute);
             int result = mAidCache.onRoutingOverridedOrRecovered();
@@ -1247,10 +1248,18 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
             NfcPermissions.enforceAdminPermissions(mContext);
 
-            int aidRoute = getRouteForSecureElement(aids);
-            int protocolRoute = getRouteForSecureElement(protocol);
-            int technologyRoute = getRouteForSecureElement(technology);
-            int scRoute = getRouteForSecureElement(sc);
+            int aidRoute = (aids != null && aids.equals("default"))
+                    ? mRoutingOptionManager.getDefaultRoute()
+                    : getRouteForSecureElement(aids);
+            int protocolRoute = (protocol != null && protocol.equals("default"))
+                    ? mRoutingOptionManager.getDefaultIsoDepRoute()
+                    : getRouteForSecureElement(protocol);
+            int technologyRoute = (technology != null && technology.equals("default"))
+                    ? mRoutingOptionManager.getDefaultOffHostRoute()
+                    : getRouteForSecureElement(technology);
+            int scRoute = (sc != null && sc.equals("default"))
+                    ? mRoutingOptionManager.getDefaultScRoute()
+                    : getRouteForSecureElement(sc);
 
             if (DBG)  {
                 Log.d(TAG, "overwriteRoutingTable(): aidRoute: " + Integer.toHexString(aidRoute)
@@ -1468,6 +1477,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     }
                     mForegroundUid = Process.INVALID_UID;
                     mRoutingOptionManager.recoverOverridedRoutingTable();
+                    if (mAidCache.onRoutingOverridedOrRecovered()
+                            != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
+                        Log.e(TAG, "recoverRoutingTable: onRoutingOverridedOrRecovered() failed");
+                    }
                 }
             }
         }
@@ -1666,6 +1679,19 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
 
         return TelephonyUtils.SIM_TYPE_UNKNOWN;
+    }
+
+    public byte[] getReaderByPreferredSim() {
+        Optional<SubscriptionInfo> optionalInfo =
+                mTelephonyUtils.getActiveSubscriptionInfoById(mPreferredSubscriptionService
+                        .getPreferredSubscriptionId());
+        if (optionalInfo.isPresent() && optionalInfo.get().isEmbedded()) {
+            SubscriptionInfo info = optionalInfo.get();
+            return (RoutingOptionManager.SE_PREFIX_SIM + (1 + info.getSimSlotIndex()))
+                    .getBytes(StandardCharsets.UTF_8);
+        } else {
+            return null;
+        }
     }
 
     public void updateForShouldDefaultToObserveMode(int userId) {

@@ -200,7 +200,7 @@ tNFA_STATUS gVSCmdStatus = NFA_STATUS_OK;
 uint16_t gCurrentConfigLen;
 uint8_t gConfig[256];
 std::vector<uint8_t> gCaps(0);
-static int prevScreenState = NFA_SCREEN_STATE_OFF_LOCKED;
+static int prevScreenState = NFA_SCREEN_STATE_UNKNOWN;
 static int NFA_SCREEN_POLLING_TAG_MASK = 0x10;
 bool gIsDtaEnabled = false;
 static bool gObserveModeEnabled = false;
@@ -1704,7 +1704,7 @@ static jboolean nfcManager_doInitialize(JNIEnv* e, jobject o) {
           }
         }
 
-        prevScreenState = NFA_SCREEN_STATE_OFF_LOCKED;
+        prevScreenState = NFA_SCREEN_STATE_UNKNOWN;
 
         // Do custom NFCA startup configuration.
         doStartupConfig();
@@ -1801,12 +1801,10 @@ static tNFA_STATUS setTechAPollingLoopAnnotation(JNIEnv* env, jobject o,
       command.push_back(0x00);
     } else {
       command.push_back(0x01);                 // Number of frame entries.
-      command.push_back(0x21);                 // Position and type.
-      command.push_back(annotation_size + 3);  // Length
+      command.push_back(0x20);                 // Position and type.
+      command.push_back(annotation_size + 1);  // Length
       command.push_back(0x0a);                 // Waiting time
       command.insert(command.end(), annotation_data, annotation_data + annotation_size);
-      command.push_back(0x00);
-      command.push_back(0x00);
     }
     SyncEventGuard guard(gNfaVsCommand);
     tNFA_STATUS status =
@@ -2303,7 +2301,8 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
 
   if (prevScreenState == NFA_SCREEN_STATE_OFF_LOCKED ||
       prevScreenState == NFA_SCREEN_STATE_OFF_UNLOCKED ||
-      prevScreenState == NFA_SCREEN_STATE_ON_LOCKED) {
+      prevScreenState == NFA_SCREEN_STATE_ON_LOCKED ||
+      prevScreenState == NFA_SCREEN_STATE_UNKNOWN) {
     SyncEventGuard guard(sNfaSetPowerSubState);
     status = NFA_SetPowerSubStateForScreenState(state);
     if (status != NFA_STATUS_OK) {

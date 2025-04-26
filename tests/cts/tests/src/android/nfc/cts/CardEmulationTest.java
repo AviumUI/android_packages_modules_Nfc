@@ -110,6 +110,11 @@ public class CardEmulationTest {
         return pm.hasSystemFeature(PackageManager.FEATURE_NFC_OFF_HOST_CARD_EMULATION_ESE);
     }
 
+    private boolean supportsTelephonySubscription() {
+        final PackageManager pm = InstrumentationRegistry.getContext().getPackageManager();
+        return pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION);
+    }
+
     @Before
     public void setUp() throws NoSuchFieldException, RemoteException, InterruptedException {
         assumeTrue("Device must support NFC HCE", supportsHardware());
@@ -117,24 +122,11 @@ public class CardEmulationTest {
         mAdapter = NfcAdapter.getDefaultAdapter(mContext);
         assertNotNull("NFC Adapter is null", mAdapter);
         assertTrue("NFC Adapter could not be enabled", NfcUtils.enableNfc(mAdapter, mContext));
-
-        CardEmulation cardEmulation = CardEmulation.getInstance(mAdapter);
-        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                CustomHostApduService.class), false);
-        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                CtsMyHostApduService.class), false);
     }
 
     @After
     public void tearDown() throws Exception {
         if (mAdapter != null && mContext != null) {
-            CardEmulation cardEmulation = CardEmulation.getInstance(mAdapter);
-            cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                    CustomHostApduService.class), false);
-            cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                    CtsMyHostApduService.class), false);
-
-            mAdapter.notifyHceDeactivated();
             Assert.assertTrue("Failed to enable NFC in test cleanup",
                 NfcUtils.enableNfc(mAdapter, mContext));
         } else {
@@ -2468,6 +2460,7 @@ public class CardEmulationTest {
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_CARD_EMULATION_EUICC)
     @Test
     public void testGetSetDefaultNfcSubscriptionId() {
+        assumeTrue(supportsTelephonySubscription());
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         assertTrue(NfcUtils.enableNfc(adapter, mContext));
         CardEmulation instance = CardEmulation.getInstance(adapter);

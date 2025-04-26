@@ -123,6 +123,7 @@ import androidx.annotation.VisibleForTesting;
 import com.android.nfc.DeviceHost.DeviceHostListener;
 import com.android.nfc.DeviceHost.TagEndpoint;
 import com.android.nfc.cardemulation.CardEmulationManager;
+import com.android.nfc.cardemulation.RoutingOptionManager;
 import com.android.nfc.cardemulation.util.StatsdUtils;
 import com.android.nfc.dhimpl.NativeNfcManager;
 import com.android.nfc.flags.FeatureFlags;
@@ -144,6 +145,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -475,6 +477,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     boolean mIsWlcEnabled;
     boolean mIsRWCapable;
     boolean mIsRDCapable;
+    boolean mIsEuiccCapable;
     WlcListenerDeviceInfo mWlcListenerDeviceInfo;
     public NfcDiagnostics  mNfcDiagnostics;
 
@@ -1237,6 +1240,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         if (mIsHceCapable) {
             mCardEmulationManager = mNfcInjector.getCardEmulationManager();
         }
+        mIsEuiccCapable = mContext.getResources().getBoolean(R.bool.enable_euicc_support)
+                && NfcInjector.NfcProperties.isEuiccSupported();
         mForegroundUtils = mNfcInjector.getForegroundUtils();
         mIsSecureNfcCapable = mDeviceConfigFacade.isSecureNfcCapable();
         mIsSecureNfcEnabled = mPrefs.getBoolean(PREF_SECURE_NFC_ON,
@@ -1849,6 +1854,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
             synchronized (NfcService.this) {
                 mObjectMap.clear();
+                if (mIsPowerSavingModeEnabled) {
+                    mDeviceHost.setPowerSavingMode(false);
+                    mIsPowerSavingModeEnabled = false;
+                }
                 updateState(NfcAdapter.STATE_ON);
 
                 onPreferredPaymentChanged(NfcAdapter.PREFERRED_PAYMENT_LOADED);
@@ -1887,11 +1896,6 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                  // Intents for all users
                 registerGlobalBroadcastsReceiver();
                 mIsRecovering = false;
-            }
-
-            if (mIsPowerSavingModeEnabled) {
-                mDeviceHost.setPowerSavingMode(false);
-                mIsPowerSavingModeEnabled = false;
             }
 
             if (DBG) Log.d(TAG, "EnableDisableTask.enableInternal: end");
@@ -2825,7 +2829,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             // Allow non-foreground callers with system uid or systemui
             privilegedCaller |= packageName.equals(SYSTEM_UI);
             Log.d(TAG, "setReaderMode: uid=" + callingUid + ", packageName: "
-                    + packageName + ", flags: " + flags);
+                    + packageName + ", flags: " + flags + ", annotation: "
+                    + (extras != null
+                        ? extras.getString(NfcAdapter.EXTRA_READER_TECH_A_POLLING_LOOP_ANNOTATION)
+                        : "null"));
             if (!privilegedCaller
                     && !mForegroundUtils.registerUidToBackgroundCallback(
                             NfcService.this, callingUid)) {
@@ -5266,6 +5273,18 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         mCardEmulationManager.onOffHostAidSelected();
                     }
                     byte[][] data = (byte[][]) msg.obj;
+                    if (mIsEuiccCapable){
+                        byte [] reader = null;
+                        String sReader = new String(data[2], StandardCharsets.UTF_8);
+
+                        if (mCardEmulationManager != null
+                                && sReader.contains(RoutingOptionManager.SE_PREFIX_SIM)) {
+                            reader = mCardEmulationManager.getReaderByPreferredSim();
+                        }
+                        if (reader != null) {
+                            data[2] = reader;
+                        }
+                    }
                     synchronized (NfcService.this) {
                         sendOffHostTransactionEvent(data[0], data[1], data[2]);
                     }
@@ -5493,7 +5512,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
          * have access to NFC Events on any SE */
         private ArrayList<String> getNfcPreferredPaymentChangedSEAccessAllowedPackages(int userId) {
             synchronized (NfcService.this) {
-                if (!isSEServiceAvailable()
+                if (!isSEServiceAvailable() || mIsPowerSavingModeEnabled
                         || mNfcPreferredPaymentChangedInstalledPackages.get(userId).isEmpty()) {
                     return null;
                 }

@@ -1610,6 +1610,7 @@ public class CardEmulationManagerTest {
 
         verify(mRegisteredAidCache)
                 .onWalletRoleHolderChanged(eq(WALLET_HOLDER_PACKAGE_NAME), eq(USER_ID));
+        verify(mRoutingOptionManager).overrideDefaultRoute(eq(-1));
         verify(mRoutingOptionManager).overrideDefaultIsoDepRoute(eq(-1));
         verify(mRoutingOptionManager).overrideDefaultOffHostRoute(eq(-1));
         verify(mRoutingOptionManager).getOffHostRouteEse();
@@ -1632,6 +1633,7 @@ public class CardEmulationManagerTest {
 
         verify(mRegisteredAidCache)
                 .onWalletRoleHolderChanged(eq(WALLET_HOLDER_PACKAGE_NAME), eq(USER_ID));
+        verify(mRoutingOptionManager).overrideDefaultRoute(eq(0));
         verify(mRoutingOptionManager).overrideDefaultIsoDepRoute(eq(0));
         verify(mRoutingOptionManager).overrideDefaultOffHostRoute(eq(0));
         verify(mRoutingOptionManager).getOffHostRouteEse();
@@ -1654,6 +1656,7 @@ public class CardEmulationManagerTest {
 
         verify(mRegisteredAidCache)
                 .onWalletRoleHolderChanged(eq(WALLET_HOLDER_PACKAGE_NAME), eq(USER_ID));
+        verify(mRoutingOptionManager).overrideDefaultRoute(eq(TEST_DATA_1[0] & 0xFF));
         verify(mRoutingOptionManager).overrideDefaultIsoDepRoute(eq(TEST_DATA_1[0] & 0xFF));
         verify(mRoutingOptionManager).overrideDefaultOffHostRoute(eq(TEST_DATA_1[0] & 0xFF));
         verify(mRoutingOptionManager).getOffHostRouteEse();
@@ -1677,6 +1680,7 @@ public class CardEmulationManagerTest {
 
         verify(mRegisteredAidCache)
                 .onWalletRoleHolderChanged(eq(WALLET_HOLDER_PACKAGE_NAME), eq(USER_ID));
+        verify(mRoutingOptionManager).overrideDefaultRoute(eq(TEST_DATA_2[0] & 0xFF));
         verify(mRoutingOptionManager).overrideDefaultIsoDepRoute(eq(TEST_DATA_2[0] & 0xFF));
         verify(mRoutingOptionManager).overrideDefaultOffHostRoute(eq(TEST_DATA_2[0] & 0xFF));
         verify(mRoutingOptionManager).getOffHostRouteEse();
