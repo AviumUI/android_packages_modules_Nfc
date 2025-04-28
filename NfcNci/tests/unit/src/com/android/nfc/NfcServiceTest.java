@@ -1287,7 +1287,7 @@ public final class NfcServiceTest {
         byte[] data = { 0x12, 0x34, 0x56, 0x78, 0x78 };
         mNfcService.onNfcTransactionEvent(aid, data, "SecureElement1");
         mLooper.dispatchAll();
-        verify(mCardEmulationManager).onOffHostAidSelected();
+        verify(mCardEmulationManager).onOffHostAidTransaction();
         verify(mPackageManager).queryBroadcastReceiversAsUser(any(), anyInt(), any());
         verify(mApplication).sendBroadcastAsUser(any(), any(), isNull(), any());
     }
@@ -1376,9 +1376,11 @@ public final class NfcServiceTest {
 
     @Test
     public void testOnSeSelected() {
-        mNfcService.onSeSelected(NfcService.SE_SELECTED_AID);
+        byte[] aid = new byte[]{ 0x0A, 0x00, 0x00, 0x00 };
+        mNfcService.onSeSelected(
+                NfcService.SE_SELECTED_AID, aid, "eSE1");
         mLooper.dispatchAll();
-        verify(mCardEmulationManager).onOffHostAidSelected();
+        verify(mCardEmulationManager).onOffHostAidSelected(Utils.aidBytesToString(aid), "eSE1");
     }
 
     @Test

@@ -16,6 +16,7 @@
 
 package com.android.nfc;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.nfc.NdefMessage;
 import android.nfc.cardemulation.PollingFrame;
@@ -64,7 +65,7 @@ public interface DeviceHost {
 
         public void onEeListenActivated(boolean isActivated);
 
-        public void onSeSelected(int type);
+        public void onSeSelected(int type, @Nullable byte[] aid, @NonNull String eeName);
 
         public void onCommandTimeout();
 
