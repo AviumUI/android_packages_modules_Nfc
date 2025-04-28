@@ -1050,8 +1050,8 @@ public class HostEmulationManager {
         }
     }
 
-    public void onOffHostAidSelected() {
-        Log.d(TAG, "onOffHostAidSelected");
+    public void onOffHostAidSelectedOrTransaction() {
+        Log.d(TAG, "onOffHostAidSelectedOrTransaction");
         synchronized (mLock) {
             mHandler.removeCallbacks(mEnableObserveModeAfterTransactionRunnable);
             rescheduleInactivityChecks();

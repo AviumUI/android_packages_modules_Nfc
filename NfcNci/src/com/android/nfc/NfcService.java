@@ -114,6 +114,7 @@ import android.se.omapi.ISecureElementService;
 import android.sysprop.NfcProperties;
 import android.util.EventLog;
 import android.util.Log;
+import android.util.Pair;
 import android.util.proto.ProtoOutputStream;
 import android.view.Display;
 import android.widget.Toast;
@@ -910,8 +911,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     }
 
     @Override
-    public void onSeSelected(int type) {
-        sendMessage(MSG_SE_SELECTED_EVENT, type);
+    public void onSeSelected(int type, @Nullable byte[] aid, @NonNull String eeName) {
+        sendMessage(MSG_SE_SELECTED_EVENT, type, Pair.create(aid, eeName));
     }
 
     @Override
@@ -4887,6 +4888,14 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         mHandler.sendMessage(msg);
     }
 
+    void sendMessage(int what, int arg1, Object obj) {
+        Message msg = mHandler.obtainMessage();
+        msg.what = what;
+        msg.arg1 = arg1;
+        msg.obj = obj;
+        mHandler.sendMessage(msg);
+    }
+
     /**
      * Send require device unlock for NFC intent to system UI.
      */
@@ -4983,6 +4992,13 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                             mCommitRoutingStatus = mDeviceHost.commitRouting();
                             if (mCommitRoutingCountDownLatch != null) {
                                 mCommitRoutingCountDownLatch.countDown();
+                            }
+                            if (mNfcOemExtensionCallback != null) {
+                                try {
+                                    mNfcOemExtensionCallback.onRoutingChangeCompleted();
+                                } catch (RemoteException e) {
+                                    Log.e(TAG, "onRoutingChangeCompleted failed e = " + e);
+                                }
                             }
                         } else {
                             Log.d(TAG,
@@ -5270,7 +5286,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 case MSG_TRANSACTION_EVENT:
                     Log.d(TAG, "handleMessage: MSG_TRANSACTION_EVENT");
                     if (mCardEmulationManager != null) {
-                        mCardEmulationManager.onOffHostAidSelected();
+                        mCardEmulationManager.onOffHostAidTransaction();
                     }
                     byte[][] data = (byte[][]) msg.obj;
                     if (mIsEuiccCapable){
@@ -5292,9 +5308,11 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
                 case MSG_SE_SELECTED_EVENT:
                     Log.d(TAG, "handleMessage: MSG_SE_SELECTED_EVENT");
-                    int type = (int) msg.obj;
+                    int type = (int) msg.arg1;
                     if (mCardEmulationManager != null && type == SE_SELECTED_AID) {
-                        mCardEmulationManager.onOffHostAidSelected();
+                        Pair<byte[], String> aidAndEeName = (Pair<byte[], String>) msg.obj;
+                        String aidString = Utils.aidBytesToString(aidAndEeName.first);
+                        mCardEmulationManager.onOffHostAidSelected(aidString, aidAndEeName.second);
                     }
                     break;
                 case MSG_PREFERRED_PAYMENT_CHANGED:
@@ -5377,11 +5395,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             int uid = -1;
             int offhostCategory = NfcStatsLog.NFC_CARDEMULATION_OCCURRED__CATEGORY__OFFHOST;
             try {
-                StringBuilder aidString = new StringBuilder(aid.length);
-                for (byte b : aid) {
-                    aidString.append(String.format("%02X", b));
-                }
-
+                String aidString = Utils.aidBytesToString(aid);
                 String aidCategory = mCardEmulationManager
                         .getRegisteredAidCategory(aidString.toString());
                 if (DBG) {

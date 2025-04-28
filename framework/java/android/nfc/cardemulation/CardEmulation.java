@@ -49,6 +49,7 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
+import android.se.omapi.Reader;
 import android.telephony.SubscriptionManager;
 import android.util.ArrayMap;
 import android.util.Log;
@@ -1418,6 +1419,27 @@ public final class CardEmulation {
          */
         @FlaggedApi(android.nfc.Flags.FLAG_NFC_EVENT_LISTENER)
         default void onInternalErrorReported(@NfcInternalErrorType int errorType) {}
+
+        /**
+         * This method is called when an off-host AID is selected.
+         *
+         * This indicates that an offhost (Secure Element or UICC) transaction
+         * has started.
+         *
+         * @param aid The AID that was selected
+         * @param offHostSecureElement Secure Element on which the AID was routed to. Will be string
+         *                             with prefix SIM or prefix eSE ({@link Reader#getName()}).
+         *                             Ref: GSMA TS.26 - NFC Handset Requirements
+         *                             TS26_NFC_REQ_069: For UICC, Secure Element Name SHALL be
+         *                                               SIM[smartcard slot]
+         *                                               (e.g. SIM/SIM1, SIM2… SIMn).
+         *                             TS26_NFC_REQ_070: For embedded SE, Secure Element Name SHALL
+         *                                               be eSE[number]
+         *                                               (e.g. eSE/eSE1, eSE2, etc.).
+         */
+        @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_EVENT_LISTENER_OFFHOST_AID_SELECTED)
+        default void onOffHostAidSelected(@NonNull String aid,
+                @NonNull String offHostSecureElement) {}
     }
 
     private final ArrayMap<NfcEventCallback, Executor> mNfcEventCallbacks = new ArrayMap<>();
@@ -1487,6 +1509,13 @@ public final class CardEmulation {
                         return;
                     }
                     callListeners(listener -> listener.onInternalErrorReported(errorType));
+                }
+
+                public void onOffHostAidSelected(String aid, String eeName) {
+                    if (!com.android.nfc.module.flags.Flags.eventListenerOffhostAidSelected()) {
+                        return;
+                    }
+                    callListeners(listener -> listener.onOffHostAidSelected(aid, eeName));
                 }
 
                 interface ListenerCall {
