@@ -78,6 +78,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -1284,6 +1285,29 @@ public class RegisteredServicesCache {
         return true;
     }
 
+    public Set<String> getPollingLoopFiltersForService(int userId, int uid,
+            ComponentName componentName) {
+        synchronized (mLock) {
+            UserServices services = findOrCreateUserLocked(userId);
+            // Check if we can find this service
+            ApduServiceInfo serviceInfo = getService(userId, componentName);
+            if (serviceInfo == null) {
+                throw new IllegalArgumentException("getPollingLoopFiltersForService: Service "
+                                                       + componentName + " does not exist");
+            }
+            if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
+                // This is probably a good indication something is wrong here.
+                // Either newer service installed with different uid (but then
+                // we should have known about it), or somebody calling us from
+                // a different uid.
+                throw new SecurityException("getPollingLoopFiltersForService: UID mismatch");
+            }
+            DynamicSettings dynamicSettings =
+                    getOrCreateSettings(services, componentName, serviceInfo.getUid());
+            return dynamicSettings.pollingLoopFilters.keySet();
+        }
+    }
+
     public boolean registerPollingLoopPatternFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopPatternFilter,
             boolean autoTransact) {
@@ -1349,6 +1373,28 @@ public class RegisteredServicesCache {
         return true;
     }
 
+    public Set<String> getPollingLoopPatternFiltersForService(int userId, int uid,
+            ComponentName componentName) {
+        synchronized (mLock) {
+            UserServices services = findOrCreateUserLocked(userId);
+            // Check if we can find this service
+            ApduServiceInfo serviceInfo = getService(userId, componentName);
+            if (serviceInfo == null) {
+                throw new IllegalArgumentException("getPollingLoopFiltersForService: Service "
+                                                       + componentName + " does not exist");
+            }
+            if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
+                // This is probably a good indication something is wrong here.
+                // Either newer service installed with different uid (but then
+                // we should have known about it), or somebody calling us from
+                // a different uid.
+                throw new SecurityException("getPollingLoopFiltersForService: UID mismatch");
+            }
+            DynamicSettings dynamicSettings =
+                    getOrCreateSettings(services, componentName, serviceInfo.getUid());
+            return dynamicSettings.pollingLoopPatternFilters.keySet();
+        }
+    }
 
 
     public boolean registerAidGroupForService(int userId, int uid,
