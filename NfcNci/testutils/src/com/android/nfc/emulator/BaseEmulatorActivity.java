@@ -55,6 +55,13 @@ public abstract class BaseEmulatorActivity extends Activity {
 
     // Intent action that's sent after the test condition is met.
     protected static final String ACTION_TEST_PASSED = PACKAGE_NAME + ".ACTION_TEST_PASSED";
+    protected static final String ACTION_OFFHOST_AID_SELECTED =
+            PACKAGE_NAME + ".ACTION_OFFHOST_AID_SELECTED";
+    protected static final String EXTRA_OFFHOST_AID_SELECTED_AID =
+            PACKAGE_NAME + ".EXTRA_OFFHOST_AID_SELECTED_AID";
+    protected static final String EXTRA_OFFHOST_AID_SELECTED_SE =
+            PACKAGE_NAME + ".EXTRA_OFFHOST_AID_SELECTED_SE";
+
     protected static final String TAG = "BaseEmulatorActivity";
     protected NfcAdapter mAdapter;
     protected CardEmulation mCardEmulation;
