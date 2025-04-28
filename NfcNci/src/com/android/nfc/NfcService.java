@@ -4993,6 +4993,13 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                             if (mCommitRoutingCountDownLatch != null) {
                                 mCommitRoutingCountDownLatch.countDown();
                             }
+                            if (mNfcOemExtensionCallback != null) {
+                                try {
+                                    mNfcOemExtensionCallback.onRoutingChangeCompleted();
+                                } catch (RemoteException e) {
+                                    Log.e(TAG, "onRoutingChangeCompleted failed e = " + e);
+                                }
+                            }
                         } else {
                             Log.d(TAG,
                                     "handleMessage: Not committing routing because "

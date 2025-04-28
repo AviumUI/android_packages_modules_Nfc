@@ -119,6 +119,7 @@ package android.nfc {
     method public void onReaderOptionChanged(boolean);
     method public void onRfDiscoveryStarted(boolean);
     method public void onRfFieldDetected(boolean);
+    method @FlaggedApi("com.android.nfc.module.flags.oem_extension_25q4") public default void onRoutingChangeCompleted();
     method public void onRoutingChanged(@NonNull java.util.function.Consumer<java.lang.Boolean>);
     method public void onRoutingTableFull();
     method public void onStateUpdated(int);
