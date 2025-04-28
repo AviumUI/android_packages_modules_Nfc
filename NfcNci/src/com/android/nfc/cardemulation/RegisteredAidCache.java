@@ -1347,7 +1347,7 @@ public class RegisteredAidCache {
                 aidType.isOnHost = onHost;
                 aidType.offHostSE = onHost ? null : offHostSE;
                 requiresUnlock = onHost ? false : requiresUnlock;
-                requiresScreenOn = onHost ? true : requiresScreenOn;
+                requiresScreenOn = onHost ? false : requiresScreenOn;
 
                 aidType.power = computeAidPowerState(onHost, requiresScreenOn, requiresUnlock);
 
