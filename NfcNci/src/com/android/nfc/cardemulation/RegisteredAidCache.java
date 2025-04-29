@@ -1321,9 +1321,11 @@ public class RegisteredAidCache {
                             offHostSE = service.getOffHostSecureElement();
                             requiresUnlock = service.requiresUnlock();
                             requiresScreenOn = service.requiresScreenOn();
-                        } else if (!offHostSE.equals(
-                                service.getOffHostSecureElement())) {
-                            // There are registrations to different SEs, route this
+                        } else if (service.getOffHostSecureElement() != null
+                                       && !offHostSE.equals(
+                                           service.getOffHostSecureElement())) {
+                            // if getOffHostSecureElement() is null, assume it is same SE
+                            // else, there are registrations to different SEs, route this
                             // to host and have user choose a service for this AID
                             offHostSE = null;
                             onHost = true;
@@ -1347,7 +1349,7 @@ public class RegisteredAidCache {
                 aidType.isOnHost = onHost;
                 aidType.offHostSE = onHost ? null : offHostSE;
                 requiresUnlock = onHost ? false : requiresUnlock;
-                requiresScreenOn = onHost ? true : requiresScreenOn;
+                requiresScreenOn = onHost ? false : requiresScreenOn;
 
                 aidType.power = computeAidPowerState(onHost, requiresScreenOn, requiresUnlock);
 

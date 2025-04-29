@@ -1132,6 +1132,7 @@ public final class NfcServiceTest {
         assertThat(pollTech).isEqualTo(0);
         when(mPreferences.getInt(NfcService.PREF_POLL_TECH, NfcService.DEFAULT_POLL_TECH))
                 .thenReturn(NfcService.DEFAULT_LISTEN_TECH);
+        mNfcService.mIsReaderOptionEnabled = true;
         pollTech = mNfcService.getNfcPollTech();
         assertThat(pollTech).isEqualTo(0xf);
         verify(mPreferences, atLeastOnce()).getInt(anyString(), anyInt());

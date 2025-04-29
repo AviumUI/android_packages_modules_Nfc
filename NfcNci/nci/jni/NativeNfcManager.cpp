@@ -2280,6 +2280,12 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
       "%s: state = %d prevScreenState= %d, discovry_param = %d", __FUNCTION__,
       state, prevScreenState, discovry_param);
 
+  if (gPartialInitMode != ENABLE_MODE_DEFAULT) {
+    LOG(ERROR) << StringPrintf(
+        "%s: PartialInit mode Screen state change not required", __FUNCTION__);
+    return;
+  }
+
   if (prevScreenState == state) {
     LOG(DEBUG) << StringPrintf(
         "%s: New screen state is same as previous state. No action taken",
@@ -2458,6 +2464,7 @@ static bool nfcManager_isMultiTag() {
 static void nfcManager_doStartStopPolling(JNIEnv* e, jobject o,
                                           jboolean start) {
   if (sIsShuttingDown) return;
+  if (sIsRecovering) return;
   startStopPolling(start);
 }
 
