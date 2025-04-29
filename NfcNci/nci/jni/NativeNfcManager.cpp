@@ -2464,6 +2464,7 @@ static bool nfcManager_isMultiTag() {
 static void nfcManager_doStartStopPolling(JNIEnv* e, jobject o,
                                           jboolean start) {
   if (sIsShuttingDown) return;
+  if (sIsRecovering) return;
   startStopPolling(start);
 }
 
