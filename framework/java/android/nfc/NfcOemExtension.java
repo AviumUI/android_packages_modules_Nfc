@@ -38,6 +38,9 @@ import android.nfc.cardemulation.CardEmulation;
 import android.nfc.cardemulation.CardEmulation.ProtocolAndTechnologyRoute;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
 import android.se.omapi.Reader;
@@ -602,6 +605,7 @@ public final class NfcOemExtension {
                 NfcAdapter.callService(() -> {
                     NfcAdapter.sService.registerOemExtensionCallback(mOemNfcExtensionCallback);
                     mIsRegistered = true;
+                    linkToNfcDeath();
                 });
             } else {
                 updateNfCState(callback, executor);
@@ -644,6 +648,10 @@ public final class NfcOemExtension {
                     NfcAdapter.sService.unregisterOemExtensionCallback(mOemNfcExtensionCallback);
                     mIsRegistered = false;
                     mCallbackMap.remove(callback);
+                    if (mDeathRecipient != null) {
+                        NfcAdapter.sService.asBinder().unlinkToDeath(mDeathRecipient, 0);
+                        mDeathRecipient = null;
+                    }
                 });
             } else {
                 mCallbackMap.remove(callback);
@@ -1232,6 +1240,38 @@ public final class NfcOemExtension {
         }
     }
 
+    private IBinder.DeathRecipient mDeathRecipient;
+    private void linkToNfcDeath() {
+        try {
+            mDeathRecipient = new IBinder.DeathRecipient() {
+                @Override
+                public void binderDied() {
+                    synchronized (mCallbackMap) {
+                        mDeathRecipient = null;
+                    }
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.postDelayed(new Runnable() {
+                        public void run() {
+                            try {
+                                synchronized (mCallbackMap) {
+                                    if (mCallbackMap.size() > 0) {
+                                        NfcAdapter.callService(() ->
+                                                NfcAdapter.sService.registerOemExtensionCallback(
+                                                        mOemNfcExtensionCallback));
+                                    }
+                                }
+                            } catch (Throwable t) {
+                                handler.postDelayed(this, 50);
+                            }
+                        }
+                    }, 50);
+                }
+            };
+            NfcAdapter.sService.asBinder().linkToDeath(mDeathRecipient, 0);
+        } catch (RemoteException re) {
+            Log.e(TAG, "Couldn't link to death");
+        }
+    }
     private @CardEmulation.ProtocolAndTechnologyRoute int routeStringToInt(String route) {
         if (route.equals("DH")) {
             return PROTOCOL_AND_TECHNOLOGY_ROUTE_DH;
