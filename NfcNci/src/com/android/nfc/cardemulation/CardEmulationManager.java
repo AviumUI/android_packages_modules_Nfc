@@ -367,7 +367,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     public void onOffHostAidSelected(@NonNull String aid, @NonNull String eeName) {
         mHostEmulationManager.onOffHostAidSelectedOrTransaction();
-        if (android.nfc.Flags.nfcEventListener()) {
+        if (com.android.nfc.module.flags.Flags.eventListenerOffhostAidSelected()) {
             callNfcEventCallbacks(listener -> listener.onOffHostAidSelected(aid, eeName));
         }
     }
