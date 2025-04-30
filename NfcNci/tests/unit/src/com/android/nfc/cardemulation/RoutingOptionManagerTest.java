@@ -298,12 +298,19 @@ public class RoutingOptionManagerTest {
     }
 
     @Test
-    public void testAutoChangeStatus() {
-        mManager = new TestRoutingOptionManager();
-        assertTrue(mManager.isAutoChangeEnabled());
+    public void testAutoChangeStatus() throws NoSuchFieldException, IllegalAccessException {
+        SharedPreferences mPrefs = mock(SharedPreferences.class);
+        SharedPreferences.Editor editor = mock(SharedPreferences.Editor.class);
+        Field field = RoutingOptionManager.class.getDeclaredField("mPrefs");
+        field.setAccessible(true);
+        field.set(mRoutingOptionManager, mPrefs);
+        when(mPrefs.edit()).thenReturn(editor);
+        when(editor.putBoolean(anyString(), anyBoolean())).thenReturn(editor);
 
-        mManager.setAutoChangeStatus(false);
-        assertFalse(mManager.isAutoChangeEnabled());
+        assertTrue(mRoutingOptionManager.isAutoChangeEnabled());
+
+        mRoutingOptionManager.setAutoChangeStatus(false);
+        assertFalse(mRoutingOptionManager.isAutoChangeEnabled());
     }
 
     @Test
