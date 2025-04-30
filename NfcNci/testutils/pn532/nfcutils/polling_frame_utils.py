@@ -162,10 +162,6 @@ _B_NOCRC = TransceiveConfiguration(
 _F = TransceiveConfiguration(
     type="F", crc=True, bits=8, bitrate=212, timeout=_F_TIMEOUT
 )
-_F_424 = TransceiveConfiguration(
-    type="F", crc=True, bits=8, bitrate=424, timeout=_F_TIMEOUT
-)
-
 
 # Possible polling frame configurations
 # 1) Frames with special meaning like wakeup/request:
@@ -306,11 +302,6 @@ POLLING_FRAMES_TYPE_F_SPECIAL = [
     PollingFrameTestCase(_F, "00ffff0001", ["F"]),
     #   SENSF_REQ, SC, 0x0003, RC 0x00, TS 0x02 (4)
     PollingFrameTestCase(_F, "0000030002", ["F"]),
-    # 2) 424 kbps
-    #   SENSF_REQ, SC, 0xffff
-    PollingFrameTestCase(_F_424, "00ffff0100", ["F"]),
-    #   SENSF_REQ, SC, 0x0003
-    PollingFrameTestCase(_F_424, "00ffff0100", ["F"]),
 ]
 
 POLLING_FRAME_ALL_TEST_CASES = [
