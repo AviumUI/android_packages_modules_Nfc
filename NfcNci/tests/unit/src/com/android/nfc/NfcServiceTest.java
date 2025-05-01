@@ -1521,7 +1521,9 @@ public final class NfcServiceTest {
     }
 
     @Test
-    public void testSetSystemCodeRoute() {
+    public void testSetSystemCodeRoute() throws Exception {
+        enableAndVerify();
+
         mNfcService.setSystemCodeRoute(1);
         mLooper.dispatchAll();
         ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
