@@ -42,6 +42,8 @@ interface INfcCardEmulation
     boolean removeAidGroupForService(int userHandle, in ComponentName service, String category);
     boolean removePollingLoopFilterForService(int userHandle, in ComponentName service, in String pollingLoopFilter);
     boolean removePollingLoopPatternFilterForService(int userHandle, in ComponentName service, in String pollingLoopPatternFilter);
+    List<String> getPollingLoopFiltersForService(int userHandle, in ComponentName service);
+    List<String> getPollingLoopPatternFiltersForService(int userHandle, in ComponentName service);
     List<ApduServiceInfo> getServices(int userHandle, in String category);
     boolean setPreferredService(in ComponentName service);
     boolean unsetPreferredService();

@@ -498,6 +498,22 @@ public final class CardEmulation {
                 mContext.getUser().getIdentifier(), service, pollingLoopFilterV), false);
     }
 
+    /**
+     * Retrieve all the polling loop filters registered for a {@link HostApduService}.
+     *
+     * @param service The HostApduService to retrieve the filter for
+     * @return List of polling loop filters, will be empty if there are none registered.
+     * @throws IllegalArgumentException if the service is not valid.
+     * @see #registerPollingLoopFilterForService(ComponentName, String, boolean)
+     */
+    @NonNull
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_GET_POLLING_LOOP_FILTERS)
+    public List<String> getPollingLoopFiltersForService(@NonNull ComponentName service) {
+        return callServiceReturn(() ->
+                        sService.getPollingLoopFiltersForService(
+                                mContext.getUser().getIdentifier(), service),
+                List.of());
+    }
 
     /**
      * Register a polling loop pattern filter (PLPF) for a HostApduService and indicate whether it
@@ -552,6 +568,23 @@ public final class CardEmulation {
         return callServiceReturn(() ->
             sService.removePollingLoopPatternFilterForService(
                 mContext.getUser().getIdentifier(), service, pollingLoopPatternFilterV), false);
+    }
+
+    /**
+     * Retrieve all the polling loop pattern filters registered for a {@link HostApduService}.
+     *
+     * @param service The HostApduService to retrieve the filter for
+     * @return List of polling loop pattern filters, will be empty if there are none registered.
+     * @throws IllegalArgumentException if the service is not valid.
+     * @see #registerPollingLoopPatternFilterForService(ComponentName, String, boolean)
+     */
+    @NonNull
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_GET_POLLING_LOOP_FILTERS)
+    public List<String> getPollingLoopPatternFiltersForService(@NonNull ComponentName service) {
+        return callServiceReturn(() ->
+                        sService.getPollingLoopPatternFiltersForService(
+                                mContext.getUser().getIdentifier(), service),
+                List.of());
     }
 
     /**
