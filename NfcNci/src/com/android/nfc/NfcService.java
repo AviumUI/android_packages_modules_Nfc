@@ -4880,7 +4880,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     }
 
     public void setSystemCodeRoute(int route) {
-        sendMessage(MSG_UPDATE_SYSTEM_CODE_ROUTE, route);
+        // Don't call function "nfcManager_updateSystemCodeRoute()" after NFC Deinitialization
+        if(!isNfcDisabledOrDisabling()) {
+            sendMessage(MSG_UPDATE_SYSTEM_CODE_ROUTE, route);
+        }
     }
 
     void sendMessage(int what, Object obj) {

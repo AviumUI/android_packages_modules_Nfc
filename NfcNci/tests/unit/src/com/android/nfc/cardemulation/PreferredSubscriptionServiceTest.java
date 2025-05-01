@@ -127,13 +127,13 @@ public class PreferredSubscriptionServiceTest {
                 editor);
         when(editor.commit()).thenReturn(true);
         when(mTelephonyUtils.getActiveSubscriptions()).thenReturn(infos);
-        when(mTelephonyUtils.isEuiccSubscription(
+        when(mTelephonyUtils.isUiccSubscription(
                 TelephonyUtils.SUBSCRIPTION_ID_UICC)).thenReturn(
-                false);
+                true);
 
         mPreferredSubscriptionService.setPreferredSubscriptionId(
                 TelephonyUtils.SUBSCRIPTION_ID_UICC, true);
-        verify(mTelephonyUtils).isEuiccSubscription(TelephonyUtils.SUBSCRIPTION_ID_UICC);
+        verify(mTelephonyUtils).isUiccSubscription(TelephonyUtils.SUBSCRIPTION_ID_UICC);
         verify(editor).commit();
     }
 
@@ -150,11 +150,11 @@ public class PreferredSubscriptionServiceTest {
         when(mSubscriptionInfo.areUiccApplicationsEnabled()).thenReturn(true);
         infos.add(mSubscriptionInfo);
         when(mTelephonyUtils.getActiveSubscriptions()).thenReturn(infos);
-        when(mTelephonyUtils.isEuiccSubscription(TelephonyUtils.SUBSCRIPTION_ID_UICC)).thenReturn(
-                false);
+        when(mTelephonyUtils.isUiccSubscription(TelephonyUtils.SUBSCRIPTION_ID_UICC)).thenReturn(
+                true);
 
         mPreferredSubscriptionService.onActiveSubscriptionsUpdated(infos);
-        verify(mTelephonyUtils).isEuiccSubscription(TelephonyUtils.SUBSCRIPTION_ID_UICC);
+        verify(mTelephonyUtils).isUiccSubscription(TelephonyUtils.SUBSCRIPTION_ID_UICC);
         verify(mCallback).onPreferredSubscriptionChanged(TelephonyUtils.SUBSCRIPTION_ID_UICC,
                 false);
     }
@@ -171,10 +171,10 @@ public class PreferredSubscriptionServiceTest {
         when(mSubscriptionInfo.areUiccApplicationsEnabled()).thenReturn(true);
         infos.add(mSubscriptionInfo);
         when(mTelephonyUtils.getActiveSubscriptions()).thenReturn(infos);
-        when(mTelephonyUtils.isEuiccSubscription(anyInt())).thenReturn(false);
+        when(mTelephonyUtils.isUiccSubscription(anyInt())).thenReturn(false);
 
         mPreferredSubscriptionService.initialize();
-        verify(mTelephonyUtils).isEuiccSubscription(anyInt());
+        verify(mTelephonyUtils).isUiccSubscription(anyInt());
         verify(mTelephonyUtils).registerSubscriptionChangedCallback(
                 any(TelephonyUtils.Callback.class));
 

@@ -123,9 +123,13 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
                                     TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
                     .collect(Collectors.toList());
         }
-        boolean isEuiccSubscription = mTelephonyUtils.isEuiccSubscription(subscriptionId);
-        return mActiveSubscriptions.stream().anyMatch(subscriptionInfo ->
-                subscriptionInfo.isEmbedded() == isEuiccSubscription);
+        if (mTelephonyUtils.isUiccSubscription(subscriptionId)) {
+            return mActiveSubscriptions.stream()
+                .anyMatch(subscriptionInfo -> !subscriptionInfo.isEmbedded());
+        } else {
+            return mActiveSubscriptions.stream().anyMatch(subscriptionInfo ->
+                    subscriptionInfo.getSubscriptionId() == subscriptionId);
+        }
     }
 
     private boolean checkSubscriptionStateChanged(List<SubscriptionInfo> activeSubscriptionList) {

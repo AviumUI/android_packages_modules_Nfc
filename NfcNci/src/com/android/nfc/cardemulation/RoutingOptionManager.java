@@ -414,6 +414,7 @@ public class RoutingOptionManager {
 
     public void setAutoChangeStatus(boolean status) {
         mIsAutoChangeCapable = status;
+        writeRoutingOption(KEY_AUTO_CHANGE_CAPABLE, mIsAutoChangeCapable);
     }
 
     public boolean isAutoChangeEnabled() {
