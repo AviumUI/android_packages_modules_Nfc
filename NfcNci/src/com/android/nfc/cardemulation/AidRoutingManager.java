@@ -327,6 +327,10 @@ public class AidRoutingManager {
         synchronized (mLock) {
             if (routeForAid.equals(mRouteForAid) && powerForAid.equals(mPowerForAid) && !force) {
                 if (DBG) Log.d(TAG, "configureRouting: Routing table unchanged, not updating");
+                // restore state variables since we did not update the routing table.
+                mDefaultRoute = prevDefaultRoute;
+                mDefaultIsoDepRoute = prevDefaultIsoDepRoute;
+                mDefaultOffHostRoute = prevDefaultOffHostRoute;
                 return CONFIGURE_ROUTING_SUCCESS;
             }
 
