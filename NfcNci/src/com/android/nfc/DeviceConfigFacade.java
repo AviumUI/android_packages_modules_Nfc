@@ -68,6 +68,7 @@ public class DeviceConfigFacade {
     private int mUnknownTagPollingDelayMax;
     private int mUnknownTagPollingDelayLong;
     private boolean mCeDisableOtherServicesOnManagedProfiles;
+    private int mCeWakeLockTimeoutMillis;
 
     private static DeviceConfigFacade sInstance;
     public static DeviceConfigFacade getInstance(Context context, Handler handler) {
@@ -189,6 +190,9 @@ public class DeviceConfigFacade {
         mCeDisableOtherServicesOnManagedProfiles = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_NFC,
                 "ce_disable_other_services_on_managed_profiles",
                 mContext.getResources().getBoolean(R.bool.ce_disable_other_services_on_managed_profiles));
+        mCeWakeLockTimeoutMillis = DeviceConfig.getInt(DEVICE_CONFIG_NAMESPACE_NFC,
+                "ce_wake_lock_timeout_millis",
+                mContext.getResources().getInteger(R.integer.ce_wake_lock_timeout_millis));
     }
 
     private boolean isSecureNfcCapableDefault() {
@@ -258,5 +262,9 @@ public class DeviceConfigFacade {
 
     public boolean getCeDisableOtherServicesOnManagedProfiles() {
         return mCeDisableOtherServicesOnManagedProfiles;
+    }
+
+    public int getCeWakeLockTimeoutMillis() {
+        return mCeWakeLockTimeoutMillis;
     }
 }
