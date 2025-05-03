@@ -12,10 +12,10 @@
     <string name="beam_canceled" msgid="512339558899479458">"Beam రద్దు చేయబడింది"</string>
     <string name="cancel" msgid="2441041247172250936">"రద్దు చేయండి"</string>
     <string name="beam_tap_to_view" msgid="9147455481297418801">"చూడటానికి నొక్కండి"</string>
-    <string name="beam_handover_not_supported" msgid="3930703977696510905">"స్వీకర్త పరికరం Beam ద్వారా పెద్ద ఫైల్ బదిలీకి మద్దతు ఇవ్వదు."</string>
+    <string name="beam_handover_not_supported" msgid="3930703977696510905">"స్వీకర్త డివైజ్ Beam ద్వారా పెద్ద ఫైల్ బదిలీకి మద్దతు ఇవ్వదు."</string>
     <string name="beam_try_again" msgid="1962556612448345422">"పరికరాలను మళ్లీ సమీపంలోకి తీసుకురండి"</string>
     <string name="beam_busy" msgid="8179024484757185047">"Beam ప్రస్తుతం బిజీగా ఉంది. మునుపటి బదిలీ పూర్తయిన తర్వాత మళ్లీ ట్రై చేయండి."</string>
-    <string name="device" msgid="6859793408635712424">"పరికరం"</string>
+    <string name="device" msgid="6859793408635712424">"డివైజ్"</string>
     <string name="connecting_peripheral" msgid="5023158537894294802">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>ని కనెక్ట్ చేస్తోంది"</string>
     <string name="connected_peripheral" msgid="2496731052957541047">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> కనెక్ట్ చేయబడింది"</string>
     <string name="connect_peripheral_failed" msgid="368937385551413385">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>ని కనెక్ట్ చేయడం సాధ్యపడలేదు"</string>

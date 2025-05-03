@@ -1844,8 +1844,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
                                        jboolean enable_host_routing,
                                        jbyteArray tech_a_polling_loop_annotation,
                                        jboolean restart) {
-  if (sIsShuttingDown) return;
-  if (sIsRecovering) return;
+  if (sIsShuttingDown || sIsRecovering || sIsDisabling || !sIsNfaEnabled)
+    return;
   tNFA_TECHNOLOGY_MASK tech_mask = DEFAULT_TECH_MASK;
   struct nfc_jni_native_data* nat = getNative(e, o);
 
@@ -1954,8 +1954,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
 **
 *******************************************************************************/
 void nfcManager_disableDiscovery(JNIEnv* e, jobject o) {
-  if (sIsShuttingDown) return;
-  if (sIsRecovering) return;
+  if (sIsShuttingDown || sIsRecovering || sIsDisabling || !sIsNfaEnabled)
+    return;
   tNFA_STATUS status = NFA_STATUS_OK;
   LOG(DEBUG) << StringPrintf("%s: enter;", __func__);
 
