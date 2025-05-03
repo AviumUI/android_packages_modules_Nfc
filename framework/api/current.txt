@@ -207,6 +207,8 @@ package android.nfc.cardemulation {
     method @FlaggedApi("android.nfc.enable_card_emulation_euicc") public int getDefaultNfcSubscriptionId();
     method @Nullable @RequiresPermission(android.Manifest.permission.NFC_PREFERRED_PAYMENT_INFO) public CharSequence getDescriptionForPreferredPaymentService();
     method public static android.nfc.cardemulation.CardEmulation getInstance(android.nfc.NfcAdapter);
+    method @FlaggedApi("com.android.nfc.module.flags.get_polling_loop_filters") @NonNull public java.util.List<java.lang.String> getPollingLoopFiltersForService(@NonNull android.content.ComponentName);
+    method @FlaggedApi("com.android.nfc.module.flags.get_polling_loop_filters") @NonNull public java.util.List<java.lang.String> getPollingLoopPatternFiltersForService(@NonNull android.content.ComponentName);
     method @Nullable @RequiresPermission(android.Manifest.permission.NFC_PREFERRED_PAYMENT_INFO) public String getRouteDestinationForPreferredPaymentService();
     method public int getSelectionModeForCategory(String);
     method public boolean isDefaultServiceForAid(android.content.ComponentName, String);

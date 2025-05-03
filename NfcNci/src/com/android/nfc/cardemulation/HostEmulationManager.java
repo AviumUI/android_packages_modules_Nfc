@@ -17,6 +17,7 @@
 package com.android.nfc.cardemulation;
 
 import static com.android.nfc.module.flags.Flags.nfcHceLatencyEvents;
+import static com.android.nfc.module.flags.Flags.ceWakeLock;
 
 import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
@@ -53,6 +54,7 @@ import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.Trace;
 import android.os.UserHandle;
+import android.os.WorkSource;
 import android.sysprop.NfcProperties;
 import android.util.ArraySet;
 import android.util.Log;
@@ -136,6 +138,7 @@ public class HostEmulationManager {
     final KeyguardManager mKeyguard;
     final Object mLock;
     final PowerManager mPowerManager;
+    final PowerManager.WakeLock mWakeLock;
     private final Looper mLooper;
     final DeviceConfigFacade mDeviceConfig;
 
@@ -331,6 +334,9 @@ public class HostEmulationManager {
         mPollingLoopState = PollingLoopState.EVALUATING_POLLING_LOOP;
         mKeyguard = context.getSystemService(KeyguardManager.class);
         mPowerManager = context.getSystemService(PowerManager.class);
+        mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                "HostEmulationManager:mWakeLock");
+        mWakeLock.setReferenceCounted(false);
         mStatsdUtils = Flags.statsdCeEventsFlag() ? statsdUtils : null;
         mPollingLoopFilters = new HashMap<Integer, Map<String, List<ApduServiceInfo>>>();
         mPollingLoopPatternFilters = new HashMap<Integer, Map<Pattern, List<ApduServiceInfo>>>();
@@ -785,6 +791,13 @@ public class HostEmulationManager {
         if (fieldOn && nfcHceLatencyEvents()) {
             mFieldOnTime = SystemClock.elapsedRealtime();
         }
+        if (fieldOn) {
+            // Acquire the wakelock when FIELD_ON is detected.
+            acquireWakeLock();
+        } else {
+            // Release the wakelock when FIELD_OFF is detected.
+            releaseWakeLock();
+        }
     }
 
     public void onHostEmulationActivated() {
@@ -1076,6 +1089,37 @@ public class HostEmulationManager {
         }
     }
 
+    private void acquireWakeLock() {
+        if (!ceWakeLock() || mDeviceConfig.getCeWakeLockTimeoutMillis() == 0) return;
+        Log.d(TAG, "acquireWakeLock");
+        mWakeLock.setWorkSource(null); // reset work source from previous transaction
+        mWakeLock.acquire(mDeviceConfig.getCeWakeLockTimeoutMillis());
+    }
+
+    private void updateWakeLockWorkSource(ComponentNameAndUser componentNameAndUser) {
+        if (!ceWakeLock() || !mWakeLock.isHeld()) return;
+        Log.d(TAG, "updateWakeLockWorkSource: " + componentNameAndUser);
+        final String packageName = componentNameAndUser.getComponentName().getPackageName();
+        try {
+            int uid = mContext.getPackageManager().getPackageUidAsUser(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(0),
+                    componentNameAndUser.getUserId()
+            );
+            mWakeLock.setWorkSource(new WorkSource(uid, packageName));
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.w(TAG, "Failed to find uid for " + packageName + " and user "
+                    + componentNameAndUser.getUserId());
+        }
+    }
+
+    private void releaseWakeLock() {
+        if (!ceWakeLock() || !mWakeLock.isHeld()) return;
+        Log.d(TAG, "releaseWakeLock");
+        mWakeLock.release();
+        mWakeLock.setWorkSource(null);
+    }
+
     Messenger bindServiceIfNeededLocked(@UserIdInt int userId, ComponentName service) {
         if (service == null) {
             Log.e(TAG, "bindServiceIfNeededLocked: service ComponentName is null");
@@ -1086,6 +1130,10 @@ public class HostEmulationManager {
         int preferredPaymentUserId = preferredPaymentService.getUserId();
         ComponentName preferredPaymentServiceName = preferredPaymentService.getComponentName();
         ComponentNameAndUser newServiceAndUser = new ComponentNameAndUser(userId, service);
+
+        // When the service to handle this transaction is found, update the worksource
+        // to share the power blame.
+        updateWakeLockWorkSource(newServiceAndUser);
 
         if (mPaymentServiceName != null && mPaymentServiceName.equals(service)
                 && mPaymentServiceUserId == userId) {
