@@ -515,6 +515,9 @@ public class CardEmulationTest {
                 }
             }
         }
+        @Override
+        public void onOffHostAidSelected(String aid, String offHostSecureElement) { }
+
 
         public void onListenersRegistered() {
             if (mLatch != null) {
@@ -1990,6 +1993,42 @@ public class CardEmulationTest {
                 () ->cardEmulation.registerPollingLoopFilterForService(customServiceName,
                     "123", false));
 
+    }
+
+    @Test
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_GET_POLLING_LOOP_FILTERS)
+    public void testGetPollingLoopFilters() throws NoSuchFieldException {
+        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
+        CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
+        ComponentName customServiceName = new ComponentName(mContext, CustomHostApduService.class);
+        String testName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        String annotationStringHex = HexFormat.of().toHexDigits(testName.hashCode());
+        assertTrue(cardEmulation.registerPollingLoopFilterForService(
+                customServiceName,
+                annotationStringHex, false));
+        assertEquals(List.of(annotationStringHex),
+            cardEmulation.getPollingLoopFiltersForService(customServiceName));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_GET_POLLING_LOOP_FILTERS)
+    public void testGetPollingLoopPatternFilters() throws NoSuchFieldException {
+        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
+        CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
+        ComponentName customServiceName = new ComponentName(mContext, CustomHostApduService.class);
+        String testName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        String annotationStringHexPrefix = HexFormat.of().toHexDigits(testName.hashCode());
+        String annotationStringHex = annotationStringHexPrefix + "123456789ABCDF";
+        String annotationStringHexPattern = annotationStringHexPrefix + ".*";
+        assertTrue(cardEmulation.registerPollingLoopPatternFilterForService(
+                customServiceName, annotationStringHexPattern, false));
+        assertTrue(cardEmulation.registerPollingLoopPatternFilterForService(
+                customServiceName,
+                annotationStringHexPattern, false));
+        assertEquals(List.of(annotationStringHexPattern),
+                cardEmulation.getPollingLoopPatternFiltersForService(customServiceName));
     }
 
     static void ensureUnlocked() {

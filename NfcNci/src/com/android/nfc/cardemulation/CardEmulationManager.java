@@ -81,6 +81,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -361,8 +362,15 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
     }
 
-    public void onOffHostAidSelected() {
-        mHostEmulationManager.onOffHostAidSelected();
+    public void onOffHostAidTransaction() {
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
+    }
+
+    public void onOffHostAidSelected(@NonNull String aid, @NonNull String eeName) {
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
+        if (com.android.nfc.module.flags.Flags.eventListenerOffhostAidSelected()) {
+            callNfcEventCallbacks(listener -> listener.onOffHostAidSelected(aid, eeName));
+        }
     }
 
     public void onBootCompleted() {
@@ -959,6 +967,18 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
 
         @Override
+        public List<String> getPollingLoopFiltersForService(int userId, ComponentName service) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException("getPollingLoopPatternFiltersForService: "
+                        + "service (" + service + ") isn't registered for user " + userId);
+            }
+            return List.copyOf(mServiceCache.getPollingLoopFiltersForService(
+                    userId,Binder.getCallingUid(), service));
+        }
+
+        @Override
         public boolean registerPollingLoopPatternFilterForService(int userId, ComponentName service,
                 String pollingLoopPatternFilter, boolean autoTransact) throws RemoteException {
             NfcPermissions.validateUserId(userId);
@@ -1026,6 +1046,19 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                                     .build())
                             .build());
             return true;
+        }
+
+        @Override
+        public List<String> getPollingLoopPatternFiltersForService(
+            int userId, ComponentName service) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException("getPollingLoopPatternFiltersForService: "
+                        + "service (" + service + ") isn't registered for user " + userId);
+            }
+            return List.copyOf(mServiceCache.getPollingLoopPatternFiltersForService(
+                    userId, Binder.getCallingUid(), service));
         }
 
         @Override

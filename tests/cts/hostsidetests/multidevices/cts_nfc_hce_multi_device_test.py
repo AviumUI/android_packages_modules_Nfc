@@ -606,8 +606,32 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         """
         self._set_up_emulator(
             False, start_emulator_fun=self.emulator.nfc_emulator.startOffHostEmulatorActivity)
-
         self._set_up_reader_and_assert_transaction(expected_service=_OFFHOST_SERVICE)
+
+    @CddTest(requirements = ["7.4.4/C-2-2", "7.4.4/C-1-2"])
+    def test_offhost_aid_selected_event_listener(self):
+        """Tests successful APDU exchange between offhost service and reader and verifies that
+        offhost aid selected listener is invoked.
+
+        Test Steps:
+        1. Start emulator activity.
+        2. Set callback handler for when reader TestPass event is received.
+        3. Start reader activity, which should trigger APDU exchange between
+        reader and emulator.
+        4. Verifies that off host aid selected event listener is received
+
+        Verifies:
+        1. Verifies offhost aid selected listener invocation.
+        """
+        asserts.skip_if(int(self.emulator.build_info[
+                            android_device.BuildInfoConstants.BUILD_VERSION_SDK.build_info_key]) <= 36,
+                        "Skipping aid selected tests on SDK < 36")
+        offhost_aid_selected_handler = self.emulator.nfc_emulator.asyncWaitForOffHostAidSelected(
+            'OffHostAidSelected')
+        self._set_up_emulator(
+            False, start_emulator_fun=self.emulator.nfc_emulator.startOffHostEmulatorActivity)
+        self._set_up_reader_and_assert_transaction(expected_service=_OFFHOST_SERVICE)
+        offhost_aid_selected_handler.waitAndGet('OffHostAidSelected', _NFC_TIMEOUT_SEC)
 
     @CddTest(requirements = ["7.4.4/C-2-2", "7.4.4/C-1-2"])
     def test_on_and_offhost_service(self):

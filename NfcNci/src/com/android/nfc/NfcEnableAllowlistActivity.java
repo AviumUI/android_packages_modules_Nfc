@@ -53,6 +53,7 @@ public class NfcEnableAllowlistActivity extends Activity implements View.OnClick
                     Log.i(TAG, "Nfc is disallowed by user for app: " + appName);
                     finish();
                 });
+        mAlertDialog.setOnCancelListener(dialog -> finish());
     }
 
     @Override

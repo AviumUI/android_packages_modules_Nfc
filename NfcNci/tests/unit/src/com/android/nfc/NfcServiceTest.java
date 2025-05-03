@@ -30,6 +30,8 @@ import static com.android.nfc.NfcService.SOUND_ERROR;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
@@ -414,7 +416,10 @@ public final class NfcServiceTest {
     public void testEnableNfc_changeStateRestricted() throws Exception {
         when(mUserRestrictions.getBoolean(
                 UserManager.DISALLOW_CHANGE_NEAR_FIELD_COMMUNICATION_RADIO)).thenReturn(true);
-        mNfcService.mNfcAdapter.enable(PKG_NAME);
+        Exception exception = assertThrows(SecurityException.class, () -> {
+            mNfcService.mNfcAdapter.enable(PKG_NAME);
+        });
+        assertEquals("Change nfc state by system app is not allowed!", exception.getMessage());
         assert(mNfcService.mState == NfcAdapter.STATE_OFF);
     }
 
@@ -423,7 +428,10 @@ public final class NfcServiceTest {
         enableAndVerify();
         when(mUserRestrictions.getBoolean(
                 UserManager.DISALLOW_CHANGE_NEAR_FIELD_COMMUNICATION_RADIO)).thenReturn(true);
-        mNfcService.mNfcAdapter.disable(true, PKG_NAME);
+        Exception exception = assertThrows(SecurityException.class, () -> {
+            mNfcService.mNfcAdapter.disable(true, PKG_NAME);
+        });
+        assertEquals("Change nfc state by system app is not allowed!", exception.getMessage());
         assert(mNfcService.mState == NfcAdapter.STATE_ON);
     }
 
@@ -1132,6 +1140,7 @@ public final class NfcServiceTest {
         assertThat(pollTech).isEqualTo(0);
         when(mPreferences.getInt(NfcService.PREF_POLL_TECH, NfcService.DEFAULT_POLL_TECH))
                 .thenReturn(NfcService.DEFAULT_LISTEN_TECH);
+        mNfcService.mIsReaderOptionEnabled = true;
         pollTech = mNfcService.getNfcPollTech();
         assertThat(pollTech).isEqualTo(0xf);
         verify(mPreferences, atLeastOnce()).getInt(anyString(), anyInt());
@@ -1287,7 +1296,7 @@ public final class NfcServiceTest {
         byte[] data = { 0x12, 0x34, 0x56, 0x78, 0x78 };
         mNfcService.onNfcTransactionEvent(aid, data, "SecureElement1");
         mLooper.dispatchAll();
-        verify(mCardEmulationManager).onOffHostAidSelected();
+        verify(mCardEmulationManager).onOffHostAidTransaction();
         verify(mPackageManager).queryBroadcastReceiversAsUser(any(), anyInt(), any());
         verify(mApplication).sendBroadcastAsUser(any(), any(), isNull(), any());
     }
@@ -1376,9 +1385,11 @@ public final class NfcServiceTest {
 
     @Test
     public void testOnSeSelected() {
-        mNfcService.onSeSelected(NfcService.SE_SELECTED_AID);
+        byte[] aid = new byte[]{ 0x0A, 0x00, 0x00, 0x00 };
+        mNfcService.onSeSelected(
+                NfcService.SE_SELECTED_AID, aid, "eSE1");
         mLooper.dispatchAll();
-        verify(mCardEmulationManager).onOffHostAidSelected();
+        verify(mCardEmulationManager).onOffHostAidSelected(Utils.aidBytesToString(aid), "eSE1");
     }
 
     @Test
@@ -1518,7 +1529,9 @@ public final class NfcServiceTest {
     }
 
     @Test
-    public void testSetSystemCodeRoute() {
+    public void testSetSystemCodeRoute() throws Exception {
+        enableAndVerify();
+
         mNfcService.setSystemCodeRoute(1);
         mLooper.dispatchAll();
         ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);

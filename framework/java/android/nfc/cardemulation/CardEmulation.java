@@ -49,6 +49,7 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
+import android.se.omapi.Reader;
 import android.telephony.SubscriptionManager;
 import android.util.ArrayMap;
 import android.util.Log;
@@ -497,6 +498,22 @@ public final class CardEmulation {
                 mContext.getUser().getIdentifier(), service, pollingLoopFilterV), false);
     }
 
+    /**
+     * Retrieve all the polling loop filters registered for a {@link HostApduService}.
+     *
+     * @param service The HostApduService to retrieve the filter for
+     * @return List of polling loop filters, will be empty if there are none registered.
+     * @throws IllegalArgumentException if the service is not valid.
+     * @see #registerPollingLoopFilterForService(ComponentName, String, boolean)
+     */
+    @NonNull
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_GET_POLLING_LOOP_FILTERS)
+    public List<String> getPollingLoopFiltersForService(@NonNull ComponentName service) {
+        return callServiceReturn(() ->
+                        sService.getPollingLoopFiltersForService(
+                                mContext.getUser().getIdentifier(), service),
+                List.of());
+    }
 
     /**
      * Register a polling loop pattern filter (PLPF) for a HostApduService and indicate whether it
@@ -551,6 +568,23 @@ public final class CardEmulation {
         return callServiceReturn(() ->
             sService.removePollingLoopPatternFilterForService(
                 mContext.getUser().getIdentifier(), service, pollingLoopPatternFilterV), false);
+    }
+
+    /**
+     * Retrieve all the polling loop pattern filters registered for a {@link HostApduService}.
+     *
+     * @param service The HostApduService to retrieve the filter for
+     * @return List of polling loop pattern filters, will be empty if there are none registered.
+     * @throws IllegalArgumentException if the service is not valid.
+     * @see #registerPollingLoopPatternFilterForService(ComponentName, String, boolean)
+     */
+    @NonNull
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_GET_POLLING_LOOP_FILTERS)
+    public List<String> getPollingLoopPatternFiltersForService(@NonNull ComponentName service) {
+        return callServiceReturn(() ->
+                        sService.getPollingLoopPatternFiltersForService(
+                                mContext.getUser().getIdentifier(), service),
+                List.of());
     }
 
     /**
@@ -1418,6 +1452,27 @@ public final class CardEmulation {
          */
         @FlaggedApi(android.nfc.Flags.FLAG_NFC_EVENT_LISTENER)
         default void onInternalErrorReported(@NfcInternalErrorType int errorType) {}
+
+        /**
+         * This method is called when an off-host AID is selected.
+         *
+         * This indicates that an offhost (Secure Element or UICC) transaction
+         * has started.
+         *
+         * @param aid The AID that was selected
+         * @param offHostSecureElement Secure Element on which the AID was routed to. Will be string
+         *                             with prefix SIM or prefix eSE ({@link Reader#getName()}).
+         *                             Ref: GSMA TS.26 - NFC Handset Requirements
+         *                             TS26_NFC_REQ_069: For UICC, Secure Element Name SHALL be
+         *                                               SIM[smartcard slot]
+         *                                               (e.g. SIM/SIM1, SIM2… SIMn).
+         *                             TS26_NFC_REQ_070: For embedded SE, Secure Element Name SHALL
+         *                                               be eSE[number]
+         *                                               (e.g. eSE/eSE1, eSE2, etc.).
+         */
+        @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_EVENT_LISTENER_OFFHOST_AID_SELECTED)
+        default void onOffHostAidSelected(@NonNull String aid,
+                @NonNull String offHostSecureElement) {}
     }
 
     private final ArrayMap<NfcEventCallback, Executor> mNfcEventCallbacks = new ArrayMap<>();
@@ -1487,6 +1542,13 @@ public final class CardEmulation {
                         return;
                     }
                     callListeners(listener -> listener.onInternalErrorReported(errorType));
+                }
+
+                public void onOffHostAidSelected(String aid, String eeName) {
+                    if (!com.android.nfc.module.flags.Flags.eventListenerOffhostAidSelected()) {
+                        return;
+                    }
+                    callListeners(listener -> listener.onOffHostAidSelected(aid, eeName));
                 }
 
                 interface ListenerCall {

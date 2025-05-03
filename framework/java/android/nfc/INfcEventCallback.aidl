@@ -15,4 +15,5 @@ oneway interface INfcEventCallback {
     void onNfcStateChanged(in int nfcState);
     void onRemoteFieldChanged(boolean isDetected);
     void onInternalErrorReported(in int errorType);
+    void onOffHostAidSelected(in String aid, in String eeName);
 }

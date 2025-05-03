@@ -1056,6 +1056,10 @@ public class NfcAdapterTest {
         }
 
         @Override
+        public void onRoutingChangeCompleted() {
+        }
+
+        @Override
         public void onHceEventReceived(int action) {
         }
 

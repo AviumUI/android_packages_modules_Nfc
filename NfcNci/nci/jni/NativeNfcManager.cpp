@@ -1844,8 +1844,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
                                        jboolean enable_host_routing,
                                        jbyteArray tech_a_polling_loop_annotation,
                                        jboolean restart) {
-  if (sIsShuttingDown) return;
-  if (sIsRecovering) return;
+  if (sIsShuttingDown || sIsRecovering || sIsDisabling || !sIsNfaEnabled)
+    return;
   tNFA_TECHNOLOGY_MASK tech_mask = DEFAULT_TECH_MASK;
   struct nfc_jni_native_data* nat = getNative(e, o);
 
@@ -1954,8 +1954,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
 **
 *******************************************************************************/
 void nfcManager_disableDiscovery(JNIEnv* e, jobject o) {
-  if (sIsShuttingDown) return;
-  if (sIsRecovering) return;
+  if (sIsShuttingDown || sIsRecovering || sIsDisabling || !sIsNfaEnabled)
+    return;
   tNFA_STATUS status = NFA_STATUS_OK;
   LOG(DEBUG) << StringPrintf("%s: enter;", __func__);
 
@@ -2280,6 +2280,12 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
       "%s: state = %d prevScreenState= %d, discovry_param = %d", __FUNCTION__,
       state, prevScreenState, discovry_param);
 
+  if (gPartialInitMode != ENABLE_MODE_DEFAULT) {
+    LOG(ERROR) << StringPrintf(
+        "%s: PartialInit mode Screen state change not required", __FUNCTION__);
+    return;
+  }
+
   if (prevScreenState == state) {
     LOG(DEBUG) << StringPrintf(
         "%s: New screen state is same as previous state. No action taken",
@@ -2458,6 +2464,7 @@ static bool nfcManager_isMultiTag() {
 static void nfcManager_doStartStopPolling(JNIEnv* e, jobject o,
                                           jboolean start) {
   if (sIsShuttingDown) return;
+  if (sIsRecovering) return;
   startStopPolling(start);
 }
 

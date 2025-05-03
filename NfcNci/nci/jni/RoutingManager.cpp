@@ -575,16 +575,16 @@ void RoutingManager::notifyEeAidSelected(tNFC_AID& nfcaid,
                         (jbyte*)&aid[0]);
   CHECK(!e->ExceptionCheck());
 
-  std::string evtSrc;
-  if (!getNameOfEe(ee_handle, evtSrc)) {
+  std::string eeName;
+  if (!getNameOfEe(ee_handle, eeName)) {
     return;
   }
 
-  ScopedLocalRef<jobject> srcJavaString(e, e->NewStringUTF(evtSrc.c_str()));
-  CHECK(srcJavaString.get());
+  ScopedLocalRef<jobject> eeNameJavaString(e, e->NewStringUTF(eeName.c_str()));
+  CHECK(eeNameJavaString.get());
   e->CallVoidMethod(mNativeData->manager,
                     android::gCachedNfcManagerNotifyEeAidSelected,
-                    aidJavaArray.get(), srcJavaString.get());
+                    aidJavaArray.get(), eeNameJavaString.get());
 }
 
 /*******************************************************************************
@@ -603,16 +603,16 @@ void RoutingManager::notifyEeProtocolSelected(uint8_t protocol,
   ScopedAttach attach(mNativeData->vm, &e);
   CHECK(e);
 
-  std::string evtSrc;
-  if (!getNameOfEe(ee_handle, evtSrc)) {
+  std::string eeName;
+  if (!getNameOfEe(ee_handle, eeName)) {
     return;
   }
 
-  ScopedLocalRef<jobject> srcJavaString(e, e->NewStringUTF(evtSrc.c_str()));
-  CHECK(srcJavaString.get());
+  ScopedLocalRef<jobject> eeNameJavaString(e, e->NewStringUTF(eeName.c_str()));
+  CHECK(eeNameJavaString.get());
   e->CallVoidMethod(mNativeData->manager,
                     android::gCachedNfcManagerNotifyEeProtocolSelected,
-                    protocol, srcJavaString.get());
+                    protocol, eeNameJavaString.get());
 }
 
 /*******************************************************************************
@@ -630,16 +630,16 @@ void RoutingManager::notifyEeTechSelected(uint8_t tech, tNFA_HANDLE ee_handle) {
   ScopedAttach attach(mNativeData->vm, &e);
   CHECK(e);
 
-  std::string evtSrc;
-  if (!getNameOfEe(ee_handle, evtSrc)) {
+  std::string eeName;
+  if (!getNameOfEe(ee_handle, eeName)) {
     return;
   }
 
-  ScopedLocalRef<jobject> srcJavaString(e, e->NewStringUTF(evtSrc.c_str()));
-  CHECK(srcJavaString.get());
+  ScopedLocalRef<jobject> eeNameJavaString(e, e->NewStringUTF(eeName.c_str()));
+  CHECK(eeNameJavaString.get());
   e->CallVoidMethod(mNativeData->manager,
                     android::gCachedNfcManagerNotifyEeTechSelected, tech,
-                    srcJavaString.get());
+                    eeNameJavaString.get());
 }
 
 /*******************************************************************************
