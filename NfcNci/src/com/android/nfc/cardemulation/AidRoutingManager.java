@@ -244,6 +244,66 @@ public class AidRoutingManager {
     public @interface ConfigureRoutingResult {}
 
     /**
+     * Adds AID to RoutingTableCache by handling prefix,suffix if any.
+     *
+     * @param aid AID which need to be handled and added to RoutingTableCache
+     * @param aidRoutingTableCache Final map of AIDs to their corresponding {@link AidEntry}.
+     * @param aidMap The map of AIDs to their corresponding {@link AidEntry}.
+     * @param route Route of the AID
+     */
+    void addAidToRoutingtable(String aid, HashMap<String, AidEntry> aidRoutingTableCache,
+            HashMap<String, AidEntry> aidMap, int route) {
+        if (aid.endsWith("*")) {
+            if (mAidMatchingSupport == AID_MATCHING_EXACT_ONLY) {
+                Log.e(TAG,
+                        "configureRouting: This device does not support "
+                        + "prefix AIDs.");
+            } else if (mAidMatchingSupport == AID_MATCHING_PREFIX_ONLY) {
+                if (DBG) {
+                    Log.d(TAG,
+                            "configureRouting: Routing prefix AID " + aid + " to route "
+                            + Integer.toString(route));
+                }
+                // Cut off '*' since controller anyway treats all AIDs as a prefix
+                aidRoutingTableCache.put(aid.substring(0, aid.length() - 1), aidMap.get(aid));
+            } else if (mAidMatchingSupport == AID_MATCHING_EXACT_OR_PREFIX
+                    || mAidMatchingSupport == AID_MATCHING_EXACT_OR_SUBSET_OR_PREFIX) {
+                if (DBG) {
+                    Log.d(TAG,
+                            "configureRouting: Routing prefix AID " + aid + " to route "
+                            + Integer.toString(route));
+                }
+                aidRoutingTableCache.put(aid.substring(0, aid.length() - 1), aidMap.get(aid));
+            }
+        } else if (aid.endsWith("#")) {
+            if (mAidMatchingSupport == AID_MATCHING_EXACT_ONLY) {
+                Log.e(TAG,
+                        "configureRouting: Device does not support subset "
+                        + "AIDs but AID [" + aid + "] is registered");
+            } else if (mAidMatchingSupport == AID_MATCHING_PREFIX_ONLY
+                    || mAidMatchingSupport == AID_MATCHING_EXACT_OR_PREFIX) {
+                Log.e(TAG,
+                        "configureRouting: Device does not support subset "
+                        + "AIDs but AID [" + aid + "] is registered");
+            } else if (mAidMatchingSupport == AID_MATCHING_EXACT_OR_SUBSET_OR_PREFIX) {
+                if (DBG) {
+                    Log.d(TAG,
+                            "configureRouting: Routing subset AID " + aid + " to route "
+                            + Integer.toString(route));
+                }
+                aidRoutingTableCache.put(aid.substring(0, aid.length() - 1), aidMap.get(aid));
+            }
+        } else {
+            if (DBG) {
+                Log.d(TAG,
+                        "configureRouting: Routing exact AID " + aid + " to route "
+                        + Integer.toString(route));
+            }
+            aidRoutingTableCache.put(aid, aidMap.get(aid));
+        }
+    }
+
+    /**
      * Configures the routing table with the given {@code aidMap}.
      *
      * @param aidMap The map of AIDs to their corresponding {@link AidEntry}.
@@ -401,48 +461,7 @@ public class AidRoutingManager {
                     if (route != mDefaultRoute) {
                         Set<String> aidsForRoute = mAidRoutingTable.get(route);
                         for (String aid : aidsForRoute) {
-                            if (aid.endsWith("*")) {
-                                if (mAidMatchingSupport == AID_MATCHING_EXACT_ONLY) {
-                                    Log.e(TAG, "configureRouting: This device does not support "
-                                            + "prefix AIDs.");
-                                } else if (mAidMatchingSupport == AID_MATCHING_PREFIX_ONLY) {
-                                    if (DBG) {
-                                        Log.d(TAG, "configureRouting: Routing prefix AID " + aid
-                                                + " to route " + Integer.toString(route));
-                                    }
-                                    // Cut off '*' since controller anyway treats all AIDs as a prefix
-                                    aidRoutingTableCache.put(aid.substring(0,aid.length() - 1), aidMap.get(aid));
-                                } else if (mAidMatchingSupport == AID_MATCHING_EXACT_OR_PREFIX ||
-                                  mAidMatchingSupport == AID_MATCHING_EXACT_OR_SUBSET_OR_PREFIX) {
-                                    if (DBG) {
-                                        Log.d(TAG, "configureRouting: Routing prefix AID " + aid
-                                                + " to route " + Integer.toString(route));
-                                    }
-                                    aidRoutingTableCache.put(aid.substring(0,aid.length() - 1), aidMap.get(aid));
-                                }
-                            } else if (aid.endsWith("#")) {
-                                if (mAidMatchingSupport == AID_MATCHING_EXACT_ONLY) {
-                                    Log.e(TAG,
-                                            "configureRouting: Device does not support subset "
-                                                    + "AIDs but AID [" + aid + "] is registered");
-                                } else if (mAidMatchingSupport == AID_MATCHING_PREFIX_ONLY ||
-                                    mAidMatchingSupport == AID_MATCHING_EXACT_OR_PREFIX) {
-                                    Log.e(TAG, "configureRouting: Device does not support subset "
-                                            + "AIDs but AID [" + aid + "] is registered");
-                                } else if (mAidMatchingSupport == AID_MATCHING_EXACT_OR_SUBSET_OR_PREFIX) {
-                                    if (DBG) {
-                                        Log.d(TAG, "configureRouting: Routing subset AID " + aid
-                                                + " to route " + Integer.toString(route));
-                                    }
-                                    aidRoutingTableCache.put(aid.substring(0,aid.length() - 1), aidMap.get(aid));
-                                }
-                            } else {
-                                if (DBG) {
-                                    Log.d(TAG, "configureRouting: Routing exact AID " + aid
-                                            + " to route " + Integer.toString(route));
-                                }
-                                aidRoutingTableCache.put(aid, aidMap.get(aid));
-                            }
+                            addAidToRoutingtable(aid, aidRoutingTableCache, aidMap, route);
                         }
                     }
                 }
@@ -491,7 +510,8 @@ public class AidRoutingManager {
                     if (aidsForDefaultRoute != null) {
                         for (String aid : aidsForDefaultRoute) {
                             if (aidMap.get(aid).power != default_route_power_state) {
-                                aidRoutingTableCache.put(aid, aidMap.get(aid));
+                                addAidToRoutingtable(
+                                        aid, aidRoutingTableCache, aidMap, mDefaultRoute);
                                 isPowerStateUpdated = true;
                             }
                         }
