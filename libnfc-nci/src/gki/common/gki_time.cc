@@ -226,11 +226,11 @@ void GKI_start_timer(uint8_t tnum, int32_t ticks, bool is_continuous) {
   ** Note that this works when no timers are active since
   ** both OSNumOrigTicks and OSTicksTilExp are 0.
   */
-  if (GKI_MAX_INT32 - (gki_cb.com.OSNumOrigTicks - gki_cb.com.OSTicksTilExp) >
-      ticks) {
-    ticks += gki_cb.com.OSNumOrigTicks - gki_cb.com.OSTicksTilExp;
-  } else
+  if (__builtin_add_overflow(
+          ticks, gki_cb.com.OSNumOrigTicks - gki_cb.com.OSTicksTilExp,
+          &ticks)) {
     ticks = GKI_MAX_INT32;
+  }
 
   switch (tnum) {
 #if (GKI_NUM_TIMERS > 0)
@@ -368,6 +368,8 @@ void GKI_timer_update(int32_t ticks_since_last_update) {
   long next_expiration; /* Holds the next soonest expiration time after this
                            update */
 
+  GKI_disable();
+
   /* Increment the number of ticks used for time stamps */
   gki_cb.com.OSTicks += ticks_since_last_update;
 
@@ -377,7 +379,10 @@ void GKI_timer_update(int32_t ticks_since_last_update) {
   gki_cb.com.OSTicksTilExp -= ticks_since_last_update;
 
   /* Don't allow timer interrupt nesting */
-  if (gki_cb.com.timer_nesting) return;
+  if (gki_cb.com.timer_nesting) {
+    GKI_enable();
+    return;
+  }
 
   gki_cb.com.timer_nesting = 1;
 
@@ -391,6 +396,7 @@ void GKI_timer_update(int32_t ticks_since_last_update) {
       }
       gki_cb.com.OSTicksTilStop = 0; /* clear inactivity delay timer */
       gki_cb.com.timer_nesting = 0;
+      GKI_enable();
       return;
     } else
       gki_cb.com.OSTicksTilStop -= ticks_since_last_update;
@@ -400,10 +406,9 @@ void GKI_timer_update(int32_t ticks_since_last_update) {
   /* No need to update the ticks if no timeout has occurred */
   if (gki_cb.com.OSTicksTilExp > 0) {
     gki_cb.com.timer_nesting = 0;
+    GKI_enable();
     return;
   }
-
-  GKI_disable();
 
   next_expiration = GKI_NO_NEW_TMRS_STARTED;
 
