@@ -5875,9 +5875,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     + "Detection Procedure");
             if (isTagPresent()) {
                 prepareForRemovalDetectionMode();
-                mHandler.post(() -> Toast.makeText(mContext,
-                        "No activity over reader mode, RF removal detection procedure started",
-                        Toast.LENGTH_LONG).show());
+                Log.d(TAG, "No activity over reader mode, RF removal detection procedure started");
                 /* Request JNI to start remove detection procedure */
                 startRemovalDetection(mTagRemovalDetectionWaitTime);
             } else {
