@@ -29,6 +29,7 @@
 #include <android/hardware/nfc/1.1/INfc.h>
 #include <android/hardware/nfc/1.2/INfc.h>
 #include <cutils/properties.h>
+#include <future>
 #include <hwbinder/ProcessState.h>
 
 #include <thread>
@@ -844,6 +845,32 @@ tHAL_NFC_ENTRY* NfcAdaptation::GetHalEntryFuncs() { return &mHalEntryFuncs; }
 
 /*******************************************************************************
 **
+** Function:    NfcAdaptation::waitForNfcServiceAsync()
+**
+** Description: Binder to NFC HAL Service.
+**
+** Returns:     Binder object if success or nullptr if timeout(5s).
+**
+*******************************************************************************/
+std::shared_ptr<INfcAidl> waitForNfcServiceAsync() {
+  auto future = std::async(std::launch::async, []() -> std::shared_ptr<INfcAidl> {
+      ::ndk::SpAIBinder binder(
+          AServiceManager_waitForService(NFC_AIDL_HAL_SERVICE_NAME.c_str()));
+      return INfcAidl::fromBinder(binder);
+  });
+
+  constexpr auto timeout = std::chrono::seconds(5);
+  if (future.wait_for(timeout) == std::future_status::ready) {
+    ALOGD("Ready for NFC AIDL service (future).");
+    return future.get();
+  } else {
+    ALOGE("Timeout waiting for NFC AIDL service (future).");
+    return nullptr;
+  }
+}
+
+/*******************************************************************************
+**
 ** Function:    NfcAdaptation::InitializeHalDeviceContext
 **
 ** Description: Check validity of current handle to the nfc HAL service
@@ -878,9 +905,7 @@ void NfcAdaptation::InitializeHalDeviceContext() {
   }
   if (mHal == nullptr) {
     // Try get AIDL
-    ::ndk::SpAIBinder binder(
-        AServiceManager_waitForService(NFC_AIDL_HAL_SERVICE_NAME.c_str()));
-    mAidlHal = INfcAidl::fromBinder(binder);
+    mAidlHal = waitForNfcServiceAsync();
     if (mAidlHal != nullptr) {
       use_aidl = true;
       AIBinder_linkToDeath(mAidlHal->asBinder().get(), mDeathRecipient.get(),
@@ -894,9 +919,11 @@ void NfcAdaptation::InitializeHalDeviceContext() {
       if (mAidlHalVer <= 1) {
         sVndExtnsPresent = sNfcVendorExtn->Initialize(nullptr, mAidlHal);
       }
+    } else {
+      LOG(INFO) << StringPrintf("%s: Failed to retrieve the NFC AIDL!", func);
+      ALOGE("Exit current process to recover.");
+      _exit(0);
     }
-    LOG_ALWAYS_FATAL_IF(mAidlHal == nullptr,
-                        "Failed to retrieve the NFC AIDL!");
   } else {
     LOG(INFO) << StringPrintf("%s: INfc::getService() returned %p (%s)", func,
                               mHal.get(),
