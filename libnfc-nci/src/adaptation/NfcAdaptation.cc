@@ -103,6 +103,7 @@ uint8_t appl_dta_mode_flag = 0x00;
 bool isDownloadFirmwareCompleted = false;
 bool use_aidl = false;
 uint8_t mute_tech_route_option = 0x00;
+std::vector<uint8_t> t4tNfceeAidBuf;
 unsigned int t5t_mute_legacy = 0;
 bool nfa_ee_route_debounce_timer = true;
 
@@ -648,6 +649,10 @@ void NfcAdaptation::Initialize() {
   if (NfcConfig::hasKey(NAME_ISO15693_SKIP_GET_SYS_INFO_CMD)) {
     t5t_mute_legacy =
         NfcConfig::getUnsigned(NAME_ISO15693_SKIP_GET_SYS_INFO_CMD);
+  }
+
+  if (NfcConfig::hasKey(NAME_T4T_NDEF_NFCEE_AID)) {
+    t4tNfceeAidBuf = NfcConfig::getBytes(NAME_T4T_NDEF_NFCEE_AID);
   }
 
   if (NfcConfig::hasKey(NAME_NFA_DM_LISTEN_ACTIVE_DEACT_NTF_TIMEOUT)) {
