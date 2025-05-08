@@ -557,9 +557,8 @@ void nfa_hci_enable_one_nfcee(void) {
       if (nfa_ee_cb.isDiscoveryStopped == true) {
         nfa_dm_act_start_rf_discovery(nullptr);
         nfa_ee_cb.isDiscoveryStopped = false;
-        tNFA_EE_ECB* p_cb = nfa_ee_find_ecb(nfceeid);
         tNFA_EE_CBACK_DATA nfa_ee_cback_data;
-        p_cb->p_ee_cback(NFA_EE_ENABLED_EVT, &nfa_ee_cback_data);
+        nfa_ee_report_event(nullptr, NFA_EE_ENABLED_EVT, &nfa_ee_cback_data);
       }
     }
   }
