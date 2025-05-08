@@ -43,6 +43,8 @@ import androidx.annotation.VisibleForTesting;
  * enforce the corresponding API permissions.
  */
 public class NfcShellCommand extends BasicShellCommandHandler {
+    @VisibleForTesting
+    public static String SHELL_PACKAGE_NAME = "com.android.shell";
     private static final int DISABLE_POLLING_FLAGS = 0x1000;
     private static final int ENABLE_POLLING_FLAGS = 0x0000;
 
@@ -111,21 +113,21 @@ public class NfcShellCommand extends BasicShellCommandHandler {
                     if (TextUtils.equals(stringSaveState, "[persist]")) {
                         saveState = true;
                     }
-                    mNfcService.mNfcAdapter.disable(saveState, mContext.getPackageName());
+                    mNfcService.mNfcAdapter.disable(saveState, SHELL_PACKAGE_NAME);
                     return 0;
                 case "enable-nfc":
-                    mNfcService.mNfcAdapter.enable(mContext.getPackageName());
+                    mNfcService.mNfcAdapter.enable(SHELL_PACKAGE_NAME);
                     return 0;
                 case "set-reader-mode":
                     boolean enable_polling =
                             getNextArgRequiredTrueOrFalse("enable-polling", "disable-polling");
                     int flags = enable_polling ? ENABLE_POLLING_FLAGS : DISABLE_POLLING_FLAGS;
                     mNfcService.mNfcAdapter.setReaderMode(
-                        new Binder(), null, flags, null, mContext.getPackageName());
+                        new Binder(), null, flags, null, SHELL_PACKAGE_NAME);
                     return 0;
                 case "set-observe-mode":
                     boolean enable = getNextArgRequiredTrueOrFalse("enable", "disable");
-                    mNfcService.mNfcAdapter.setObserveMode(enable, mContext.getPackageName());
+                    mNfcService.mNfcAdapter.setObserveMode(enable, SHELL_PACKAGE_NAME);
                     return 0;
                 case "set-controller-always-on":
                     int mode = Integer.parseInt(getNextArgRequired());
@@ -135,7 +137,7 @@ public class NfcShellCommand extends BasicShellCommandHandler {
                     int pollTech = Integer.parseInt(getNextArg());
                     int listenTech = Integer.parseInt(getNextArg());
                     mNfcService.mNfcAdapter.updateDiscoveryTechnology(
-                            new Binder(), pollTech, listenTech, mContext.getPackageName());
+                            new Binder(), pollTech, listenTech, SHELL_PACKAGE_NAME);
                     return 0;
                 case "configure-dta":
                     boolean enableDta = getNextArgRequiredTrueOrFalse("enable", "disable");
@@ -206,7 +208,7 @@ public class NfcShellCommand extends BasicShellCommandHandler {
         pw.println("  configure-dta");
         try {
             INfcDta dtaService =
-                    mNfcService.mNfcAdapter.getNfcDtaInterface(mContext.getPackageName());
+                    mNfcService.mNfcAdapter.getNfcDtaInterface(SHELL_PACKAGE_NAME);
             if (enable) {
                 pw.println("  enableDta()");
                 dtaService.enableDta();
