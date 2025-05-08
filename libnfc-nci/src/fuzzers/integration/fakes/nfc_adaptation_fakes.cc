@@ -5,6 +5,7 @@ unsigned int t5t_mute_legacy = 0;
 bool nfc_nci_reset_keep_cfg_enabled = false;
 uint8_t nfc_nci_reset_type = 0x00;
 bool nfa_ee_route_debounce_timer = true;
+std::vector<uint8_t> t4tNfceeAidBuf = {};
 
 NfcAdaptation* NfcAdaptation::mpInstance = nullptr;
 
