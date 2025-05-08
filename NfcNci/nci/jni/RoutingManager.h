@@ -55,6 +55,7 @@ class RoutingManager {
   void notifyEeTechSelected(uint8_t tech, tNFA_HANDLE ee_handle);
   bool getNameOfEe(tNFA_HANDLE ee_handle, std::string& eeName);
   void setEeInfoChangedFlag();
+  bool isRTUpdateOptimized();
 
   static const int CLEAR_AID_ENTRIES = 0x01;
   static const int CLEAR_PROTOCOL_ENTRIES = 0x02;
@@ -137,6 +138,7 @@ class RoutingManager {
   bool mReceivedEeInfo;
   bool mAidRoutingConfigured;
   bool mIsRFDiscoveryOptimized;
+  bool mIsRTUpdateOptimized;
   tNFA_EE_CBACK_DATA mCbEventData;
   tNFA_EE_DISCOVER_REQ mEeInfo;
   tNFA_TECHNOLOGY_MASK mSeTechMask;
