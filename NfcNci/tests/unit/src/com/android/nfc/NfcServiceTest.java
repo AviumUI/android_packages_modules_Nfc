@@ -832,7 +832,6 @@ public final class NfcServiceTest {
     @Test
     public void testDirectBootAware() throws Exception {
         when(mPreferences.getBoolean(eq(PREF_NFC_ON), anyBoolean())).thenReturn(true);
-        when(mFeatureFlags.enableDirectBootAware()).thenReturn(true);
         mNfcService = new NfcService(mApplication, mNfcInjector);
         mLooper.dispatchAll();
         verify(mNfcInjector).makeDeviceHost(mDeviceHostListener.capture());
