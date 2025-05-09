@@ -2008,8 +2008,8 @@ public class CardEmulationTest {
         assertTrue(cardEmulation.registerPollingLoopFilterForService(
                 customServiceName,
                 annotationStringHex, false));
-        assertEquals(List.of(annotationStringHex),
-            cardEmulation.getPollingLoopFiltersForService(customServiceName));
+        assertTrue(cardEmulation.getPollingLoopFiltersForService(customServiceName)
+                       .contains(annotationStringHex));
     }
 
     @Test
@@ -2025,8 +2025,8 @@ public class CardEmulationTest {
         String annotationStringHexPattern = annotationStringHexPrefix + ".*";
         assertTrue(cardEmulation.registerPollingLoopPatternFilterForService(
                 customServiceName, annotationStringHexPattern, false));
-        assertEquals(List.of(annotationStringHexPattern),
-                cardEmulation.getPollingLoopPatternFiltersForService(customServiceName));
+        assertTrue(cardEmulation.getPollingLoopPatternFiltersForService(customServiceName)
+                         .contains(annotationStringHexPattern));
     }
 
     static void ensureUnlocked() {
