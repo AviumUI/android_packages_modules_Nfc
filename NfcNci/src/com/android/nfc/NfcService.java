@@ -557,9 +557,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
         @Override
         public void onDisplayChanged(int displayId) {
-            if (displayId == Display.DEFAULT_DISPLAY) {
-                handleScreenStateChanged();
-            }
+            handleScreenStateChanged();
         }
     };
 
