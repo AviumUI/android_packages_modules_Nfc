@@ -645,6 +645,9 @@ public class CardEmulationTest {
             assertTrue((boolean)event.mState);
 
             assertFalse(adapter.isObserveModeEnabled());
+
+            Thread.sleep(1_000); // Drain out all incoming events.
+
             eventPollLoopReceiver.setNumEventsToWaitFor(1);
 
             assertTrue(adapter.setObserveModeEnabled(true));
