@@ -1037,6 +1037,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         )
 
         self.emulator.nfc_emulator.setNfcState(False)
+        time.sleep(2) # Let NFC stack complete initialization.
         self.emulator.nfc_emulator.setNfcState(True)
 
         self._set_up_reader_and_assert_transaction(expected_service=_PAYMENT_SERVICE_1)

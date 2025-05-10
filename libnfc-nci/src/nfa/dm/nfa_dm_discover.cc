@@ -1788,16 +1788,6 @@ void nfa_dm_disc_new_state(tNFA_DM_RF_DISC_STATE new_state) {
       nfa_sys_check_disabled();
     }
   }
-
-  if (((nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_IDLE) ||
-       (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_DISCOVERY)) &&
-      (!(nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_W4_RSP)) &&
-      (nfc_cb.is_nfcee_discovery_required)) {
-    LOG(VERBOSE) << StringPrintf("%s: Triggering Pending EE discovery...",
-                                 __func__);
-    nfa_dm_nfc_response_cback_wrapper(NFC_NFCEE_STATUS_REVT,
-                                      &nfc_cb.nfcee_data);
-  }
 }
 
 /*******************************************************************************
@@ -2996,6 +2986,16 @@ void nfa_dm_disc_sm_execute(tNFA_DM_RF_DISC_SM_EVENT event,
       "%s: new state=%s (%d), disc_flags=0x%x", __func__,
       nfa_dm_disc_state_2_str(nfa_dm_cb.disc_cb.disc_state).c_str(),
       nfa_dm_cb.disc_cb.disc_state, nfa_dm_cb.disc_cb.disc_flags);
+
+  if (((nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_IDLE) ||
+        (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_DISCOVERY)) &&
+      (!(nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_W4_RSP)) &&
+      (nfc_cb.is_nfcee_discovery_required)) {
+    LOG(VERBOSE) << StringPrintf("%s: Triggering Pending EE discovery...",
+        __func__);
+    nfa_dm_nfc_response_cback_wrapper(NFC_NFCEE_STATUS_REVT,
+        &nfc_cb.nfcee_data);
+  }
 }
 
 /*******************************************************************************

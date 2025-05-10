@@ -338,6 +338,11 @@ public class NativeNfcManager implements DeviceHost {
     @Override
     public void clearT3tIdentifiersCache() {
         synchronized (mLock) {
+            Iterator<Integer> it = mT3tIdentifiers.keySet().iterator();
+            while (it.hasNext()) {
+                int handle = it.next().intValue();
+                doDeregisterT3tIdentifier(handle);
+            }
             mT3tIdentifiers.clear();
         }
     }
