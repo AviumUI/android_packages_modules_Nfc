@@ -257,7 +257,12 @@ void phNfcExtn_LibClose() {
   }
   if (p_oem_extn_handle != NULL) {
     LOG(DEBUG) << StringPrintf("%s: Closing %s!!", __func__, mLibPathName.c_str());
-    dlclose(p_oem_extn_handle);
+    int32_t status = dlclose(p_oem_extn_handle);
+    dlerror(); /* Clear any existing error */
+    if (status != 0) {
+      LOG(ERROR) << StringPrintf("%s: Closing %s failed !!", __func__,
+                                 mLibPathName.c_str());
+    }
     p_oem_extn_handle = NULL;
   }
 }

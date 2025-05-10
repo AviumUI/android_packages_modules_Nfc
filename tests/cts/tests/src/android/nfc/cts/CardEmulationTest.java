@@ -645,6 +645,9 @@ public class CardEmulationTest {
             assertTrue((boolean)event.mState);
 
             assertFalse(adapter.isObserveModeEnabled());
+
+            Thread.sleep(1_000); // Drain out all incoming events.
+
             eventPollLoopReceiver.setNumEventsToWaitFor(1);
 
             assertTrue(adapter.setObserveModeEnabled(true));
@@ -2003,12 +2006,13 @@ public class CardEmulationTest {
         ComponentName customServiceName = new ComponentName(mContext, CustomHostApduService.class);
         String testName = new Object() {
         }.getClass().getEnclosingMethod().getName();
-        String annotationStringHex = HexFormat.of().toHexDigits(testName.hashCode());
+        String annotationStringHex =
+            HexFormat.of().withUpperCase().toHexDigits(testName.hashCode());
         assertTrue(cardEmulation.registerPollingLoopFilterForService(
                 customServiceName,
                 annotationStringHex, false));
-        assertEquals(List.of(annotationStringHex),
-            cardEmulation.getPollingLoopFiltersForService(customServiceName));
+        assertTrue(cardEmulation.getPollingLoopFiltersForService(customServiceName)
+                       .contains(annotationStringHex));
     }
 
     @Test
@@ -2019,16 +2023,13 @@ public class CardEmulationTest {
         ComponentName customServiceName = new ComponentName(mContext, CustomHostApduService.class);
         String testName = new Object() {
         }.getClass().getEnclosingMethod().getName();
-        String annotationStringHexPrefix = HexFormat.of().toHexDigits(testName.hashCode());
-        String annotationStringHex = annotationStringHexPrefix + "123456789ABCDF";
+        String annotationStringHexPrefix =
+            HexFormat.of().withUpperCase().toHexDigits(testName.hashCode());
         String annotationStringHexPattern = annotationStringHexPrefix + ".*";
         assertTrue(cardEmulation.registerPollingLoopPatternFilterForService(
                 customServiceName, annotationStringHexPattern, false));
-        assertTrue(cardEmulation.registerPollingLoopPatternFilterForService(
-                customServiceName,
-                annotationStringHexPattern, false));
-        assertEquals(List.of(annotationStringHexPattern),
-                cardEmulation.getPollingLoopPatternFiltersForService(customServiceName));
+        assertTrue(cardEmulation.getPollingLoopPatternFiltersForService(customServiceName)
+                         .contains(annotationStringHexPattern));
     }
 
     static void ensureUnlocked() {

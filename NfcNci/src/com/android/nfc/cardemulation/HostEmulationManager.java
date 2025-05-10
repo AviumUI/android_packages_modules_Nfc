@@ -1106,7 +1106,9 @@ public class HostEmulationManager {
                     PackageManager.PackageInfoFlags.of(0),
                     componentNameAndUser.getUserId()
             );
+            // Re-acquire the wake lock with the new work source.
             mWakeLock.setWorkSource(new WorkSource(uid, packageName));
+            mWakeLock.acquire(mDeviceConfig.getCeWakeLockTimeoutMillis());
         } catch (PackageManager.NameNotFoundException e) {
             Log.w(TAG, "Failed to find uid for " + packageName + " and user "
                     + componentNameAndUser.getUserId());

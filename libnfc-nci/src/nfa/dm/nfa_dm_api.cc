@@ -86,6 +86,7 @@ extern void NFA_Partial_Init(tHAL_NFC_ENTRY* p_hal_entry_tbl, uint8_t mode) {
     nfa_sys_init();
     nfa_dm_init();
     nfa_ee_init();
+    nfa_t4tnfcee_init();
   } else {
     LOG(ERROR) << StringPrintf("%s: Unknown Mode!", __func__);
     return;

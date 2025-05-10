@@ -34,6 +34,7 @@ acts as an NFC reader. The devices should be placed back to back.
 from http.client import HTTPSConnection
 import json
 import logging
+import re
 import ssl
 import sys
 import time
@@ -121,9 +122,30 @@ Polling frame vendor specific gain value dropped on power increase
 _FAILED_FRAME_TYPE_INVALID = "Polling frame type is invalid"
 _FAILED_FRAME_DATA_INVALID = "Polling frame data is invalid"
 
+_MAINLINE_MODULE_VERSION_REGEX = re.compile(
+    r"package:(?P<package>[\S]+) versionCode:(?P<version>\d+)"
+)
 
 
 class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
+
+    def record_mainline_version(self, ad: android_device.AndroidDevice) -> None:
+      """Records NFC mainline version in Android device info."""
+      apex = "com.google.android.nfcservices"
+      if apex in ad.device_info["user_added_info"]:
+        return
+
+      try:
+        mainline_info = ad.adb.shell(
+            f"pm list packages --apex-only --show-versioncode | grep {apex}"
+        ).decode().strip()
+      except adb.AdbError:
+        ad.log.debug("No mainline modules found")
+        return
+
+      match = _MAINLINE_MODULE_VERSION_REGEX.match(mainline_info)
+      if match is not None:
+        ad.add_device_info(apex, match.group("version"))
 
     def _set_up_emulator(self, *args, start_emulator_fun=None, service_list=[],
                  expected_service=None, is_payment=False, preferred_service=None,
@@ -226,6 +248,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         try:
             devices = self.register_controller(android_device)[:1]
             self.emulator = devices[0]
+            self.record_mainline_version(self.emulator)
 
             self._setup_failure_reason = (
                 'Cannot load emulator snippet. Is NfcEmulatorTestApp.apk '
@@ -1014,6 +1037,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         )
 
         self.emulator.nfc_emulator.setNfcState(False)
+        time.sleep(2) # Let NFC stack complete initialization.
         self.emulator.nfc_emulator.setNfcState(True)
 
         self._set_up_reader_and_assert_transaction(expected_service=_PAYMENT_SERVICE_1)

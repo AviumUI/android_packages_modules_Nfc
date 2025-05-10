@@ -1595,7 +1595,15 @@ static jboolean doPartialInit() {
     }
     NFA_SetNfccMode(ENABLE_MODE_DEFAULT);
   }
-
+  if (stat == NFA_STATUS_OK) {
+    // sIsNfaEnabled indicates whether stack started successfully
+    if (sIsNfaEnabled) {
+      NativeT4tNfcee::getInstance().initialize();
+    }
+  } else {
+    LOG(ERROR) << StringPrintf("%s: fail enable; error=0x%X", __func__, stat);
+    return JNI_FALSE;
+  }
   // sIsNfaEnabled indicates whether stack started successfully
   if (!sIsNfaEnabled) {
     NFA_Disable(false /* ungraceful */);
@@ -1933,7 +1941,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
   }
 
   // Checking if RT should be updated
-  RoutingManager::getInstance().commitRouting();
+  if (!RoutingManager::getInstance().isRTUpdateOptimized())
+    RoutingManager::getInstance().commitRouting();
 
   // Actually start discovery.
   startRfDiscovery(true);
@@ -1987,6 +1996,7 @@ static jboolean doPartialDeinit() {
   LOG(DEBUG) << StringPrintf("%s: enter", __func__);
   tNFA_STATUS stat = NFA_STATUS_OK;
   sIsDisabling = true;
+  NativeT4tNfcee::getInstance().onNfccShutdown();
   if (sIsNfaEnabled) {
     SyncEventGuard guard(sNfaDisableEvent);
     stat = NFA_Disable(TRUE /* graceful */);
