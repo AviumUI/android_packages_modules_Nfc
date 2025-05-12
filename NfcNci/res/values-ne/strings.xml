@@ -29,7 +29,7 @@
     <string name="pair_no" msgid="1333098406083837138">"होइन"</string>
     <string name="tap_again_to_pay" msgid="4338572813931564301">"<xliff:g id="APP">%1$s</xliff:g>सँग तिर्न फेरी छुनुहोस्"</string>
     <string name="tap_again_to_complete" msgid="6649361012821973200">"<xliff:g id="APP">%1$s</xliff:g> सँग समाप्त गर्न फेरी छुनुहोस्"</string>
-    <string name="tap_again_description" msgid="7062073825398109427">"रिडर नजिकै लग्नुहोस्"</string>
+    <string name="tap_again_description" msgid="7062073825398109427">"रिडर नजिकै लैजानुहोस्"</string>
     <string name="appchooser_description" msgid="4568068957993132082">"स्क्यान गर्नु पर्ने एप छनौट गर्नुहोस्"</string>
     <string name="transaction_failure" msgid="6933419514549792555">"यस transaction <xliff:g id="APP">%1$s</xliff:g> सगँ सम्पन्न गर्न सकिन्न।"</string>
     <string name="could_not_use_app" msgid="2945389413330489607">"<xliff:g id="APP">%1$s</xliff:g> प्रयोग गर्न सकेन।"</string>
