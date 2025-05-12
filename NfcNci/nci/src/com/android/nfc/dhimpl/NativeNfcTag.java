@@ -69,6 +69,7 @@ public class NativeNfcTag implements TagEndpoint {
 
     private boolean mIsPresent; // Whether the tag is known to be still present
 
+    private boolean mIsShutdown;
     private PresenceCheckWatchdog mWatchdog;
 
     private boolean mIsRemovalDetectionModeReq = false;
@@ -149,12 +150,17 @@ public class NativeNfcTag implements TagEndpoint {
             if (!isRemovalDetectionModeRequested()) {
                 // Restart the polling loop
                 Log.d(TAG, "Tag lost, restarting polling loop");
-                doDisconnect();
+                if (!mIsShutdown) {
+                    doDisconnect();
+                }
             }
-            if (tagDisconnectedCallback != null) {
-                tagDisconnectedCallback.onTagDisconnected();
+            if (!mIsShutdown) {
+                if (tagDisconnectedCallback != null) {
+                    tagDisconnectedCallback.onTagDisconnected();
+                }
             }
-            if (DBG) Log.d(TAG, "Stopping background presence check");
+            if (DBG)
+                Log.d(TAG, "Stopping background presence check");
         }
     }
 
@@ -254,7 +260,8 @@ public class NativeNfcTag implements TagEndpoint {
     }
 
     @Override
-    public synchronized void stopPresenceChecking() {
+    public synchronized void stopPresenceChecking(boolean isShutdown) {
+        mIsShutdown = isShutdown;
         mIsPresent = false;
         if (mWatchdog != null) {
             mWatchdog.end(true);
@@ -267,6 +274,7 @@ public class NativeNfcTag implements TagEndpoint {
         // Once we start presence checking, we allow the upper layers
         // to know the tag is in the field.
         mIsPresent = true;
+        mIsShutdown = false;
         if (mWatchdog == null) {
             mWatchdog = new PresenceCheckWatchdog(presenceCheckDelay, callback);
             mWatchdog.start();
