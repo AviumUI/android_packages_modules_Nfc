@@ -25,7 +25,7 @@ android_test {
         "android.nfc.flags-aconfig-java",
         "android.permission.flags-aconfig-java",
         "com.android.nfc.flags-aconfig-java",
-        "com.android.nfc.module.flags-aconfig-java",
+        "com.android.nfc.module.flags-aconfig-exported-java",
         "ctstestrunner-axt",
         "compatibility-device-util-axt",
         "flag-junit",
