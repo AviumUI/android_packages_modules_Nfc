@@ -24,6 +24,7 @@
 #include <log/log.h>
 #include <nativehelper/ScopedLocalRef.h>
 #include <nativehelper/ScopedPrimitiveArray.h>
+#include "IntervalTimer.h"
 #include <statslog_nfc.h>
 
 #include "JavaClassConstants.h"
@@ -38,6 +39,9 @@ static jobjectArray sTechPollBytes;
 static jobjectArray gtechActBytes;
 static int sLastSelectedTagId = 0;
 
+static void selectCompleteCallBack(union sigval);
+IntervalTimer gSelectCompleteTimer;
+
 /*******************************************************************************
 **
 ** Function:        NfcTag
@@ -51,6 +55,7 @@ NfcTag::NfcTag()
     : mNumTechList(0),
       mNumRfDiscId(0),
       mIsReselecting(false),
+      mWaitingForSelect(false),
       mTechnologyTimeoutsTable(MAX_NUM_TECHNOLOGY),
       mNativeData(NULL),
       mIsActivated(false),
@@ -1086,6 +1091,7 @@ void NfcTag::resetTechnologies() {
   memset(mTechParams, 0, sizeof(mTechParams));
   mIsDynamicTagId = false;
   mIsFelicaLite = false;
+  selectCompleteStatus(false);
   resetAllTransceiveTimeouts(true);
 }
 
@@ -1116,8 +1122,13 @@ void NfcTag::selectFirstTag() {
 
   if (foundIdx != -1) {
     tNFA_STATUS stat = selectTagAtIndex(foundIdx);
-    if (stat != NFA_STATUS_OK)
+    if (stat != NFA_STATUS_OK) {
       LOG(ERROR) << StringPrintf("%s: fail select; error=0x%X", fn, stat);
+    } else {
+      mWaitingForSelect = true;
+      gSelectCompleteTimer.set(1000, selectCompleteCallBack);
+      LOG(DEBUG) << StringPrintf("%s: starting timer", fn);
+    }
   } else
     LOG(ERROR) << StringPrintf("%s: only found NFC-DEP technology.", fn);
 }
@@ -1165,6 +1176,9 @@ void NfcTag::selectNextTagIfExists() {
                                  fn);
     } else {
       LOG(ERROR) << StringPrintf("%s: fail select; error=0x%X", fn, stat);
+      mWaitingForSelect = true;
+      LOG(DEBUG) << StringPrintf("%s: Starting timer", fn);
+      gSelectCompleteTimer.set(1000, selectCompleteCallBack);
     }
   } else {
     LOG(ERROR) << StringPrintf("%s: only found NFC-DEP technology.", fn);
@@ -1794,3 +1808,37 @@ bool NfcTag::isReselecting() { return mIsReselecting; }
 **
 *******************************************************************************/
 void NfcTag::setReselect(bool isReselecting) { mIsReselecting = isReselecting; }
+
+/*******************************************************************************
+**
+** Function:        selectCompleteStatus
+**
+** Description:     Notify whether tag select is success/failure
+**
+** Returns:         None
+**
+*******************************************************************************/
+void NfcTag::selectCompleteStatus(bool status) {
+  if (mWaitingForSelect == true) {
+    LOG(INFO) << StringPrintf("%s: status=%u", __func__, status);
+    gSelectCompleteTimer.kill();
+    mWaitingForSelect = false;
+  }
+}
+
+/*******************************************************************************
+**
+** Function:        selectCompleteCallBack
+**
+** Description:     CallBack called when tag select is timed out.
+**
+** Returns:         None
+**
+*******************************************************************************/
+void selectCompleteCallBack(union sigval) {
+  if (NfcTag::getInstance().mWaitingForSelect == true) {
+    LOG(DEBUG) << StringPrintf("%s", __func__);
+    NfcTag::getInstance().mWaitingForSelect = false;
+    NFA_Deactivate(false);
+  }
+}

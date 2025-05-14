@@ -2175,7 +2175,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 Log.d(TAG, "resetReaderModeParams: Disabling reader mode because app died"
                         + " or moved to background");
                 mReaderModeParams = null;
-                StopPresenceChecking();
+                StopPresenceChecking(false);
                 // listenTech is different from the default value, the stored listenTech will be included.
                 // When using enableReaderMode, change listenTech to default & restore to the previous value.
                 if (isNfcEnabled()) {
@@ -2901,7 +2901,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
                         if (mPollingDisableDeathRecipients.size() == 0) {
                             mReaderModeParams = null;
-                            StopPresenceChecking();
+                            StopPresenceChecking(false);
                         }
 
                         if (pollingDisableDeathRecipient != null) {
@@ -4638,7 +4638,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
     }
 
-    private void StopPresenceChecking() {
+    private void StopPresenceChecking(boolean isShutdown) {
         Object[] objectValues = mObjectMap.values().toArray();
         if (!ArrayUtils.isEmpty(objectValues)) {
             // If there are some tags connected, we need to execute the callback to indicate
@@ -4647,8 +4647,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
         for (Object object : objectValues) {
             if (object instanceof TagEndpoint) {
-                TagEndpoint tag = (TagEndpoint)object;
-                ((TagEndpoint) object).stopPresenceChecking();
+                TagEndpoint tag = (TagEndpoint) object;
+                ((TagEndpoint) object).stopPresenceChecking(isShutdown);
             }
         }
     }
@@ -5725,7 +5725,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     unregisterObject(tagEndpoint.getHandle());
                     if (mPollDelayTime > NO_POLL_DELAY) {
                         pollingDelay();
-                        tagEndpoint.stopPresenceChecking();
+                        tagEndpoint.stopPresenceChecking(false);
                     } else {
                         Log.d(TAG, "dispatchTagEndpoint: Keep presence checking");
                     }
@@ -6048,6 +6048,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     new EnableDisableTask().execute(TASK_DISABLE_ALWAYS_ON);
                 }
                 if (isNfcEnabled()) {
+                    StopPresenceChecking(true);
                     mDeviceHost.shutdown();
                 }
             }

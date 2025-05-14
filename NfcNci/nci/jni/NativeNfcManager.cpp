@@ -420,6 +420,7 @@ static void nfaConnectionCallback(uint8_t connEvent,
       if (eventData->status != NFA_STATUS_OK) {
         if (gIsSelectingRfInterface) {
           nativeNfcTag_doConnectStatus(false);
+          NfcTag::getInstance().selectCompleteStatus(false);
         }
 
         LOG(ERROR) << StringPrintf(
@@ -448,6 +449,7 @@ static void nfaConnectionCallback(uint8_t connEvent,
       uint8_t activatedMode =
           eventData->activated.activate_ntf.rf_tech_param.mode;
       gTagJustActivated = true;
+      NfcTag::getInstance().selectCompleteStatus(true);
       if (NFC_PROTOCOL_T5T == activatedProtocol &&
           NfcTag::getInstance().getNumDiscNtf()) {
         /* T5T doesn't support multiproto detection logic */

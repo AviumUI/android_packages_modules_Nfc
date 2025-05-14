@@ -327,7 +327,7 @@ public class NfcChargingTest {
     public void testHandleWlcCap_ModeReq_State24() {
         mNfcCharging.WLCState = 9;
         mNfcCharging.HandleWLCState();
-        verify(mNfcCharging.TagHandler).stopPresenceChecking();
+        verify(mNfcCharging.TagHandler).stopPresenceChecking(false);
         Assert.assertEquals(0, mNfcCharging.WLCState);
     }
 
