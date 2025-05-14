@@ -19,6 +19,8 @@ package com.android.nfc.cardemulation;
 import static android.nfc.cardemulation.CardEmulation.SET_SERVICE_ENABLED_STATUS_FAILURE_FEATURE_UNSUPPORTED;
 import static android.nfc.cardemulation.CardEmulation.SET_SERVICE_ENABLED_STATUS_OK;
 
+import static com.android.nfc.cardemulation.util.TelephonyUtils.SWP_SUPPORTED_PHYSICAL_SIM_SLOT;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertEquals;
@@ -2762,13 +2764,13 @@ public class CardEmulationManagerTest {
         boolean isActive = true;
         TelephonyUtils telephonyUtils = mock(TelephonyUtils.class);
         SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
-        Optional<SubscriptionInfo> optionalInfo = Optional.of(subscriptionInfo);
         Field field = CardEmulationManager.class.getDeclaredField("mTelephonyUtils");
         field.setAccessible(true);
         field.set(mCardEmulationManager, telephonyUtils);
         when(subscriptionInfo.isEmbedded()).thenReturn(true);
         when(subscriptionInfo.getPortIndex()).thenReturn(0);
-        when(telephonyUtils.getActiveSubscriptionInfoById(subscriptionId)).thenReturn(optionalInfo);
+        when(subscriptionInfo.getSubscriptionId()).thenReturn(subscriptionId);
+        when(telephonyUtils.getActiveSubscriptions()).thenReturn(List.of(subscriptionInfo));
         when(mRoutingOptionManager.getSecureElementForRoute(anyInt())).thenReturn("");
 
         mCardEmulationManager.onPreferredSubscriptionChanged(subscriptionId, isActive);
@@ -2789,7 +2791,8 @@ public class CardEmulationManagerTest {
         field.set(mCardEmulationManager, telephonyUtils);
         when(subscriptionInfo.isEmbedded()).thenReturn(true);
         when(subscriptionInfo.getPortIndex()).thenReturn(1);
-        when(telephonyUtils.getActiveSubscriptionInfoById(subscriptionId)).thenReturn(optionalInfo);
+        when(subscriptionInfo.getSubscriptionId()).thenReturn(subscriptionId);
+        when(telephonyUtils.getActiveSubscriptions()).thenReturn(List.of(subscriptionInfo));
         when(mRoutingOptionManager.getSecureElementForRoute(anyInt())).thenReturn("");
 
         mCardEmulationManager.onPreferredSubscriptionChanged(subscriptionId, isActive);
@@ -2804,12 +2807,16 @@ public class CardEmulationManagerTest {
         boolean isActive = true;
         TelephonyUtils telephonyUtils = mock(TelephonyUtils.class);
         SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
-        Optional<SubscriptionInfo> optionalInfo = Optional.of(subscriptionInfo);
         Field field = CardEmulationManager.class.getDeclaredField("mTelephonyUtils");
         field.setAccessible(true);
         field.set(mCardEmulationManager, telephonyUtils);
+        when(telephonyUtils.isUiccSubscription(subscriptionId)).thenReturn(true);
         when(subscriptionInfo.isEmbedded()).thenReturn(false);
-        when(telephonyUtils.getActiveSubscriptionInfoById(subscriptionId)).thenReturn(optionalInfo);
+        when(subscriptionInfo.areUiccApplicationsEnabled()).thenReturn(true);
+        when(subscriptionInfo.getSubscriptionId()).thenReturn(subscriptionId);
+        when(telephonyUtils.getActiveSubscriptions()).thenReturn(List.of(subscriptionInfo));
+        when(telephonyUtils.findPhysicalSlotIndex(subscriptionInfo))
+                .thenReturn(SWP_SUPPORTED_PHYSICAL_SIM_SLOT);
         when(mRoutingOptionManager.getSecureElementForRoute(anyInt())).thenReturn("");
 
         mCardEmulationManager.onPreferredSubscriptionChanged(subscriptionId, isActive);
@@ -2823,11 +2830,10 @@ public class CardEmulationManagerTest {
         int subscriptionId = 1;
         boolean isActive = true;
         TelephonyUtils telephonyUtils = mock(TelephonyUtils.class);
-        Optional<SubscriptionInfo> optionalInfo = Optional.empty();
         Field field = CardEmulationManager.class.getDeclaredField("mTelephonyUtils");
         field.setAccessible(true);
         field.set(mCardEmulationManager, telephonyUtils);
-        when(telephonyUtils.getActiveSubscriptionInfoById(subscriptionId)).thenReturn(optionalInfo);
+        when(telephonyUtils.getActiveSubscriptions()).thenReturn(List.of());
 
         mCardEmulationManager.onPreferredSubscriptionChanged(subscriptionId, isActive);
         verify(mRoutingOptionManager).onPreferredSimChanged(TelephonyUtils.SIM_TYPE_UNKNOWN);
@@ -2936,13 +2942,13 @@ public class CardEmulationManagerTest {
         when(mPreferredSubscriptionService.getPreferredSubscriptionId()).thenReturn(subscriptionId);
         TelephonyUtils telephonyUtils = mock(TelephonyUtils.class);
         SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
-        Optional<SubscriptionInfo> optionalInfo = Optional.of(subscriptionInfo);
         Field field = CardEmulationManager.class.getDeclaredField("mTelephonyUtils");
         field.setAccessible(true);
         field.set(mCardEmulationManager, telephonyUtils);
         when(subscriptionInfo.isEmbedded()).thenReturn(true);
         when(subscriptionInfo.getPortIndex()).thenReturn(0);
-        when(telephonyUtils.getActiveSubscriptionInfoById(subscriptionId)).thenReturn(optionalInfo);
+        when(subscriptionInfo.getSubscriptionId()).thenReturn(subscriptionId);
+        when(telephonyUtils.getActiveSubscriptions()).thenReturn(List.of(subscriptionInfo));
         when(telephonyUtils.updateSwpStatusForEuicc(TelephonyUtils.SIM_TYPE_EUICC_1)).thenReturn(
                 "6F02839000");
 
@@ -2964,13 +2970,13 @@ public class CardEmulationManagerTest {
         when(mPreferredSubscriptionService.getPreferredSubscriptionId()).thenReturn(subscriptionId);
         TelephonyUtils telephonyUtils = mock(TelephonyUtils.class);
         SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
-        Optional<SubscriptionInfo> optionalInfo = Optional.of(subscriptionInfo);
         Field field = CardEmulationManager.class.getDeclaredField("mTelephonyUtils");
         field.setAccessible(true);
         field.set(mCardEmulationManager, telephonyUtils);
         when(subscriptionInfo.isEmbedded()).thenReturn(true);
         when(subscriptionInfo.getPortIndex()).thenReturn(0);
-        when(telephonyUtils.getActiveSubscriptionInfoById(subscriptionId)).thenReturn(optionalInfo);
+        when(subscriptionInfo.getSubscriptionId()).thenReturn(subscriptionId);
+        when(telephonyUtils.getActiveSubscriptions()).thenReturn(List.of(subscriptionInfo));
         when(telephonyUtils.updateSwpStatusForEuicc(TelephonyUtils.SIM_TYPE_EUICC_1)).thenReturn(
                 "6F0283FFFF");
 
@@ -2993,13 +2999,13 @@ public class CardEmulationManagerTest {
         when(mPreferredSubscriptionService.getPreferredSubscriptionId()).thenReturn(subscriptionId);
         TelephonyUtils telephonyUtils = mock(TelephonyUtils.class);
         SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
-        Optional<SubscriptionInfo> optionalInfo = Optional.of(subscriptionInfo);
         Field field = CardEmulationManager.class.getDeclaredField("mTelephonyUtils");
         field.setAccessible(true);
         field.set(mCardEmulationManager, telephonyUtils);
         when(subscriptionInfo.isEmbedded()).thenReturn(true);
         when(subscriptionInfo.getPortIndex()).thenReturn(0);
-        when(telephonyUtils.getActiveSubscriptionInfoById(subscriptionId)).thenReturn(optionalInfo);
+        when(subscriptionInfo.getSubscriptionId()).thenReturn(subscriptionId);
+        when(telephonyUtils.getActiveSubscriptions()).thenReturn(List.of(subscriptionInfo));
         when(telephonyUtils.updateSwpStatusForEuicc(TelephonyUtils.SIM_TYPE_EUICC_1)).thenReturn(
                 "6FF");
 

@@ -163,6 +163,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     private final DeviceConfigFacade mDeviceConfigFacade;
     private final NfcInjector mNfcInjector;
 
+    private boolean mIsEuiccCapable;
+
     // TODO: Move this object instantiation and dependencies to NfcInjector.
     public CardEmulationManager(Context context, NfcInjector nfcInjector,
         DeviceConfigFacade deviceConfigFacade) {
@@ -175,6 +177,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mWalletRoleObserver = new WalletRoleObserver(context,
                 context.getSystemService(RoleManager.class), this, nfcInjector);
 
+        mIsEuiccCapable = mContext.getResources().getBoolean(R.bool.enable_euicc_support)
+                && NfcInjector.NfcProperties.isEuiccSupported();
         mRoutingOptionManager = RoutingOptionManager.getInstance();
         mOffHostRouteEse = mRoutingOptionManager.getOffHostRouteEse();
         mOffHostRouteUicc = mRoutingOptionManager.getOffHostRouteUicc();
@@ -736,9 +740,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     @Override
     public void onPreferredSubscriptionChanged(int subscriptionId, boolean isActive) {
         int simType = isActive ?  getSimTypeById(subscriptionId) : TelephonyUtils.SIM_TYPE_UNKNOWN;
-        Log.i(TAG, "onPreferredSubscriptionChanged: subscription_" + subscriptionId + "is active("
-                + isActive + ")"
-                + ", type(" + simType + ")");
+        Log.i(TAG, "onPreferredSubscriptionChanged: subscription_" + subscriptionId
+                + "is active(" + isActive + "), type(" + simType + ")");
         mRoutingOptionManager.onPreferredSimChanged(simType);
         if (simType != TelephonyUtils.SIM_TYPE_UNKNOWN) {
             updateRouteBasedOnPreferredSim();
@@ -1698,8 +1701,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     private int getSimTypeById(int subscriptionId) {
-        Optional<SubscriptionInfo> optionalInfo =
-                mTelephonyUtils.getActiveSubscriptionInfoById(subscriptionId);
+        Optional<SubscriptionInfo> optionalInfo = getActiveSubscriptionInfoById(subscriptionId);
         if (optionalInfo.isPresent()) {
             SubscriptionInfo info = optionalInfo.get();
             if (info.isEmbedded()) {
@@ -1716,8 +1718,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     public byte[] getReaderByPreferredSim() {
         Optional<SubscriptionInfo> optionalInfo =
-                mTelephonyUtils.getActiveSubscriptionInfoById(mPreferredSubscriptionService
-                        .getPreferredSubscriptionId());
+                getActiveSubscriptionInfoById(
+                    mPreferredSubscriptionService.getPreferredSubscriptionId());
         if (optionalInfo.isPresent() && optionalInfo.get().isEmbedded()) {
             SubscriptionInfo info = optionalInfo.get();
             return (RoutingOptionManager.SE_PREFIX_SIM + (1 + info.getSimSlotIndex()))
@@ -1842,5 +1844,24 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     public boolean isHostCardEmulationActivated() {
         return mHostEmulationManager.isHostCardEmulationActivated();
+    }
+
+    Optional<SubscriptionInfo> getActiveSubscriptionInfoById(int subscriptionId) {
+        Log.d(TAG, "getActiveSubscriptionInfoById: " + subscriptionId);
+        if (mTelephonyUtils.isUiccSubscription(subscriptionId)) {
+            Log.d(TAG, "Get activated uicc subscription with SWP supported physical slot");
+            return mTelephonyUtils.getActiveSubscriptions().stream()
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC)
+                    .filter(subscriptionInfo ->
+                                mTelephonyUtils.findPhysicalSlotIndex(subscriptionInfo)
+                                == TelephonyUtils.SWP_SUPPORTED_PHYSICAL_SIM_SLOT)
+                    .findFirst();
+        } else {
+            return mTelephonyUtils.getActiveSubscriptions().stream()
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC)
+                    .filter(subscriptionInfo ->
+                                subscriptionInfo.getSubscriptionId() == subscriptionId)
+                    .findFirst();
+        }
     }
 }

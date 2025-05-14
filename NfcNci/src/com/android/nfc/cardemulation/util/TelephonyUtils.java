@@ -19,6 +19,7 @@ import android.content.Context;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.telephony.UiccCardInfo;
 import android.util.Log;
 
 import java.util.Collections;
@@ -48,11 +49,19 @@ public class TelephonyUtils extends SubscriptionManager.OnSubscriptionsChangedLi
     public static final int MEP_MODE_A2 = 2;
     public static final int MEP_MODE_B = 3;
 
+    public static final int SWP_SUPPORTED_PHYSICAL_SIM_SLOT = 0;
+
     private TelephonyManager mTelephonyManager;
     private SubscriptionManager mSubscriptionManager;
 
     private boolean mIsSubscriptionsChangedListenerRegistered = false;
 
+    // Condition for checking active subscription for UICC and eUICC
+    // When find for an active list, the UICC and eUICC status are different as
+    // the SIM manager enables or disables it.
+    // In the case of UICC, it is included in the active list when disabled in the SIM manager,
+    // while eUICC is not included. This is based on the SIM power maintenance policy.
+    // For UICC, also check the application state.
     public static Predicate<SubscriptionInfo> SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC =
             subscriptionInfo -> !subscriptionInfo.isEmbedded()
                     && subscriptionInfo.areUiccApplicationsEnabled();
@@ -87,20 +96,6 @@ public class TelephonyUtils extends SubscriptionManager.OnSubscriptionsChangedLi
                 Executors.newSingleThreadExecutor(), this);
     }
 
-    public Optional<SubscriptionInfo> getActiveSubscriptionInfoById(int subscriptionId) {
-        Log.d(TAG, "getActiveSubscriptionInfoById: " + subscriptionId);
-        if (isUiccSubscription(subscriptionId)) {
-            Log.d(TAG, "getActiveSubscriptionInfoById: Uicc Subscription");
-            return findFirstActiveSubscriptionInfo(subscriptionInfo ->
-                    !subscriptionInfo.isEmbedded()
-                            && subscriptionInfo.areUiccApplicationsEnabled());
-        }
-        else {
-            Log.d(TAG, "getActiveSubscriptionInfoById: Embedded Uicc Subscription");
-            return Optional.ofNullable(
-                    mSubscriptionManager.getActiveSubscriptionInfo(subscriptionId));
-        }
-    }
     public boolean isUiccSubscription(int subscriptionId) {
         return subscriptionId == SUBSCRIPTION_ID_UICC;
     }
@@ -115,6 +110,15 @@ public class TelephonyUtils extends SubscriptionManager.OnSubscriptionsChangedLi
         return (list != null) ? list : Collections.emptyList();
     }
 
+    public int findPhysicalSlotIndex(SubscriptionInfo subscriptionInfo) {
+        return mTelephonyManager.getUiccCardsInfo().stream()
+                .filter(info->!info.isEuicc())
+                .filter(card->card.getPorts().stream()
+                        .anyMatch(port->
+                                port.getLogicalSlotIndex() == subscriptionInfo.getSimSlotIndex()))
+                .map(UiccCardInfo::getPhysicalSlotIndex)
+                .findFirst().orElseGet(()->-1);
+    }
     @Override
     public void onSubscriptionsChanged() {
         Log.d(TAG, "onSubscriptionsChanged");
@@ -125,7 +129,7 @@ public class TelephonyUtils extends SubscriptionManager.OnSubscriptionsChangedLi
         }
 
         mCallback.onActiveSubscriptionsUpdated(
-                mSubscriptionManager.getActiveSubscriptionInfoList());
+            mSubscriptionManager.getActiveSubscriptionInfoList());
     }
 
     public String updateSwpStatusForEuicc(int simType) {
@@ -176,6 +180,4 @@ public class TelephonyUtils extends SubscriptionManager.OnSubscriptionsChangedLi
     public void setMepMode(int mepMode) {
         mMepMode = mepMode;
     }
-
-
 }
