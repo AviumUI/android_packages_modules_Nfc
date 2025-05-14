@@ -132,6 +132,7 @@ static bool sReselectTagIdle = false;
 
 static int sPresCheckStatus = 0;
 static bool sIsDisconnecting = false;
+void nativeNfcTag_doPresenceCheckResult(tNFA_STATUS status);
 
 static int reSelect(tNFA_INTF_TYPE rfInterface, bool fSwitchIfNeeded);
 extern bool gIsDtaEnabled;
@@ -164,10 +165,8 @@ void nativeNfcTag_abortWaits() {
   }
 
   sem_post(&sCheckNdefSem);
-  {
-    SyncEventGuard guard(sPresenceCheckEvent);
-    sPresenceCheckEvent.notifyOne();
-  }
+  nativeNfcTag_doPresenceCheckResult(NFA_STATUS_FAILED);
+
   sem_post(&sMakeReadonlySem);
   sCurrentRfInterface = NFA_INTERFACE_ISO_DEP;
   sCurrentActivatedProtocl = NFA_INTERFACE_ISO_DEP;
