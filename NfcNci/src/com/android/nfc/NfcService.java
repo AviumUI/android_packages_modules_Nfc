@@ -118,7 +118,6 @@ import android.util.EventLog;
 import android.util.Log;
 import android.util.Pair;
 import android.util.proto.ProtoOutputStream;
-import android.view.Display;
 import android.widget.Toast;
 
 import androidx.annotation.VisibleForTesting;
@@ -5374,7 +5373,6 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     }
                     break;
                 case MSG_WATCHDOG_PING:
-                    Log.d(TAG, "handleMessage: MSG_WATCHDOG_PING");
                     NfcWatchdog watchdog = (NfcWatchdog) msg.obj;
                     watchdog.notifyHasReturned();
                     if (mLastFieldOnTimestamp + TIME_TO_MONITOR_AFTER_FIELD_ON_MS >
