@@ -48,6 +48,7 @@ class NfcTag {
   int mNumTechList;  // current number of NFC technologies in the list
   int mNumRfDiscId;
   bool mIsReselecting;
+  bool mWaitingForSelect;
 
   /*******************************************************************************
   **
@@ -501,6 +502,17 @@ class NfcTag {
   **
   *******************************************************************************/
   int getNumDiscNtf();
+
+  /*******************************************************************************
+  **
+  ** Function:        selectCompleteStatus
+  **
+  ** Description:     Notify whether tag select is success/failure
+  **
+  ** Returns:         None
+  **
+  *******************************************************************************/
+  void selectCompleteStatus(bool status);
 
  private:
   std::vector<int> mTechnologyTimeoutsTable;

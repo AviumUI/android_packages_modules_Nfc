@@ -41,10 +41,11 @@ flag {
     namespace: "nfc"
     description: "Event listener callback for offhost AID select"
     bug: "396186563"
-} 
+}
 
 flag {
     name: "get_polling_loop_filters"
+    is_exported: true
     namespace: "nfc"
     description: "API to fetch polling loop filters registered for HCE service"
     bug: "402776679"

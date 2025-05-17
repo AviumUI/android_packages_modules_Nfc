@@ -86,7 +86,7 @@ public interface DeviceHost {
         boolean isPresent();
         void startPresenceChecking(int presenceCheckDelay,
                                    @Nullable TagDisconnectedCallback callback);
-        void stopPresenceChecking();
+        void stopPresenceChecking(boolean isShutdown);
         boolean isPresenceCheckStopped();
         void prepareForRemovalDetectionMode();
 

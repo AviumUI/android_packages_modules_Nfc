@@ -1073,6 +1073,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
             start_emulator_fun=self.emulator.nfc_emulator.startPollingFrameEmulatorActivity
         )
 
+        time.sleep(3) # Let NFC stack complete onServicesUpdated.
+
         timed_pn532 = TimedWrapper(self.pn532)
         testcases = [
             POLLING_FRAME_ON,

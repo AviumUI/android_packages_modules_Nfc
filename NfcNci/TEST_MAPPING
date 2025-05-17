@@ -19,5 +19,15 @@
       "name": "libnfc-nci-jni-tests",
       "keywords": ["primary-device"]
     }
+  ],
+  "wear-cts-postsubmit": [
+    {
+      "name": "CtsNfcTestCases",
+      "options": [
+       {
+         "include-filter": "android.nfc.cts.CardEmulationTest"
+       }
+     ]
+    }
   ]
 }
