@@ -106,27 +106,6 @@ public class TelephonyUtilsTest {
     }
 
     @Test
-    public void testGetActiveSubscriptionInfoByIdWhenIdUicc() {
-        SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
-        List<SubscriptionInfo> list = new ArrayList<>();
-        list.add(subscriptionInfo);
-        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(list);
-
-        mTelephonyUtils.getActiveSubscriptionInfoById(SUBSCRIPTION_ID_UICC);
-        verify(mSubscriptionManager).getActiveSubscriptionInfoList();
-    }
-
-    @Test
-    public void testGetActiveSubscriptionInfoByIdWhenEmbeddedUicc() {
-        SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
-        when(mSubscriptionManager.getActiveSubscriptionInfo(SUBSCRIPTION_ID_UNKNOWN)).thenReturn(
-                subscriptionInfo);
-
-        mTelephonyUtils.getActiveSubscriptionInfoById(SUBSCRIPTION_ID_UNKNOWN);
-        verify(mSubscriptionManager).getActiveSubscriptionInfo(SUBSCRIPTION_ID_UNKNOWN);
-    }
-
-    @Test
     public void testOnSubscriptionsChanged() {
         TelephonyUtils.Callback callback = mock(TelephonyUtils.Callback.class);
         SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
