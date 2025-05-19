@@ -17,6 +17,7 @@ package com.android.nfc.cardemulation;
 
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_AUTO_CHANGE_CAPABLE;
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_ISO_DEP_ROUTE;
+import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_FELICA_ROUTE;
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_OFFHOST_ROUTE;
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_ROUTE;
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_SC_ROUTE;
@@ -381,15 +382,18 @@ public class RoutingOptionManagerTest {
         when(deviceConfigFacade.getDefaultRoute()).thenReturn(defaultRoute);
         when(deviceConfigFacade.getDefaultIsoDepRoute()).thenReturn(defaultRoute);
         when(deviceConfigFacade.getDefaultOffHostRoute()).thenReturn(defaultRoute);
+        when(deviceConfigFacade.getDefaultFelicaRoute()).thenReturn(defaultRoute);
         when(deviceConfigFacade.getDefaultScRoute()).thenReturn(defaultRoute);
         when(mPrefs.contains(KEY_DEFAULT_ROUTE)).thenReturn(false);
         when(mPrefs.contains(KEY_DEFAULT_ISO_DEP_ROUTE)).thenReturn(false);
         when(mPrefs.contains(KEY_DEFAULT_OFFHOST_ROUTE)).thenReturn(false);
+        when(mPrefs.contains(KEY_DEFAULT_FELICA_ROUTE)).thenReturn(false);
         when(mPrefs.contains(KEY_DEFAULT_SC_ROUTE)).thenReturn(false);
         when(mPrefs.contains(KEY_AUTO_CHANGE_CAPABLE)).thenReturn(false);
         when(mPrefs.getString(KEY_DEFAULT_ROUTE, null)).thenReturn(defaultRoute);
         when(mPrefs.getString(KEY_DEFAULT_ISO_DEP_ROUTE, null)).thenReturn(defaultRoute);
         when(mPrefs.getString(KEY_DEFAULT_OFFHOST_ROUTE, null)).thenReturn(defaultRoute);
+        when(mPrefs.getString(KEY_DEFAULT_FELICA_ROUTE, null)).thenReturn(defaultRoute);
         when(mPrefs.getString(KEY_DEFAULT_SC_ROUTE, null)).thenReturn(defaultRoute);
         when(mPrefs.getBoolean(KEY_AUTO_CHANGE_CAPABLE, true)).thenReturn(true);
 

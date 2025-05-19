@@ -1386,47 +1386,66 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
         @Override
         public void overwriteRoutingTable(int userHandle, String aids,
-            String protocol, String technology, String sc) {
+                String protocol, String technologyAB, String technologyF, String sc) {
             Log.d(TAG, "overwriteRoutingTable(): userHandle: " + userHandle
-                + ", emptyAid: " + aids + ", protocol: " + protocol
-                + ", technology: " + technology + ", systemCode: " + sc);
+                    + ", emptyAid: " + aids + ", protocol: " + protocol
+                    + ", technologyAB: " + technologyAB + ", technologyF: " + technologyF
+                    + ", systemCode: " + sc);
 
             NfcPermissions.enforceAdminPermissions(mContext);
 
+            int aidRoute = (aids != null && aids.equals("default"))
+                    ? RoutingOptionManager.ROUTE_DEFAULT
+                    : getRouteForSecureElement(aids);
+            int protocolRoute = (protocol != null && protocol.equals("default"))
+                    ? RoutingOptionManager.ROUTE_DEFAULT
+                    : getRouteForSecureElement(protocol);
+            int technologyABRoute = (technologyAB != null && technologyAB.equals("default"))
+                    ? RoutingOptionManager.ROUTE_DEFAULT
+                    : getRouteForSecureElement(technologyAB);
+            int technologyFRoute = (technologyF != null && technologyF.equals("default"))
+                    ? RoutingOptionManager.ROUTE_DEFAULT
+                    : getRouteForSecureElement(technologyF);
+            int scRoute = (sc != null && sc.equals("default"))
+                    ? RoutingOptionManager.ROUTE_DEFAULT
+                    : getRouteForSecureElement(sc);
+
             if (aids != null) {
-                mRoutingOptionManager.overrideDefaultRoute(
-                        aids.equals("default") ? RoutingOptionManager.ROUTE_DEFAULT
-                            : getRouteForSecureElement(aids));
+                mRoutingOptionManager.overrideDefaultRoute(aidRoute);
             }
             if (protocol != null) {
-                mRoutingOptionManager.overrideDefaultIsoDepRoute(
-                        protocol.equals("default") ? RoutingOptionManager.ROUTE_DEFAULT
-                                : getRouteForSecureElement(protocol));
+                mRoutingOptionManager.overrideDefaultIsoDepRoute(protocolRoute);
             }
-            if (technology != null) {
-                mRoutingOptionManager.overrideDefaultOffHostRoute(
-                        technology.equals("default") ? RoutingOptionManager.ROUTE_DEFAULT
-                                : getRouteForSecureElement(technology));
+            if (technologyAB != null && technologyF != null) {
+                mRoutingOptionManager.overrideDefaultTechRoute(
+                        technologyABRoute, technologyFRoute);
+            } else if (technologyAB != null && technologyF == null) {
+                mRoutingOptionManager.overrideDefaultTechRoute(
+                        technologyABRoute, mRoutingOptionManager.getDefaultFelicaRoute());
+            } else if (technologyAB == null && technologyF != null) {
+                mRoutingOptionManager.overrideDefaultTechRoute(
+                        mRoutingOptionManager.getDefaultOffHostRoute(), technologyFRoute);
             }
             if (sc != null) {
-                mRoutingOptionManager.overrideDefaultScRoute(
-                        sc.equals("default") ? RoutingOptionManager.ROUTE_DEFAULT
-                                : getRouteForSecureElement(sc));
+                mRoutingOptionManager.overrideDefaultScRoute(scRoute);
             }
 
             if (DBG) {
-                int aidRoute = mRoutingOptionManager.getOverrideDefaultRoute();
-                int protocolRoute = mRoutingOptionManager.getOverrideDefaultIsoDepRoute();
-                int technologyRoute = mRoutingOptionManager.getOverrideDefaultOffHostRoute();
-                int scRoute = mRoutingOptionManager.getOverrideDefaultScRoute();
+                aidRoute = mRoutingOptionManager.getOverrideDefaultRoute();
+                protocolRoute = mRoutingOptionManager.getOverrideDefaultIsoDepRoute();
+                technologyABRoute = mRoutingOptionManager.getOverrideDefaultOffHostRoute();
+                technologyFRoute = mRoutingOptionManager.getOverrideDefaultFelicaRoute();
+                scRoute = mRoutingOptionManager.getOverrideDefaultScRoute();
 
                 Log.d(TAG, "overwriteRoutingTable(): aidRoute: " + Integer.toHexString(aidRoute)
                         + ", protocolRoute: " + Integer.toHexString(protocolRoute)
-                        + ", technologyRoute: " + Integer.toHexString(technologyRoute)
+                        + ", technologyABRoute: " + Integer.toHexString(technologyABRoute)
+                        + ", technologyFRoute: " + Integer.toHexString(technologyFRoute)
                         + ", scRoute: " + Integer.toHexString(scRoute));
             }
 
-            if (aids != null || protocol != null || technology != null || sc != null) {
+            if (aids != null || protocol != null || sc != null
+                    || technologyAB != null || technologyF != null) {
                 mRoutingOptionManager.overwriteRoutingTable();
             }
 
@@ -1457,14 +1476,22 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     overrideDefaultOffHostRoute =
                         mRoutingOptionManager.getDefaultOffHostRoute();
                 }
+                int overrideDefaultFelicaRoute =
+                        mRoutingOptionManager.getOverrideDefaultFelicaRoute();
+                if (overrideDefaultFelicaRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultFelicaRoute =
+                        mRoutingOptionManager.getDefaultFelicaRoute();
+                }
                 routingList.add(overrideDefaultRoute);
                 routingList.add(overrideDefaultIsoDepRoute);
                 routingList.add(overrideDefaultOffHostRoute);
+                routingList.add(overrideDefaultFelicaRoute);
             }
             else {
                 routingList.add(mRoutingOptionManager.getDefaultRoute());
                 routingList.add(mRoutingOptionManager.getDefaultIsoDepRoute());
                 routingList.add(mRoutingOptionManager.getDefaultOffHostRoute());
+                routingList.add(mRoutingOptionManager.getDefaultFelicaRoute());
             }
 
             return routingList.stream()

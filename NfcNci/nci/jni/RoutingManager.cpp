@@ -959,6 +959,17 @@ void RoutingManager::updateDefaultRoute() {
   LOG(DEBUG) << StringPrintf("%s:  Default SC route=0x%x", fn,
                              mDefaultSysCodeRoute);
 
+  // remove SC routing
+  {
+    SyncEventGuard guard(mRoutingEvent);
+    tNFA_STATUS stat = NFA_EeRemoveSystemCodeRouting(mDefaultSysCode);
+    if (stat == NFA_STATUS_OK) {
+      mRoutingEvent.wait();
+    } else {
+      LOG(ERROR) << fn << ": Fail to remove system code";
+    }
+  }
+
   // Register System Code for routing
   SyncEventGuard guard(mRoutingEvent);
   tNFA_STATUS nfaStat = NFA_EeAddSystemCodeRouting(
