@@ -1128,6 +1128,61 @@ public class CardEmulationTest {
         }
     }
 
+    @RequiresFlagsEnabled({com.android.nfc.module.flags.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE})
+    @ApiTest(apis = {
+            "android.nfc.cardemulation.CardEmulation.setRequireDeviceScreenOnForService",
+            "android.nfc.cardemulation.CardEmulation.isDeviceScreenOnRequiredForService",
+    })
+    @Test
+    public void testToggleRequireDeviceScreenOn() {
+        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
+        adapter.notifyHceDeactivated();
+        Activity activity = createAndResumeActivity();
+        CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
+        ComponentName service = new ComponentName(mContext, CtsMyHostApduService.class);
+        try {
+            assertTrue(cardEmulation.setPreferredService(activity, service));
+
+            cardEmulation.setRequireDeviceScreenOnForService(service, true);
+            assertTrue(cardEmulation.isDeviceScreenOnRequiredForService(service));
+
+            cardEmulation.setRequireDeviceScreenOnForService(service, false);
+            assertFalse(cardEmulation.isDeviceScreenOnRequiredForService(service));
+        } finally {
+            assertTrue(cardEmulation.unsetPreferredService(activity));
+            activity.finish();
+            adapter.notifyHceDeactivated();
+        }
+    }
+
+    @RequiresFlagsEnabled({com.android.nfc.module.flags.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE})
+    @ApiTest(apis = {
+            "android.nfc.cardemulation.CardEmulation.setRequireDeviceUnlockForService",
+            "android.nfc.cardemulation.CardEmulation.isDeviceUnlockRequiredForService",
+    })
+    @Test
+    public void testToggleRequireDeviceUnlock() {
+        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
+        adapter.notifyHceDeactivated();
+        Activity activity = createAndResumeActivity();
+        CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
+        ComponentName service = new ComponentName(mContext, CtsMyHostApduService.class);
+        try {
+            assertTrue(cardEmulation.setPreferredService(activity, service));
+
+            cardEmulation.setRequireDeviceUnlockForService(service, true);
+            assertTrue(cardEmulation.isDeviceUnlockRequiredForService(service));
+
+            cardEmulation.setRequireDeviceUnlockForService(service, false);
+            assertFalse(cardEmulation.isDeviceUnlockRequiredForService(service));
+        } finally {
+            assertTrue(cardEmulation.unsetPreferredService(activity));
+            activity.finish();
+            adapter.notifyHceDeactivated();
+        }
+    }
+
+
     @Test
     public void testTypeAOneLoopPollingLoopToForeground() {
         assumeVsrApiGreaterThanUdc();

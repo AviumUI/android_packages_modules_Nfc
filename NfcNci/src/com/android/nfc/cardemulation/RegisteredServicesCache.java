@@ -135,6 +135,8 @@ public class RegisteredServicesCache {
         public final HashMap<String, AidGroup> aidGroups = new HashMap<>();
         public String offHostSE;
         public String shouldDefaultToObserveModeStr;
+        public String requireDeviceScreenOnStr;
+        public String requireDeviceUnlockStr;
 
         DynamicSettings(int uid) {
             this.uid = uid;
@@ -620,6 +622,16 @@ public class RegisteredServicesCache {
                                 convertValueToBoolean(dynamicSettings.shouldDefaultToObserveModeStr,
                                 false));
                     }
+                    if (dynamicSettings.requireDeviceScreenOnStr != null) {
+                        serviceInfo.setRequiresScreenOn(
+                                convertValueToBoolean(dynamicSettings.requireDeviceScreenOnStr,
+                                        serviceInfo.requiresScreenOn()));
+                    }
+                    if (dynamicSettings.requireDeviceUnlockStr != null) {
+                        serviceInfo.setRequiresUnlock(
+                                convertValueToBoolean(dynamicSettings.requireDeviceScreenOnStr,
+                                        serviceInfo.requiresUnlock()));
+                    }
                 }
             }
             if (toBeRemoved.size() > 0) {
@@ -761,6 +773,8 @@ public class RegisteredServicesCache {
                 int currentUid = -1;
                 String currentOffHostSE = null;
                 String shouldDefaultToObserveModeStr = null;
+                String requireDeviceScreenOnStr = null;
+                String requireDeviceUnlockStr = null;
                 ArrayList<AidGroup> currentGroups = new ArrayList<AidGroup>();
                 Map<String, Boolean> plFilters = new HashMap<>();
                 Map<String, Boolean> plPatternFilters = new HashMap<>();
@@ -774,6 +788,10 @@ public class RegisteredServicesCache {
                                     = parser.getAttributeValue(null, "offHostSE");
                             shouldDefaultToObserveModeStr =
                                     parser.getAttributeValue(null, "shouldDefaultToObserveMode");
+                            requireDeviceScreenOnStr =
+                                    parser.getAttributeValue(null, "requireDeviceScreenOn");
+                            requireDeviceUnlockStr =
+                                    parser.getAttributeValue(null, "requireDeviceUnlock");
                             if (compString == null || uidString == null) {
                                 Log.e(TAG,
                                         "readDynamicSettingsFromFile: Invalid service attributes");
@@ -830,6 +848,8 @@ public class RegisteredServicesCache {
                                 dynSettings.offHostSE = currentOffHostSE;
                                 dynSettings.shouldDefaultToObserveModeStr
                                         = shouldDefaultToObserveModeStr;
+                                dynSettings.requireDeviceScreenOnStr = requireDeviceScreenOnStr;
+                                dynSettings.requireDeviceUnlockStr = requireDeviceUnlockStr;
                                 if (!readSettingsMap.containsKey(userId)) {
                                     readSettingsMap.put(userId, new ArrayList<>());
                                 }
@@ -1004,6 +1024,14 @@ public class RegisteredServicesCache {
                     if (service.getValue().shouldDefaultToObserveModeStr != null) {
                         out.attribute(null, "shouldDefaultToObserveMode",
                                 service.getValue().shouldDefaultToObserveModeStr);
+                    }
+                    if (service.getValue().requireDeviceScreenOnStr != null) {
+                        out.attribute(null, "requireDeviceScreenOnStr",
+                                service.getValue().requireDeviceScreenOnStr);
+                    }
+                    if (service.getValue().requireDeviceUnlockStr != null) {
+                        out.attribute(null, "requireDeviceUnlockStr",
+                                service.getValue().requireDeviceUnlockStr);
                     }
                     for (AidGroup group : service.getValue().aidGroups.values()) {
                         group.writeAsXml(out);
@@ -1218,6 +1246,54 @@ public class RegisteredServicesCache {
             dynSettings.shouldDefaultToObserveModeStr =  Boolean.toString(enable);
         }
         return true;
+    }
+
+    public void setRequireDeviceScreenOnForService(int userId, int uid,
+            ComponentName componentName, boolean enable) {
+        synchronized (mLock) {
+            UserServices services = findOrCreateUserLocked(userId);
+            ApduServiceInfo serviceInfo = services.services.get(componentName);
+            if (serviceInfo == null) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + componentName + " is not registered");
+            }
+            if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
+                Log.e(TAG, "setRequireDeviceScreenOnForService UID mismatch");
+                throw new IllegalArgumentException("UID mismatch between caller and service "
+                        + componentName);
+            }
+            if (serviceInfo.requiresScreenOn() == enable) {
+                return;
+            }
+            serviceInfo.setRequiresScreenOn(enable);
+            DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
+            settings.requireDeviceScreenOnStr = Boolean.toString(enable);
+            mCallback.onServicesUpdated(userId, List.of(serviceInfo), true);
+        }
+    }
+
+    public void setRequireDeviceUnlockForService(int userId, int uid,
+            ComponentName componentName, boolean enable) {
+        synchronized (mLock) {
+            UserServices services = findOrCreateUserLocked(userId);
+            ApduServiceInfo serviceInfo = services.services.get(componentName);
+            if (serviceInfo == null) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + componentName + " is not registered");
+            }
+            if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
+                Log.e(TAG, "setRequireDeviceUnlockForService UID mismatch");
+                throw new IllegalArgumentException("UID mismatch between caller and service "
+                        + componentName);
+            }
+            if (serviceInfo.requiresUnlock() == enable) {
+                return;
+            }
+            serviceInfo.setRequiresUnlock(enable);
+            DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
+            settings.requireDeviceUnlockStr = Boolean.toString(enable);
+            mCallback.onServicesUpdated(userId, List.of(serviceInfo), true);
+        }
     }
 
     public boolean registerPollingLoopFilterForService(int userId, int uid,
