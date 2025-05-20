@@ -63,8 +63,8 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
         if (mIsUiccCapable || mIsEuiccCapable) {
             mDefaultSubscriptionId = getPreferredSubscriptionId();
             if (mDefaultSubscriptionId == TelephonyUtils.SUBSCRIPTION_ID_UNKNOWN) {
-                Log.d(TAG, "PreferredSubscriptionService: Set preferred subscription "
-                        + "to UICC, only update");
+                Log.d(TAG, "Set preferred subscription to UICC forcely, because currently unknown"
+                    + " state");
                 setPreferredSubscriptionId(TelephonyUtils.SUBSCRIPTION_ID_UICC, false);
             }
         }
@@ -105,8 +105,7 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
 
     @Override
     public void onActiveSubscriptionsUpdated(List<SubscriptionInfo> activeSubscriptionList) {
-        boolean isActivationStateChanged = checkSubscriptionStateChanged(activeSubscriptionList);
-        if (isActivationStateChanged) {
+        if (checkSubscriptionStateChanged(activeSubscriptionList)) {
             mCallback.onPreferredSubscriptionChanged(mDefaultSubscriptionId,
                     mActiveSubscriptoinState == TelephonyUtils.SUBSCRIPTION_STATE_ACTIVATE);
         } else {
@@ -116,34 +115,40 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
 
     private boolean isSubscriptionActivated(int subscriptionId) {
         if (mActiveSubscriptions == null) {
-            Log.d(TAG, "isSubscriptionActivated: get active subscriptions is "
-                    + "list because it's null");
-            mActiveSubscriptions = mTelephonyUtils.getActiveSubscriptions().stream().filter(
-                            TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC.or(
-                                    TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
+            Log.d(TAG, "Get active subscriptions because list is empty");
+            mActiveSubscriptions = mTelephonyUtils.getActiveSubscriptions().stream()
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC
+                            .or(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
                     .collect(Collectors.toList());
         }
+
         if (mTelephonyUtils.isUiccSubscription(subscriptionId)) {
+            Log.d(TAG, "Check uicc subscription activated status with SWP supported physical slot");
             return mActiveSubscriptions.stream()
-                .anyMatch(subscriptionInfo -> !subscriptionInfo.isEmbedded());
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC)
+                    .anyMatch(subscriptionInfo ->
+                                  mTelephonyUtils.findPhysicalSlotIndex(subscriptionInfo)
+                                  == TelephonyUtils.SWP_SUPPORTED_PHYSICAL_SIM_SLOT);
         } else {
-            return mActiveSubscriptions.stream().anyMatch(subscriptionInfo ->
-                    subscriptionInfo.getSubscriptionId() == subscriptionId);
+            return mActiveSubscriptions.stream()
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC)
+                    .anyMatch(subscriptionInfo ->
+                                  subscriptionInfo.getSubscriptionId() == subscriptionId);
         }
     }
 
     private boolean checkSubscriptionStateChanged(List<SubscriptionInfo> activeSubscriptionList) {
         // filtered subscriptions
-        mActiveSubscriptions = activeSubscriptionList.stream().filter(
-                        TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC.or(
-                                TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
+        mActiveSubscriptions = activeSubscriptionList.stream()
+                .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC
+                        .or(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC))
                 .collect(Collectors.toList());
         int previousActiveSubscriptionState = mActiveSubscriptoinState;
         int currentActiveSubscriptionState = isSubscriptionActivated(mDefaultSubscriptionId) ?
                 TelephonyUtils.SUBSCRIPTION_STATE_ACTIVATE :
                 TelephonyUtils.SUBSCRIPTION_STATE_INACTIVATE;
         if (previousActiveSubscriptionState != currentActiveSubscriptionState) {
-            Log.d(TAG, "checkSubscriptionStateChanged: state changed: "
+            Log.d(TAG, "active subscription state changed "
                     + previousActiveSubscriptionState + " to " + currentActiveSubscriptionState);
             mActiveSubscriptoinState = currentActiveSubscriptionState;
             return true;

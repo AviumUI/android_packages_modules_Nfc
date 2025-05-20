@@ -78,6 +78,9 @@
           <!-- Params from strings.xml that can be overlaid -->
 
           <!-- Params from styles.xml that can be overlaid -->
+          <item type="style" name="DialogAlertDayNight"/>
+          <item type="style" name="TapAgainDayNight"/>
+          <item type="style" name="BottomSheetDialogStyle"/>
           <!-- Params from styles.xml that can be overlaid -->
 
           <!-- Params from drawable/ that can be overlaid -->
