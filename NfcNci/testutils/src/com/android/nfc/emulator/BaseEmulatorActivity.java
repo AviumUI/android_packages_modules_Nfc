@@ -245,6 +245,10 @@ public abstract class BaseEmulatorActivity extends Activity {
         onServicesSetup();
     }
 
+    public List<String> getAidsForService(ComponentName componentName) {
+        return mCardEmulation.getAidsForService(componentName, CardEmulation.CATEGORY_PAYMENT);
+    }
+
     /** Executed after services are set up */
     protected void onServicesSetup() {}
 

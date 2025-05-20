@@ -19,6 +19,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.nfc.cardemulation.CardEmulation;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.android.nfc.service.OffHostService;
 import com.android.nfc.service.PollingLoopService;
@@ -29,10 +30,15 @@ public class OffHostEmulatorActivity extends BaseEmulatorActivity {
     private CardEmulation.NfcEventCallback mEventListener = new CardEmulation.NfcEventCallback() {
         @Override
         public void onOffHostAidSelected(String aid, String offHostSe) {
-            Intent intent = new Intent(BaseEmulatorActivity.ACTION_OFFHOST_AID_SELECTED);
-            intent.putExtra(EXTRA_OFFHOST_AID_SELECTED_AID, aid);
-            intent.putExtra(EXTRA_OFFHOST_AID_SELECTED_SE, offHostSe);
-            sendBroadcast(intent);
+            Log.d(TAG, "onOffHostAidSelected: " + aid + ", " + offHostSe);
+            if (getAidsForService(OffHostService.COMPONENT).contains(aid)) {
+                Intent intent = new Intent(BaseEmulatorActivity.ACTION_OFFHOST_AID_SELECTED);
+                intent.putExtra(EXTRA_OFFHOST_AID_SELECTED_AID, aid);
+                intent.putExtra(EXTRA_OFFHOST_AID_SELECTED_SE, offHostSe);
+                sendBroadcast(intent);
+            } else {
+                Log.e(TAG, "Unknown AID detected in offHostAidSelected callback");
+            }
         }
     };
 
