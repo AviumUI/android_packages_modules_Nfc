@@ -955,7 +955,7 @@ void RoutingManager::updateDefaultRoute() {
   static const char fn[] = "RoutingManager::updateDefaultRoute";
   int defaultAidRoute = mDefaultEe;
 
-  if (NFC_GetNCIVersion() != NCI_VERSION_2_0) return;
+  if (NFC_GetNCIVersion() < NCI_VERSION_2_0) return;
 
   LOG(DEBUG) << StringPrintf("%s:  Default SC route=0x%x", fn,
                              mDefaultSysCodeRoute);
