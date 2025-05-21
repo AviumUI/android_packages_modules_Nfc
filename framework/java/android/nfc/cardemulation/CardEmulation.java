@@ -458,6 +458,68 @@ public final class CardEmulation {
     }
 
     /**
+     * Sets whether the device must have its screen on for the service to be activated. This API
+     * overrides the {@code android:requireDeviceScreenOn} attribute declared in the service's
+     * manifest.
+     *
+     * @param service The component name of the service
+     * @param enable Whether the service should only be activated when the device's screen is on
+     * @throws IllegalArgumentException If the provided service has not been registered
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE)
+    public void setRequireDeviceScreenOnForService(@NonNull ComponentName service,
+            boolean enable) {
+        callService(() ->
+                sService.setRequireDeviceScreenOnForService(
+                        mContext.getUser().getIdentifier(), service, enable));
+    }
+
+    /**
+     * Checks whether the device must have its screen on for the service to be activated.
+     *
+     * @param service The component name of the service
+     * @return True if the device must have its screen on for the service to be activated, false
+     * otherwise
+     * @throws IllegalArgumentException If the provided service has not been registered
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE)
+    public boolean isDeviceScreenOnRequiredForService(@NonNull ComponentName service) {
+        return callServiceReturn(() ->
+                sService.isDeviceScreenOnRequiredForService(
+                        mContext.getUser().getIdentifier(), service), false);
+    }
+
+    /**
+     * Sets whether the device must be unlocked for the service to be activated. This API overrides
+     * the {@code android:requireDeviceUnlock} attribute declared in the service's manifest.
+     *
+     * @param service The component name of the service
+     * @param enable Whether the service should only be activated when the device is unlocked
+     * @throws IllegalArgumentException If the provided service has not been registered
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE)
+    public void setRequireDeviceUnlockForService(@NonNull ComponentName service,
+            boolean enable) {
+        callService(() ->
+                sService.setRequireDeviceUnlockForService(
+                        mContext.getUser().getIdentifier(), service, enable));
+    }
+
+    /**
+     * Checks whether the device must be unlocked for the service to be activated.
+     *
+     * @param service The component name of the service
+     * @return True if the device must be unlocked for the service to be activated, false otherwise
+     * @throws IllegalArgumentException If the provided service has not been registered
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE)
+    public boolean isDeviceUnlockRequiredForService(@NonNull ComponentName service) {
+        return callServiceReturn(() ->
+                sService.isDeviceUnlockRequiredForService(
+                        mContext.getUser().getIdentifier(), service), false);
+    }
+
+    /**
      * Register a polling loop filter (PLF) for a HostApduService and indicate whether it should
      * auto-transact or not.  The PLF can be sequence of an
      * even number of at least 2 hexadecimal numbers (0-9, A-F or a-f), representing a series of

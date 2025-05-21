@@ -2060,8 +2060,13 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     mCardEmulationManager.onNfcStateChanged(newState);
                 }
                 if (mState == NfcAdapter.STATE_ON && mCardEmulationManager != null) {
-                    mCardEmulationManager.updateForShouldDefaultToObserveMode(getUserId());
-                    mCardEmulationManager.updateFirmwareExitFramesForWalletRole(getUserId());
+                    // Update default observe mode and exit frames lazily to avoid blocking on
+                    // NfcService.this for a long duration.
+                    mHandler.post(() -> {
+                        Log.d(TAG, "Update default observe mode and exit frames after NFC enable");
+                        mCardEmulationManager.updateForShouldDefaultToObserveMode(getUserId());
+                        mCardEmulationManager.updateFirmwareExitFramesForWalletRole(getUserId());
+                    });
                 }
                 if (mAlwaysOnState != NfcAdapter.STATE_TURNING_ON) {
                     Intent intent = new Intent(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED);
@@ -6080,7 +6085,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     + ScreenStateHelper.screenStateToString(screenState));
         }
         if (mScreenState != screenState) {
-            if (nci_version != NCI_VERSION_2_0) {
+            if (nci_version < NCI_VERSION_2_0) {
                 new ApplyRoutingTask().execute(Integer.valueOf(screenState));
             }
             if (DBG) Log.d(TAG, "applyScreenState: screenState != mScreenState=" + mScreenState);
