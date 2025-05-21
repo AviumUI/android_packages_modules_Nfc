@@ -307,6 +307,8 @@ public interface DeviceHost {
     */
     void setNfceePowerAndLinkCtrl(boolean enable);
 
+    boolean isPowerSavingModeSupported();
+
     /**
      * Enable or Disable the Power Saving Mode based on flag
      */

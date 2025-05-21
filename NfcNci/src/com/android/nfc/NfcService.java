@@ -122,6 +122,7 @@ import android.widget.Toast;
 
 import androidx.annotation.VisibleForTesting;
 
+import com.android.internal.annotations.GuardedBy;
 import com.android.nfc.DeviceHost.DeviceHostListener;
 import com.android.nfc.DeviceHost.TagEndpoint;
 import com.android.nfc.cardemulation.CardEmulationManager;
@@ -439,7 +440,9 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     // and the default AsyncTask thread so it is read unprotected from that thread
     int mAlwaysOnState;  // one of NfcAdapter.STATE_ON, STATE_TURNING_ON, etc
     int mAlwaysOnMode; // one of NfcOemExtension.ENABLE_DEFAULT, ENABLE_TRANSPARENT, etc
-    private boolean mIsPowerSavingModeEnabled = false;
+    private final Object mPowerSavingModeLock = new Object();
+    @GuardedBy("mPowerSavingModeLock")
+    private @NfcAdapter.AdapterState int mPowerSavingState = NfcAdapter.STATE_OFF;
 
     // fields below are final after onCreate()
     boolean mIsReaderOptionEnabled = true;
@@ -922,31 +925,48 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     /**
      * Enable or Disable PowerSaving Mode based on flag
      */
-    private boolean setPowerSavingMode(boolean flag) {
-        synchronized (NfcService.this) {
-            if ((flag && mState != NfcAdapter.STATE_ON)
-                    || (!flag && mState != NfcAdapter.STATE_OFF)) {
-                Log.d(TAG,
-                        "setPowerSavingMode: Enable Power Saving Mode is allowed in "
-                                + "Nfc On state or "
-                                + "Disable PowerSaving is allowed only if it is enabled");
-                return false;
+    private void setPowerSavingModeInternal(boolean enable) {
+        synchronized (mPowerSavingModeLock) {
+            if (!mDeviceHost.isPowerSavingModeSupported()) {
+                throw new UnsupportedOperationException(
+                        "Device does not support power saving mode");
             }
-        }
 
-        Log.d(TAG, "setPowerSavingMode: " + flag);
-        if (flag) {
-            if (mDeviceHost.setPowerSavingMode(flag)) {
-                mIsPowerSavingModeEnabled = true;
-                new EnableDisableTask().execute(TASK_DISABLE);
-                return true;
+            if (enable && isPowerSavingModeEnabled()) return;
+            if (!enable && !isPowerSavingModeEnabled()) return;
+
+            @NfcAdapter.AdapterState int oldState = mPowerSavingState;
+            mPowerSavingState = enable
+                    ? NfcAdapter.STATE_TURNING_ON
+                    : NfcAdapter.STATE_TURNING_OFF;
+            mDeviceHost.setPowerSavingMode(enable);
+
+            if (mState == NfcAdapter.STATE_OFF) {
+                EnableDisableTask chip = new EnableDisableTask();
+                if (!chip.enableInternal()) {
+                    mPowerSavingState = oldState;
+                    throw new IllegalStateException(
+                            "Failed to temporarily enable chip for power saving mode update");
+                }
+                chip.disableInternal();
             }
-        } else {
-            new EnableDisableTask().execute(TASK_ENABLE);
-            return true;
+
+            mPowerSavingState = enable ? NfcAdapter.STATE_ON : NfcAdapter.STATE_OFF;
         }
-        Log.d(TAG, "PowerSavingMode: failed");
-        return false;
+    }
+
+    boolean isPowerSavingModeEnabled() {
+        synchronized (mPowerSavingModeLock) {
+            return mPowerSavingState == NfcAdapter.STATE_ON
+                    || mPowerSavingState == NfcAdapter.STATE_TURNING_ON;
+        }
+    }
+
+    boolean isPowerSavingModeChanging() {
+        synchronized (mPowerSavingModeLock) {
+            return mPowerSavingState == NfcAdapter.STATE_TURNING_ON
+                    || mPowerSavingState == NfcAdapter.STATE_TURNING_OFF;
+        }
     }
 
     public void onWlcData(Map<String, Integer> WlcDeviceInfo) {
@@ -1828,6 +1848,9 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         if (mIsRecovering) {
                             // Recovering needs the full init. Put default value
                             mAlwaysOnState = NfcAdapter.STATE_OFF;
+                            synchronized (mPowerSavingModeLock) {
+                                mPowerSavingState = NfcAdapter.STATE_OFF;
+                            }
                         }
                         if (!mDeviceHost.initialize()) {
                             Log.w(TAG, "enableInternal: Error enabling NFC");
@@ -1859,10 +1882,6 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
             synchronized (NfcService.this) {
                 mObjectMap.clear();
-                if (mIsPowerSavingModeEnabled) {
-                    mDeviceHost.setPowerSavingMode(false);
-                    mIsPowerSavingModeEnabled = false;
-                }
                 updateState(NfcAdapter.STATE_ON);
 
                 onPreferredPaymentChanged(NfcAdapter.PREFERRED_PAYMENT_LOADED);
@@ -2071,7 +2090,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         mCardEmulationManager.updateFirmwareExitFramesForWalletRole(getUserId());
                     });
                 }
-                if (mAlwaysOnState != NfcAdapter.STATE_TURNING_ON) {
+                if (mAlwaysOnState != NfcAdapter.STATE_TURNING_ON && !isPowerSavingModeChanging()) {
                     Intent intent = new Intent(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED);
                     intent.setFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
                     intent.putExtra(NfcAdapter.EXTRA_ADAPTER_STATE, mState);
@@ -2470,6 +2489,32 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     .getSystemService(RoleManager.class);
             List<String> roleHolders = roleManager.getRoleHolders(RoleManager.ROLE_WALLET);
             return roleHolders.isEmpty() ? null : roleHolders.get(0);
+        }
+
+        @Override
+        public boolean isPowerSavingModeSupported() {
+            synchronized (NfcService.this) {
+                if (!isNfcEnabled()) {
+                    Log.e(TAG, "isPowerSavingModeSupported: NFC must be enabled but is: " + mState);
+                    return false;
+                }
+                NfcPermissions.enforceUserPermissions(mContext);
+                return mDeviceHost.isPowerSavingModeSupported();
+            }
+        }
+
+        @Override
+        public boolean isPowerSavingModeEnabled() {
+            synchronized (NfcService.this) {
+                return NfcService.this.isPowerSavingModeEnabled();
+            }
+        }
+
+        @Override
+        public void setPowerSavingMode(boolean enabled) {
+            synchronized (NfcService.this) {
+                NfcService.this.setPowerSavingModeInternal(enabled);
+            }
         }
 
         @Override
@@ -3412,7 +3457,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         public int sendVendorNciMessage(int mt, int gid, int oid, byte[] payload)
                 throws RemoteException {
             NfcPermissions.enforceAdminPermissions(mContext);
-            if ((!isNfcEnabled() && !mIsPowerSavingModeEnabled) && !isControllerAlwaysOn()) {
+            if (!isNfcEnabled() && !isControllerAlwaysOn()) {
                 Log.e(TAG, "sendVendorNciMessage: Nfc is not enabled");
                 return NCI_STATUS_FAILED;
             }
@@ -3420,15 +3465,21 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             FutureTask<Integer> sendVendorCmdTask = new FutureTask<>(
                 () -> { synchronized (NfcService.this) {
                         if (isPowerSavingModeCmd(gid, oid, payload)) {
-                            boolean status = setPowerSavingMode(payload[1] == 0x01);
-                            return status ? NCI_STATUS_OK : NCI_STATUS_FAILED;
+                            try {
+                                NfcService.this.setPowerSavingModeInternal(payload[1] == 0x01);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Failed to set power saving mode " + e);
+                                return NCI_STATUS_FAILED;
+                            }
+                            return NCI_STATUS_OK;
                         } else if (isQueryPowerSavingStatusCmd(gid, oid, payload)) {
                             NfcVendorNciResponse response = new NfcVendorNciResponse(
                                     (byte) NCI_STATUS_OK, NCI_GID_PROP, NCI_MSG_PROP_ANDROID,
                                     new byte[] {
                                             (byte) NCI_PROP_ANDROID_QUERY_POWER_SAVING_STATUS_CMD,
                                             0x00,
-                                            mIsPowerSavingModeEnabled ? (byte) 0x01 : (byte) 0x00});
+                                            isPowerSavingModeEnabled() ? (byte) 0x01 : (byte) 0x00
+                                    });
                             if (response.status == NCI_STATUS_OK) {
                                 mHandler.post(() -> mNfcAdapter.sendVendorNciResponse(
                                         response.gid, response.oid, response.payload));
@@ -4348,7 +4399,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
     boolean isNfcEnabled() {
         synchronized (this) {
-            return mState == NfcAdapter.STATE_ON;
+            return mState == NfcAdapter.STATE_ON && !isPowerSavingModeEnabled();
         }
     }
 
@@ -5568,7 +5619,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
          * have access to NFC Events on any SE */
         private ArrayList<String> getNfcPreferredPaymentChangedSEAccessAllowedPackages(int userId) {
             synchronized (NfcService.this) {
-                if (!isSEServiceAvailable() || mIsPowerSavingModeEnabled
+                if (!isSEServiceAvailable() || isPowerSavingModeEnabled()
                         || mNfcPreferredPaymentChangedInstalledPackages.get(userId).isEmpty()) {
                     return null;
                 }
@@ -6267,7 +6318,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             }
             pw.println("SnoopLogMode=" + NFC_SNOOP_LOG_MODE);
             pw.println("VendorDebugEnabled=" + NFC_VENDOR_DEBUG_ENABLED);
-            pw.println("mIsPowerSavingModeEnabled=" + mIsPowerSavingModeEnabled);
+            pw.println("mPowerSavingState=" + mPowerSavingState);
             pw.println("mIsObserveModeSupported=" + mNfcAdapter.isObserveModeSupported());
             pw.println("mIsObserveModeEnabled=" + mNfcAdapter.isObserveModeEnabled());
             pw.println("listenTech=0x" + Integer.toHexString(getNfcListenTech()));
