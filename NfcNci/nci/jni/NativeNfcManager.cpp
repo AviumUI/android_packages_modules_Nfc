@@ -2306,7 +2306,7 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
   }
 
   if (sIsDisabling || !sIsNfaEnabled ||
-      (NFC_GetNCIVersion() != NCI_VERSION_2_0)) {
+      (NFC_GetNCIVersion() < NCI_VERSION_2_0)) {
     prevScreenState = state;
     return;
   }
