@@ -1171,6 +1171,7 @@ static jboolean nfcManager_unrouteAid(JNIEnv* e, jobject, jbyteArray aid) {
 *******************************************************************************/
 static jint nfcManager_commitRouting(JNIEnv* e, jobject) {
   if (sIsShuttingDown) return -1;
+  if (sIsRecovering) return -1;
   if (sRfEnabled) {
     /*Update routing table only in Idle state.*/
     startRfDiscovery(false);
