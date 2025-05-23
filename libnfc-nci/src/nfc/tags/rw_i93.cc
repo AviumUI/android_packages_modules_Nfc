@@ -2127,11 +2127,26 @@ void rw_i93_sm_detect_ndef(NFC_HDR* p_resp) {
           }
         }
 
-        p_i93->max_ndef_length =
-            p_i93->ndef_length
-            /* add available bytes including the last block of NDEF TLV */
-            + (p_i93->block_size * (block - last_block) + 1) -
-            (p_i93->ndef_tlv_last_offset % p_i93->block_size) - 1;
+        if (block <= last_block) {
+          /* There is at least one RO block in the NDEF area,
+             it can happen if the tag was locked after NDEF mapping done.
+             This is invalid in NFC Forum sense, but it can be found.
+             We return the size of the NDEF area up to the first locked block,
+             although CC was advertising more.
+           */
+          p_i93->max_ndef_length =
+              (block - (p_i93->ndef_tlv_start_offset / p_i93->block_size) *
+                           p_i93->block_size) -
+              (p_i93->ndef_tlv_start_offset % p_i93->block_size);
+
+        } else {
+          /* There is potentially space for larger NDEF TLV */
+          p_i93->max_ndef_length =
+              p_i93->ndef_length
+              /* add available bytes including the last block of NDEF TLV */
+              + (p_i93->block_size * (block - last_block) + 1) -
+              (p_i93->ndef_tlv_last_offset % p_i93->block_size) - 1;
+        }
       } else {
         if (p_i93->rw_offset == 0) {
           p_i93->max_ndef_length =
