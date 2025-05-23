@@ -1296,6 +1296,10 @@ static jint nativeNfcTag_doCheckNdef(JNIEnv* e, jobject o, jintArray ndefInfo) {
       ndef[1] = NDEF_MODE_READ_WRITE;
     e->ReleaseIntArrayElements(ndefInfo, ndef, 0);
     status = NFA_STATUS_FAILED;
+  } else if ((sCheckNdefStatus == NFA_STATUS_TIMEOUT) &&
+             (NfcTag::getInstance().getProtocol() == NFA_PROTOCOL_T2T)) {
+    /* this is to avoid numerous retries in case NDEF detection of T2T failed */
+    status = STATUS_CODE_TARGET_LOST;
   } else {
     LOG(DEBUG) << StringPrintf("%s: unknown status 0x%X", __func__,
                                sCheckNdefStatus);
