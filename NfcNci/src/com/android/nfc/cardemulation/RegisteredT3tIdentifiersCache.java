@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 public class RegisteredT3tIdentifiersCache {
-    static final String TAG = "RegisteredT3tIdentifiersCache";
+    static final String TAG = "NfcRegisteredT3tIdentifiersCache";
 
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
 
