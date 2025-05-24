@@ -33,6 +33,10 @@ interface INfcCardEmulation
     boolean setDefaultServiceForCategory(int userHandle, in ComponentName service, String category);
     boolean setDefaultForNextTap(int userHandle, in ComponentName service);
     boolean setShouldDefaultToObserveModeForService(int userId, in android.content.ComponentName service, boolean enable);
+    void setRequireDeviceScreenOnForService(int userId, in android.content.ComponentName service, boolean enable);
+    boolean isDeviceScreenOnRequiredForService(int userId, in android.content.ComponentName service);
+    void setRequireDeviceUnlockForService(int userId, in android.content.ComponentName service, boolean enable);
+    boolean isDeviceUnlockRequiredForService(int userId, in android.content.ComponentName service);
     boolean registerAidGroupForService(int userHandle, in ComponentName service, in AidGroup aidGroup);
     boolean registerPollingLoopFilterForService(int userHandle, in ComponentName service, in String pollingLoopFilter, boolean autoTransact);
     boolean registerPollingLoopPatternFilterForService(int userHandle, in ComponentName service, in String pollingLoopPatternFilter, boolean autoTransact);

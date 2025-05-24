@@ -56,11 +56,11 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class RegisteredAidCache {
-    static final String TAG = "RegisteredAidCache";
+    static final String TAG = "NfcRegisteredAidCache";
     private INfcOemExtensionCallback mNfcOemExtensionCallback;
 
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    private static final boolean VDBG = false; // turn on for local testing.
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
 
     static final int AID_ROUTE_QUAL_SUBSET = 0x20;
     static final int AID_ROUTE_QUAL_PREFIX = 0x10;
@@ -367,14 +367,14 @@ public class RegisteredAidCache {
     private static void nonDefaultRouting(AidResolveInfo resolveInfo,
             boolean makeSingleServiceDefault) {
         if (resolveInfo.services.size() == 1 && makeSingleServiceDefault) {
-            if (DBG)  {
+            if (VDBG) {
                 Log.d(TAG, "nonDefaultRouting: DECISION: making single handling service "
                         + resolveInfo.services.get(0).getComponent() + " default.");
             }
             resolveInfo.defaultService = resolveInfo.services.get(0);
         } else {
             // Nothing to do, all services already in list
-            if (DBG)  {
+            if (VDBG) {
                 Log.d(TAG, "nonDefaultRouting: DECISION: routing to all matching services");
             }
         }
@@ -516,7 +516,7 @@ public class RegisteredAidCache {
             } else {
                 if (componentName.equals(mPreferredPaymentService)
                         && userId == mUserIdPreferredPaymentService && serviceClaimsPaymentAid) {
-                    if (DBG) {
+                    if (VDBG) {
                         Log.d(TAG, "resolveAidConflictLocked: Prioritizing dpp services");
                     }
                     resolveInfo.services.add(serviceAidInfo.service);
@@ -530,7 +530,7 @@ public class RegisteredAidCache {
         if (matchedForeground != null) {
             // 1st priority: if the foreground app prefers a service,
             // and that service asks for the AID, that service gets it
-            if (DBG) {
+            if (VDBG) {
                 Log.d(TAG, "resolveAidConflictLocked: DECISION: routing to foreground preferred "
                         + matchedForeground);
             }
@@ -586,14 +586,23 @@ public class RegisteredAidCache {
             if (componentName.equals(mPreferredForegroundService) &&
                     userId == mUserIdPreferredForegroundService) {
                 defaultServiceInfo.foregroundDefault = serviceAidInfo;
+                if (DBG && (serviceAidInfo != null)) {
+                    Log.d(TAG, "findDefaultServices: foregroundDefault=" + serviceAidInfo);
+                }
             } else if (mWalletRoleObserver.isWalletRoleFeatureEnabled()) {
                 if (isDefaultOrAssociatedWalletService(serviceAidInfo.service, userId)) {
                     defaultServiceInfo.walletDefaults.add(serviceAidInfo);
+                    if (DBG && (serviceAidInfo != null)) {
+                        Log.d(TAG, "findDefaultServices: walletDefaults=" + serviceAidInfo);
+                    }
                 }
             }else if (componentName.equals(mPreferredPaymentService) &&
                     userId == mUserIdPreferredPaymentService &&
                     serviceClaimsPaymentAid) {
                 defaultServiceInfo.paymentDefault = serviceAidInfo;
+                if (DBG && (serviceAidInfo != null)) {
+                    Log.d(TAG, "findDefaultServices: paymentDefault=" + serviceAidInfo);
+                }
             }
         }
         return defaultServiceInfo;
@@ -603,7 +612,7 @@ public class RegisteredAidCache {
             ArrayList<ServiceAidInfo> conflictingServices) {
         // No children that are preferred; add all services of the root
         // make single service default if no children are present
-        if (DBG) Log.d(TAG, "noChildrenAidsPreferred: No service has preference, adding all");
+        if (VDBG) Log.d(TAG, "noChildrenAidsPreferred: No service has preference, adding all");
         AidResolveInfo resolveinfo =
                 resolveAidConflictLocked(aidServices, conflictingServices.isEmpty());
         //If the AID is subsetAID check for conflicting prefix in all
@@ -636,7 +645,7 @@ public class RegisteredAidCache {
         //    no child is the current foreground preferred
         // 4. There is only one service for the root AID, and there are no children
         if (aidDefaultInfo.foregroundDefault != null) {
-            if (DBG) {
+            if (VDBG) {
                 Log.d(TAG,
                         "resolveAidConflictLocked: Prefix AID service "
                                 + aidDefaultInfo.foregroundDefault.service.getComponent()
@@ -656,14 +665,14 @@ public class RegisteredAidCache {
                 // Check if any of the conflicting services is foreground default
                 if (conflictingDefaultInfo.foregroundDefault != null) {
                     // Conflicting AID registration is in foreground, trumps prefix tap&pay default
-                    if (DBG) {
+                    if (VDBG) {
                         Log.d(TAG, "resolveAidConflictLocked: One of the conflicting AID "
                                 + "registrations is foreground preferred, ignoring prefix");
                     }
                     return EMPTY_RESOLVE_INFO;
                 } else {
                     // Prefix service is default wallet, treat as normal AID conflict for just prefix
-                    if (DBG) {
+                    if (VDBG) {
                         Log.d(TAG, "resolveAidConflictLocked: Default wallet app exists. "
                                 + "ignoring conflicting AIDs");
                     }
@@ -679,7 +688,7 @@ public class RegisteredAidCache {
             } else {
                 if (conflictingDefaultInfo.foregroundDefault != null ||
                         !conflictingDefaultInfo.walletDefaults.isEmpty()) {
-                    if (DBG) {
+                    if (VDBG) {
                         Log.d(TAG, "resolveAidConflictLocked: One of the conflicting "
                                 + "AID registrations "
                                 + "is wallet holder or foreground preferred, ignoring prefix");
@@ -693,14 +702,14 @@ public class RegisteredAidCache {
             // Check if any of the conflicting services is foreground default
             if (conflictingDefaultInfo.foregroundDefault != null) {
                 // Conflicting AID registration is in foreground, trumps prefix tap&pay default
-                if (DBG) {
+                if (VDBG) {
                     Log.d(TAG, "resolveAidConflictLocked: One of the conflicting AID "
                             + "registrations is foreground preferred, ignoring prefix");
                 }
                 return EMPTY_RESOLVE_INFO;
             } else {
                 // Prefix service is tap&pay default, treat as normal AID conflict for just prefix
-                if (DBG) {
+                if (VDBG) {
                     Log.d(TAG,
                             "resolveAidConflictLocked: Prefix AID service "
                                     + aidDefaultInfo.paymentDefault.service.getComponent()
@@ -717,7 +726,7 @@ public class RegisteredAidCache {
         } else {
             if (conflictingDefaultInfo.foregroundDefault != null ||
                     conflictingDefaultInfo.paymentDefault != null) {
-                if (DBG) {
+                if (VDBG) {
                     Log.d(TAG,
                             "resolveAidConflictLocked: One of the conflicting AID "
                                     + "registrations is either payment "
@@ -748,6 +757,9 @@ public class RegisteredAidCache {
     }
 
     void generateServiceMapLocked(List<ApduServiceInfo> services) {
+        if (DBG) {
+            Log.d(TAG, "generateServiceMapLocked: nb services=" + services.size());
+        }
         // Easiest is to just build the entire tree again
         mAidServices.clear();
         int currentUser = ActivityManager.getCurrentUser();
@@ -761,8 +773,20 @@ public class RegisteredAidCache {
                 continue;
             }
             for (ApduServiceInfo service : entry.getValue()) {
-                if (VDBG) {
-                    Log.d(TAG, "generateServiceMapLocked: component: " + service.getComponent());
+                if (DBG) {
+                    String category = null;
+                    if (service.hasCategory(CardEmulation.CATEGORY_OTHER)) {
+                        category = CardEmulation.CATEGORY_OTHER;
+                    } else {
+                        category = CardEmulation.CATEGORY_PAYMENT;
+                    }
+
+                    String route = "DH";
+                    if (!service.isOnHost()) {
+                        route = service.getOffHostSecureElement();
+                    }
+                    Log.d(TAG, "generateServiceMapLocked: component=" + service.getComponent()
+                            + ", category=" + category + ", route=" + route);
                 }
                 List<String> prefixAids = service.getPrefixAids();
                 List<String> subSetAids = service.getSubsetAids();
@@ -905,7 +929,7 @@ public class RegisteredAidCache {
         AidConflicts prefixConflicts = new AidConflicts();
         String plainAid = prefixAid.substring(0, prefixAid.length() - 1); // Cut off "*"
         String lastAidWithPrefix = String.format("%-32s", plainAid).replace(' ', 'F');
-        if (DBG) {
+        if (VDBG) {
             Log.d(TAG, "findConflictsForPrefixLocked: Finding AIDs in range [" + plainAid + " - "
                     + lastAidWithPrefix + "]");
         }
@@ -914,11 +938,11 @@ public class RegisteredAidCache {
         for (Map.Entry<String, ArrayList<ServiceAidInfo>> entry :
                 prefixConflicts.conflictMap.entrySet()) {
             if (!entry.getKey().equalsIgnoreCase(prefixAid)) {
-                if (DBG)
-                    Log.d(TAG,
-                            "findConflictsForPrefixLocked: AID " + entry.getKey()
-                                    + " conflicts with prefix; "
-                                    + " adding handling services for conflict resolution.");
+                if (VDBG) {
+                    Log.d(TAG, "findConflictsForPrefixLocked: AID " + entry.getKey()
+                            + " conflicts with prefix; "
+                            + " adding handling services for conflict resolution.");
+                }
                 prefixConflicts.services.addAll(entry.getValue());
                 prefixConflicts.aids.add(entry.getKey());
             }
@@ -970,6 +994,10 @@ public class RegisteredAidCache {
         //aidCache is temproary cache for geenrating the first prefix based lookup table.
         PriorityQueue<String> aidsToResolve = new PriorityQueue<String>(mAidServices.keySet());
         aidCache.clear();
+        if (DBG) {
+            Log.d(TAG, "generateAidCacheLocked: Nb of AIDs to process=" + aidsToResolve.size());
+        }
+
         while (!aidsToResolve.isEmpty()) {
             final ArrayList<String> resolvedAids = new ArrayList<String>();
 
@@ -983,7 +1011,7 @@ public class RegisteredAidCache {
             if (aidsToResolve.contains(aidToResolve + "*")) {
                 aidToResolve = aidToResolve + "*";
             }
-            if (DBG) Log.d(TAG, "generateAidCacheLocked: starting with aid " + aidToResolve);
+            if (VDBG) Log.d(TAG, "generateAidCacheLocked: starting with aid " + aidToResolve);
 
             if (isPrefix(aidToResolve)) {
                 // This AID itself is a prefix; let's consider this prefix as the "root",
@@ -1017,8 +1045,10 @@ public class RegisteredAidCache {
                                      userId == mUserIdPreferredForegroundService)) {
                                 AidResolveInfo childResolveInfo = resolveAidConflictLocked(mAidServices.get(aid), false);
                                 aidCache.put(aid,childResolveInfo);
-                                Log.d(TAG, "generateAidCacheLocked: AID " + aid
-                                        + " shared with prefix; adding subset .");
+                                if (VDBG) {
+                                    Log.d(TAG, "generateAidCacheLocked: AID " + aid
+                                            + " shared with prefix; adding subset ");
+                                }
                              }
                         }
                    }
@@ -1030,11 +1060,11 @@ public class RegisteredAidCache {
                     for (Map.Entry<String, ArrayList<ServiceAidInfo>> entry :
                             prefixConflicts.conflictMap.entrySet()) {
                         if (!entry.getKey().equalsIgnoreCase(aidToResolve)) {
-                            if (DBG)
-                                Log.d(TAG,
-                                        "generateAidCacheLocked: AID " + entry.getKey()
-                                                + " shared with prefix; "
-                                                + " adding all handling services.");
+                            if (VDBG) {
+                                Log.d(TAG, "generateAidCacheLocked: AID " + entry.getKey()
+                                        + " shared with prefix; "
+                                        + " adding all handling services");
+                            }
                             AidResolveInfo childResolveInfo = resolveAidConflictLocked(
                                     entry.getValue(), false);
                             // Special case: in this case all children AIDs must be routed to the
@@ -1064,7 +1094,7 @@ public class RegisteredAidCache {
                 // Exact AID and no other conflicting AID registrations present
                 // This is true because aidsToResolve is lexicographically ordered, and
                 // so by necessity all other AIDs are different than this AID or longer.
-                if (DBG) Log.d(TAG, "generateAidCacheLocked: Exact AID, resolving.");
+                if (VDBG) Log.d(TAG, "generateAidCacheLocked: Exact AID, resolving.");
                 final ArrayList<ServiceAidInfo> conflictingServiceInfos =
                         new ArrayList<ServiceAidInfo>(mAidServices.get(aidToResolve));
                 aidCache.put(aidToResolve, resolveAidConflictLocked(conflictingServiceInfos, true));
@@ -1072,7 +1102,7 @@ public class RegisteredAidCache {
             }
 
             // Remove the AIDs we resolved from the list of AIDs to resolve
-            if (DBG) {
+            if (VDBG) {
                 Log.d(TAG, "generateAidCacheLocked: AIDs: " + resolvedAids + " were resolved.");
             }
             aidsToResolve.removeAll(resolvedAids);
@@ -1086,14 +1116,14 @@ public class RegisteredAidCache {
             String aidToResolve = reversedQueue.peek();
             if (isPrefix(aidToResolve)) {
                 String matchingSubset = aidToResolve.substring(0, aidToResolve.length() - 1) + "#";
-                if (DBG) {
+                if (VDBG) {
                     Log.d(TAG, "generateAidCacheLocked: matching subset" + matchingSubset);
                 }
                 if (reversedQueue.contains(matchingSubset))
                      aidToResolve = aidToResolve.substring(0,aidToResolve.length()-1) + "#";
             }
             if (isSubset(aidToResolve)) {
-                if (DBG) {
+                if (VDBG) {
                     Log.d(TAG, "generateAidCacheLocked: subset resolving aidToResolve  "
                             + aidToResolve);
                 }
@@ -1113,12 +1143,13 @@ public class RegisteredAidCache {
                     // will no longer be evaluated.Check for any prefix matching in the same service
                     if (resolveInfo.prefixInfo != null && resolveInfo.prefixInfo.prefixAid != null &&
                             !resolveInfo.prefixInfo.matchingSubset) {
-                        if (DBG)
+                        if (VDBG) {
                             Log.d(TAG,
                                     "generateAidCacheLocked: AID default "
                                             + resolveInfo.prefixInfo.prefixAid
                                             + " prefix AID shared with dsubset root; "
                                             + " adding prefix aid");
+                        }
                         AidResolveInfo childResolveInfo = resolveAidConflictLocked(
                         mAidServices.get(resolveInfo.prefixInfo.prefixAid), false);
                         mAidCache.put(resolveInfo.prefixInfo.prefixAid, childResolveInfo);
@@ -1133,11 +1164,12 @@ public class RegisteredAidCache {
                         aidConflicts.conflictMap.entrySet()) {
                         // We need to add shortest prefix among them.
                         if (!entry.getKey().equalsIgnoreCase(aidToResolve)) {
-                            if (DBG)
+                            if (VDBG) {
                                 Log.d(TAG,
                                         "generateAidCacheLocked: AID " + entry.getKey()
                                                 + " shared with subset root; "
-                                                + " adding all handling services.");
+                                                + " adding all handling services");
+                            }
                             AidResolveInfo childResolveInfo = resolveAidConflictLocked(
                                 entry.getValue(), false);
                             // Special case: in this case all children AIDs must be routed to the
@@ -1160,12 +1192,13 @@ public class RegisteredAidCache {
                         AidResolveInfo childResolveInfo = resolveAidConflictLocked(
                         mAidServices.get(resolveInfo.prefixInfo.prefixAid), false);
                         mAidCache.put(resolveInfo.prefixInfo.prefixAid, childResolveInfo);
-                        if (DBG)
+                        if (VDBG) {
                             Log.d(TAG,
                                     "generateAidCacheLocked: AID "
                                             + resolveInfo.prefixInfo.prefixAid
                                             + " prefix AID shared with subset root; "
                                             + " adding prefix aid");
+                        }
                     }
                     // Special case: if in the end we didn't add any children services,
                     // and the subset has only one service, make that default
@@ -1180,7 +1213,7 @@ public class RegisteredAidCache {
                 // Exact AID and no other conflicting AID registrations present. This is
                 // true because reversedQueue is lexicographically ordered in revrese, and
                 // so by necessity all other AIDs are different than this AID or shorter.
-                if (DBG) {
+                if (VDBG) {
                     Log.d(TAG, "generateAidCacheLocked: Exact or Prefix AID." + aidToResolve);
                 }
                 mAidCache.put(aidToResolve, aidCache.get(aidToResolve));
@@ -1188,15 +1221,15 @@ public class RegisteredAidCache {
             }
 
             // Remove the AIDs we resolved from the list of AIDs to resolve
-            if (DBG) {
+            if (VDBG) {
                 Log.d(TAG, "generateAidCacheLocked: AIDs: " + resolvedAids + " were resolved.");
             }
             reversedQueue.removeAll(resolvedAids);
             resolvedAids.clear();
         }
-        if (DBG)  {
+        if (VDBG)  {
             for (String key : mAidCache.keySet()) {
-                Log.d(TAG, "generateAidCacheLocked: aid cache entry" + key + " val:"
+                Log.d(TAG, "generateAidCacheLocked: aid=" + key + " val="
                         + mAidCache.get(key).toString());
             }
         }
@@ -1355,6 +1388,17 @@ public class RegisteredAidCache {
 
                 routingEntries.put(aid, aidType);
             }
+            if ((DBG) && (resolveInfo.services.size() != 0)) {
+                String host = "DH";
+                if (!aidType.isOnHost) {
+                    host = aidType.offHostSE;
+                }
+                Log.d(TAG,
+                        "updateRoutingLocked: AID " + aid + ", route=" + host + ", power="
+                                + String.format("0x%02X", aidType.power) + ", nb services="
+                                + resolveInfo.services.size() + ", service="
+                                + resolveInfo.services.get(0).getComponent());
+            }
         }
         mRequiresScreenOnServiceExist = requiresScreenOnServiceExist;
         int result = mRoutingManager.configureRouting(routingEntries, force, isOverrideOrRecover);
@@ -1400,7 +1444,10 @@ public class RegisteredAidCache {
     }
 
     public void onWalletRoleHolderChanged(String defaultWalletHolderPackageName, int userId) {
-        if (DBG) Log.d(TAG, "onWalletRoleHolderChanged: user:" + userId);
+        if (DBG) {
+            Log.d(TAG, "onWalletRoleHolderChanged: Wallet name=" + defaultWalletHolderPackageName
+                    + ", User=" + userId);
+        }
         synchronized (mLock) {
             mDefaultWalletHolderPackageName = defaultWalletHolderPackageName;
             mUserIdDefaultWalletHolder = userId;
@@ -1505,6 +1552,8 @@ public class RegisteredAidCache {
 
 
     public void onNfcDisabled() {
+        if (DBG) Log.d(TAG, "onNfcDisabled");
+
         synchronized (mLock) {
             mNfcEnabled = false;
         }
@@ -1512,6 +1561,8 @@ public class RegisteredAidCache {
     }
 
     public void onNfcEnabled() {
+        if (DBG) Log.d(TAG, "onNfcEnabled");
+
         synchronized (mLock) {
             mNfcEnabled = true;
             updateRoutingLocked(true, false);
@@ -1615,6 +1666,7 @@ public class RegisteredAidCache {
     }
 
     public void onPreferredSimChanged(int simType) {
+        if (DBG) Log.d(TAG, "onPreferredSimChanged");
         synchronized (mLock) {
             mPreferredSimType = simType;
             mRoutingManager.onNfccRoutingTableCleared();

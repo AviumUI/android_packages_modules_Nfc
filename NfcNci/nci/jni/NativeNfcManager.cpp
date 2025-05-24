@@ -1173,6 +1173,7 @@ static jboolean nfcManager_unrouteAid(JNIEnv* e, jobject, jbyteArray aid) {
 *******************************************************************************/
 static jint nfcManager_commitRouting(JNIEnv* e, jobject) {
   if (sIsShuttingDown) return -1;
+  if (sIsRecovering) return -1;
   if (sRfEnabled) {
     /*Update routing table only in Idle state.*/
     startRfDiscovery(false);
@@ -2306,7 +2307,7 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
   }
 
   if (sIsDisabling || !sIsNfaEnabled ||
-      (NFC_GetNCIVersion() != NCI_VERSION_2_0)) {
+      (NFC_GetNCIVersion() < NCI_VERSION_2_0)) {
     prevScreenState = state;
     return;
   }

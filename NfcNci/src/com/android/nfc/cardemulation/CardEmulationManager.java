@@ -81,7 +81,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -110,8 +109,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         EnabledNfcFServices.Callback, WalletRoleObserver.Callback,
         PreferredSubscriptionService.Callback,
         HostEmulationManager.NfcAidRoutingListener {
-    static final String TAG = "CardEmulationManager";
+    static final String TAG = "NfcCardEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
 
     static final int NFC_HCE_APDU = 0x01;
     static final int NFC_HCE_NFCF = 0x04;
@@ -163,6 +163,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     private final DeviceConfigFacade mDeviceConfigFacade;
     private final NfcInjector mNfcInjector;
 
+    private boolean mIsEuiccCapable;
+
     // TODO: Move this object instantiation and dependencies to NfcInjector.
     public CardEmulationManager(Context context, NfcInjector nfcInjector,
         DeviceConfigFacade deviceConfigFacade) {
@@ -175,6 +177,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mWalletRoleObserver = new WalletRoleObserver(context,
                 context.getSystemService(RoleManager.class), this, nfcInjector);
 
+        mIsEuiccCapable = mContext.getResources().getBoolean(R.bool.enable_euicc_support)
+                && NfcInjector.NfcProperties.isEuiccSupported();
         mRoutingOptionManager = RoutingOptionManager.getInstance();
         mOffHostRouteEse = mRoutingOptionManager.getOffHostRouteEse();
         mOffHostRouteUicc = mRoutingOptionManager.getOffHostRouteUicc();
@@ -379,6 +383,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     public void onUserSwitched(int userId) {
+        if (DBG) Log.d(TAG, "onUserSwitched");
         mWalletRoleObserver.onUserSwitched(userId);
         // for HCE
         mServiceCache.onUserSwitched();
@@ -402,6 +407,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     public void onNfcEnabled() {
+        if (DBG) Log.d(TAG, "onNfcEnabled");
         // for HCE
         mAidCache.onNfcEnabled();
         // for HCE-F
@@ -409,6 +415,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     public void onNfcDisabled() {
+        if (DBG) Log.d(TAG, "onNfcDisabled");
         // for HCE
         mAidCache.onNfcDisabled();
         // for HCE-F
@@ -636,6 +643,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     boolean setDefaultServiceForCategoryChecked(int userId, ComponentName service,
             String category) {
+        if (DBG) {
+            Log.d(TAG, "setDefaultServiceForCategoryChecked: service=" + service + ", category="
+                    + category);
+        }
         if (!CardEmulation.CATEGORY_PAYMENT.equals(category)) {
             Log.e(TAG, "setDefaultServiceForCategoryChecked: Not allowing defaults for category "
                     + category);
@@ -736,9 +747,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     @Override
     public void onPreferredSubscriptionChanged(int subscriptionId, boolean isActive) {
         int simType = isActive ?  getSimTypeById(subscriptionId) : TelephonyUtils.SIM_TYPE_UNKNOWN;
-        Log.i(TAG, "onPreferredSubscriptionChanged: subscription_" + subscriptionId + "is active("
-                + isActive + ")"
-                + ", type(" + simType + ")");
+        Log.i(TAG, "onPreferredSubscriptionChanged: subscription_" + subscriptionId
+                + "is active(" + isActive + "), type(" + simType + ")");
         mRoutingOptionManager.onPreferredSimChanged(simType);
         if (simType != TelephonyUtils.SIM_TYPE_UNKNOWN) {
             updateRouteBasedOnPreferredSim();
@@ -790,6 +800,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             if (!isServiceRegistered(userId, service)) {
                 return false;
             }
+            if (DBG) {
+                Log.d(TAG, "isDefaultServiceForCategory: service=" + service + ", category="
+                        + category);
+            }
             if (mWalletRoleObserver.isWalletRoleFeatureEnabled()) {
                 PackageAndUser holder =
                         mWalletRoleObserver.getDefaultWalletRoleHolder(userId);
@@ -831,6 +845,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 throws RemoteException {
             NfcPermissions.validateProfileId(mContext, userId);
             NfcPermissions.enforceAdminPermissions(mContext);
+            if (DBG) {
+                Log.d(TAG, "setDefaultForNextTap: service=" + service);
+            }
             if (service != null && !isServiceRegistered(userId, service)) {
                 return false;
             }
@@ -858,6 +875,66 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 updateForShouldDefaultToObserveMode(userId);
             }
             return true;
+        }
+
+        @Override
+        public void setRequireDeviceScreenOnForService(int userId, ComponentName service,
+                boolean enable) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + service + " is not registered");
+            }
+
+            Log.d(TAG, "setRequireDeviceScreenOnForService: (" + service + ") to " + enable);
+
+            mServiceCache.setRequireDeviceScreenOnForService(
+                    userId, Binder.getCallingUid(), service, enable);
+        }
+
+        @Override
+        public boolean isDeviceScreenOnRequiredForService(int userId, ComponentName service) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + service + " is not registered");
+            }
+
+            return mServiceCache.getService(userId, service).requiresScreenOn();
+        }
+
+        @Override
+        public void setRequireDeviceUnlockForService(int userId, ComponentName service,
+                boolean enable) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + service + " is not registered");
+            }
+
+            Log.d(TAG, "setRequireDeviceUnlockForService: (" + service + ") to " + enable);
+
+            mServiceCache.setRequireDeviceUnlockForService(
+                    userId, Binder.getCallingUid(), service, enable);
+        }
+
+        @Override
+        public boolean isDeviceUnlockRequiredForService(int userId, ComponentName service) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + service + " is not registered");
+            }
+
+            return mServiceCache.getService(userId, service).requiresUnlock();
         }
 
         @Override
@@ -1196,9 +1273,12 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 return mWalletRoleObserver.getDefaultWalletRoleHolder(
                         callingUserId).getPackage() != null;
             }
-            String defaultComponent = Settings.Secure.getString(mContext.getContentResolver(),
-                    Constants.SETTINGS_SECURE_NFC_PAYMENT_DEFAULT_COMPONENT);
-            return defaultComponent != null ? true : false;
+            boolean isRegistered = Settings.Secure.getString(mContext.getContentResolver(),
+                    Constants.SETTINGS_SECURE_NFC_PAYMENT_DEFAULT_COMPONENT) != null;
+            if (DBG) {
+                Log.d(TAG, "isDefaultPaymentRegistered: " + isRegistered);
+            }
+            return isRegistered;
         }
 
         @Override
@@ -1698,8 +1778,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     private int getSimTypeById(int subscriptionId) {
-        Optional<SubscriptionInfo> optionalInfo =
-                mTelephonyUtils.getActiveSubscriptionInfoById(subscriptionId);
+        Optional<SubscriptionInfo> optionalInfo = getActiveSubscriptionInfoById(subscriptionId);
         if (optionalInfo.isPresent()) {
             SubscriptionInfo info = optionalInfo.get();
             if (info.isEmbedded()) {
@@ -1716,8 +1795,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     public byte[] getReaderByPreferredSim() {
         Optional<SubscriptionInfo> optionalInfo =
-                mTelephonyUtils.getActiveSubscriptionInfoById(mPreferredSubscriptionService
-                        .getPreferredSubscriptionId());
+                getActiveSubscriptionInfoById(
+                    mPreferredSubscriptionService.getPreferredSubscriptionId());
         if (optionalInfo.isPresent() && optionalInfo.get().isEmbedded()) {
             SubscriptionInfo info = optionalInfo.get();
             return (RoutingOptionManager.SE_PREFIX_SIM + (1 + info.getSimSlotIndex()))
@@ -1842,5 +1921,24 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     public boolean isHostCardEmulationActivated() {
         return mHostEmulationManager.isHostCardEmulationActivated();
+    }
+
+    Optional<SubscriptionInfo> getActiveSubscriptionInfoById(int subscriptionId) {
+        Log.d(TAG, "getActiveSubscriptionInfoById: " + subscriptionId);
+        if (mTelephonyUtils.isUiccSubscription(subscriptionId)) {
+            Log.d(TAG, "Get activated uicc subscription with SWP supported physical slot");
+            return mTelephonyUtils.getActiveSubscriptions().stream()
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC)
+                    .filter(subscriptionInfo ->
+                                mTelephonyUtils.findPhysicalSlotIndex(subscriptionInfo)
+                                == TelephonyUtils.SWP_SUPPORTED_PHYSICAL_SIM_SLOT)
+                    .findFirst();
+        } else {
+            return mTelephonyUtils.getActiveSubscriptions().stream()
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC)
+                    .filter(subscriptionInfo ->
+                                subscriptionInfo.getSubscriptionId() == subscriptionId)
+                    .findFirst();
+        }
     }
 }

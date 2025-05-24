@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SystemCodeRoutingManager {
-    static final String TAG = "SystemCodeRoutingManager";
+    static final String TAG = "NfcSystemCodeRoutingManager";
 
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
 

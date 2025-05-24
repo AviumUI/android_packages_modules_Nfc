@@ -34,6 +34,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.PackageManager.ResolveInfoFlags;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
+import android.net.Uri;
 import android.nfc.cardemulation.AidGroup;
 import android.nfc.cardemulation.ApduServiceInfo;
 import android.nfc.cardemulation.CardEmulation;
@@ -90,12 +91,12 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class RegisteredServicesCache {
     static final String XML_INDENT_OUTPUT_FEATURE = "http://xmlpull.org/v1/doc/features.html#indent-output";
-    static final String TAG = "RegisteredServicesCache";
+    static final String TAG = "NfcRegisteredServicesCache";
     static final String AID_XML_PATH = "dynamic_aids.xml";
     static final String OTHER_STATUS_PATH = "other_status.xml";
     static final String PACKAGE_DATA = "package";
     static final boolean DEBUG = NfcProperties.debug_enabled().orElse(true);
-    private static final boolean VDBG = false; // turn on for local testing.
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
 
     final Context mContext;
     final AtomicReference<BroadcastReceiver> mReceiver;
@@ -135,6 +136,8 @@ public class RegisteredServicesCache {
         public final HashMap<String, AidGroup> aidGroups = new HashMap<>();
         public String offHostSE;
         public String shouldDefaultToObserveModeStr;
+        public String requireDeviceScreenOnStr;
+        public String requireDeviceUnlockStr;
 
         DynamicSettings(int uid) {
             this.uid = uid;
@@ -270,7 +273,7 @@ public class RegisteredServicesCache {
             public void onReceive(Context context, Intent intent) {
                 final int uid = intent.getIntExtra(Intent.EXTRA_UID, -1);
                 String action = intent.getAction();
-                if (VDBG) Log.d(TAG, "onReceive: Intent action: " + action);
+                if (VDBG) Log.d(TAG, "onReceive: Intent action=" + action);
 
                 if (mRoutingOptionManager.isRoutingTableOverrided()) {
                     if (DEBUG) {
@@ -279,6 +282,7 @@ public class RegisteredServicesCache {
                 }
                 if (uid == -1) return;
                 int userId = UserHandle.getUserHandleForUid(uid).getIdentifier();
+
                 int currentUser = ActivityManager.getCurrentUser();
                 if (currentUser != getProfileParentId(context, userId)) {
                     // Cache will automatically be updated on user switch
@@ -296,10 +300,16 @@ public class RegisteredServicesCache {
                     }
                     return;
                 }
+
                 boolean replaced = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
                         && (Intent.ACTION_PACKAGE_ADDED.equals(action)
                         || Intent.ACTION_PACKAGE_REMOVED.equals(action));
                 if (!replaced) {
+                    if (DEBUG) {
+                        Uri uri = intent.getData();
+                        String pkg = uri != null ? uri.getSchemeSpecificPart() : null;
+                        Log.d(TAG, "onReceive: action=" + action + ", pkg=" + pkg);
+                    }
                     if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
                         invalidateCache(UserHandle.
                                 getUserHandleForUid(uid).getIdentifier(), true);
@@ -308,7 +318,7 @@ public class RegisteredServicesCache {
                                 getUserHandleForUid(uid).getIdentifier(), false);
                     }
                 } else {
-                    if (DEBUG) {
+                    if (VDBG) {
                         Log.d(TAG,
                                 "onReceive: Ignoring package intent due to package "
                                         + "being replaced");
@@ -415,13 +425,13 @@ public class RegisteredServicesCache {
 
     void dump(List<ApduServiceInfo> services) {
         for (ApduServiceInfo service : services) {
-            if (DEBUG) Log.d(TAG, service.toString());
+            if (DEBUG) Log.d(TAG, "invalidateCache: " + service.toString());
         }
     }
 
     void dump(ArrayList<ComponentName> services) {
         for (ComponentName service : services) {
-            if (DEBUG) Log.d(TAG, service.toString());
+            if (DEBUG) Log.d(TAG, "invalidateOther: " + service.toString());
         }
     }
 
@@ -447,6 +457,9 @@ public class RegisteredServicesCache {
         final ArrayList<ApduServiceInfo> services = new ArrayList<ApduServiceInfo>();
         synchronized (mLock) {
             UserServices userServices = findOrCreateUserLocked(userId);
+            if (DEBUG) {
+                Log.d(TAG, "getServices: Nb services found=" + userServices.services.size());
+            }
             services.addAll(userServices.services.values());
         }
         return services;
@@ -459,6 +472,10 @@ public class RegisteredServicesCache {
             for (ApduServiceInfo service : userServices.services.values()) {
                 if (service.hasCategory(category)) services.add(service);
             }
+        }
+        if (DEBUG) {
+            Log.d(TAG, "getServicesForCategory: found " + services.size()
+                    + " services for category " + category);
         }
         return services;
     }
@@ -483,6 +500,7 @@ public class RegisteredServicesCache {
                 mOffHostApduServiceIntent,
                 ResolveInfoFlags.of(PackageManager.GET_META_DATA), UserHandle.of(userId));
         resolvedServices.addAll(resolvedOffHostServices);
+
         for (ResolveInfo resolvedService : resolvedServices) {
             try {
                 boolean onHost = !resolvedOffHostServices.contains(resolvedService);
@@ -563,6 +581,10 @@ public class RegisteredServicesCache {
      * invalidateCache for specific userId.
      */
     public void invalidateCache(int userId, boolean validateInstalled) {
+        if (DEBUG) {
+            Log.d(TAG, "invalidateCache");
+        }
+
         final ArrayList<ApduServiceInfo> validServices = getInstalledServices(userId);
         if (validServices == null) {
             return;
@@ -620,6 +642,16 @@ public class RegisteredServicesCache {
                                 convertValueToBoolean(dynamicSettings.shouldDefaultToObserveModeStr,
                                 false));
                     }
+                    if (dynamicSettings.requireDeviceScreenOnStr != null) {
+                        serviceInfo.setRequiresScreenOn(
+                                convertValueToBoolean(dynamicSettings.requireDeviceScreenOnStr,
+                                        serviceInfo.requiresScreenOn()));
+                    }
+                    if (dynamicSettings.requireDeviceUnlockStr != null) {
+                        serviceInfo.setRequiresUnlock(
+                                convertValueToBoolean(dynamicSettings.requireDeviceScreenOnStr,
+                                        serviceInfo.requiresUnlock()));
+                    }
                 }
             }
             if (toBeRemoved.size() > 0) {
@@ -643,15 +675,19 @@ public class RegisteredServicesCache {
             dump(validServices);
         } else {
             // dump only new services added or removed
-            Log.i(TAG, "invalidateCache: New Services => ");
-            dump(toBeAdded);
-            Log.i(TAG, "invalidateCache: Removed Services => ");
-            dump(toBeRemoved);
+            if (toBeAdded.size() > 0) {
+                Log.i(TAG, "invalidateCache: New Services => ");
+                dump(toBeAdded);
+            }
+            if (toBeRemoved.size()  > 0) {
+                Log.i(TAG, "invalidateCache: Removed Services => ");
+                dump(toBeRemoved);
+            }
         }
     }
 
     private void invalidateOther(int userId, List<ApduServiceInfo> validOtherServices) {
-        Log.d(TAG, "invalidateOther : " + userId);
+        Log.d(TAG, "invalidateOther : userId=" + userId);
         ArrayList<ComponentName> toBeAdded = new ArrayList<>();
         ArrayList<ComponentName> toBeRemoved = new ArrayList<>();
         // remove services
@@ -712,10 +748,14 @@ public class RegisteredServicesCache {
             dump(validOtherServices);
         } else {
             // dump only new services added or removed
-            Log.i(TAG, "invalidateOther: New Services => ");
-            dump(toBeAdded);
-            Log.i(TAG, "invalidateOther: Removed Services => ");
-            dump(toBeRemoved);
+            if (toBeAdded.size() > 0) {
+                Log.i(TAG, "invalidateOther: New Services => ");
+                dump(toBeAdded);
+            }
+            if (toBeRemoved.size() > 0) {
+                Log.i(TAG, "invalidateOther: Removed Services => ");
+                dump(toBeRemoved);
+            }
         }
     }
 
@@ -761,6 +801,8 @@ public class RegisteredServicesCache {
                 int currentUid = -1;
                 String currentOffHostSE = null;
                 String shouldDefaultToObserveModeStr = null;
+                String requireDeviceScreenOnStr = null;
+                String requireDeviceUnlockStr = null;
                 ArrayList<AidGroup> currentGroups = new ArrayList<AidGroup>();
                 Map<String, Boolean> plFilters = new HashMap<>();
                 Map<String, Boolean> plPatternFilters = new HashMap<>();
@@ -774,6 +816,10 @@ public class RegisteredServicesCache {
                                     = parser.getAttributeValue(null, "offHostSE");
                             shouldDefaultToObserveModeStr =
                                     parser.getAttributeValue(null, "shouldDefaultToObserveMode");
+                            requireDeviceScreenOnStr =
+                                    parser.getAttributeValue(null, "requireDeviceScreenOn");
+                            requireDeviceUnlockStr =
+                                    parser.getAttributeValue(null, "requireDeviceUnlock");
                             if (compString == null || uidString == null) {
                                 Log.e(TAG,
                                         "readDynamicSettingsFromFile: Invalid service attributes");
@@ -830,6 +876,8 @@ public class RegisteredServicesCache {
                                 dynSettings.offHostSE = currentOffHostSE;
                                 dynSettings.shouldDefaultToObserveModeStr
                                         = shouldDefaultToObserveModeStr;
+                                dynSettings.requireDeviceScreenOnStr = requireDeviceScreenOnStr;
+                                dynSettings.requireDeviceUnlockStr = requireDeviceUnlockStr;
                                 if (!readSettingsMap.containsKey(userId)) {
                                     readSettingsMap.put(userId, new ArrayList<>());
                                 }
@@ -930,12 +978,16 @@ public class RegisteredServicesCache {
                         if ("service".equals(tagName)) {
                             // See if we have a valid service
                             if (currentComponent != null && currentUid >= 0) {
-                                Log.d(TAG, "readOtherFromFile: end of service tag");
+                                if (VDBG) {
+                                    Log.d(TAG, "readOtherFromFile: end of service tag");
+                                }
                                 final int userId =
                                         UserHandle.getUserHandleForUid(currentUid).getIdentifier();
                                 OtherServiceStatus status =
                                         new OtherServiceStatus(currentUid, checked);
-                                Log.d(TAG, "readOtherFromFile: ## user id - " + userId);
+                                if (VDBG) {
+                                    Log.d(TAG, "readOtherFromFile: ## user id - " + userId);
+                                }
                                 if (!readSettingsMap.containsKey(userId)) {
                                     readSettingsMap.put(userId, new ArrayList<>());
                                 }
@@ -966,6 +1018,9 @@ public class RegisteredServicesCache {
     }
 
     private void readOthersLocked() {
+        if (DEBUG) {
+            Log.d(TAG, "readOthersLocked");
+        }
         Map<Integer, List<Pair<ComponentName, OtherServiceStatus>>> readSettingsMap
                 = readOtherFromFile(mOthersFile);
         for (Integer userId: readSettingsMap.keySet()) {
@@ -983,6 +1038,10 @@ public class RegisteredServicesCache {
     }
 
     private boolean writeDynamicSettingsLocked() {
+        if (DEBUG) {
+            Log.d(TAG, "writeDynamicSettingsLocked");
+        }
+
         FileOutputStream fos = null;
         try {
             fos = mDynamicSettingsFile.startWrite();
@@ -1004,6 +1063,14 @@ public class RegisteredServicesCache {
                     if (service.getValue().shouldDefaultToObserveModeStr != null) {
                         out.attribute(null, "shouldDefaultToObserveMode",
                                 service.getValue().shouldDefaultToObserveModeStr);
+                    }
+                    if (service.getValue().requireDeviceScreenOnStr != null) {
+                        out.attribute(null, "requireDeviceScreenOnStr",
+                                service.getValue().requireDeviceScreenOnStr);
+                    }
+                    if (service.getValue().requireDeviceUnlockStr != null) {
+                        out.attribute(null, "requireDeviceUnlockStr",
+                                service.getValue().requireDeviceUnlockStr);
                     }
                     for (AidGroup group : service.getValue().aidGroups.values()) {
                         group.writeAsXml(out);
@@ -1045,7 +1112,9 @@ public class RegisteredServicesCache {
     }
 
     private boolean writeOthersLocked() {
-        Log.d(TAG, "writeOthersLocked");
+        if (VDBG) {
+            Log.d(TAG, "writeOthersLocked");
+        }
 
         FileOutputStream fos = null;
         try {
@@ -1056,18 +1125,26 @@ public class RegisteredServicesCache {
             out.setFeature(XML_INDENT_OUTPUT_FEATURE, true);
             out.startTag(null, "services");
 
-            Log.d(TAG, "writeOthersLocked: userServices.size: " + mUserServices.size());
+            if (VDBG) {
+                Log.d(TAG, "writeOthersLocked: userServices.size: " + mUserServices.size());
+            }
             for (int i = 0; i < mUserServices.size(); i++) {
                 final UserServices user = mUserServices.valueAt(i);
                 int userId = mUserServices.keyAt(i);
                 // Checking for 1 times
-                Log.d(TAG, "writeOthersLocked: userId: " + userId);
-                Log.d(TAG, "writeOthersLocked: others size: " + user.others.size());
+                if (VDBG) {
+                    Log.d(TAG, "writeOthersLocked: userId: " + userId);
+                    Log.d(TAG, "writeOthersLocked: others size: " + user.others.size());
+                }
                 ArrayList<ComponentName> currentService = new ArrayList<ComponentName>();
                 for (Map.Entry<ComponentName, OtherServiceStatus> service : user.others
                         .entrySet()) {
-                    Log.d(TAG, "writeOthersLocked: component: " + service.getKey().flattenToString()
-                            + ", checked: " + service.getValue().checked);
+                    if (VDBG) {
+                        Log.d(TAG,
+                                "writeOthersLocked: component: "
+                                        + service.getKey().flattenToString() + ", checked: "
+                                        + service.getValue().checked);
+                    }
 
                     boolean hasDupe = false;
                     for (ComponentName cn : currentService) {
@@ -1079,7 +1156,9 @@ public class RegisteredServicesCache {
                     if (hasDupe) {
                         continue;
                     } else {
-                        Log.d(TAG, "writeOthersLocked: Already written");
+                        if (VDBG) {
+                            Log.d(TAG, "writeOthersLocked: Already written");
+                        }
                         currentService.add(service.getKey());
                     }
 
@@ -1105,6 +1184,10 @@ public class RegisteredServicesCache {
 
     public boolean setOffHostSecureElement(int userId, int uid, ComponentName componentName,
             String offHostSE) {
+        if (DEBUG) {
+            Log.d(TAG, "setOffHostSecureElement: componentName: " + componentName.flattenToString()
+                    + " offHostSE=" + offHostSE);
+        }
         ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
@@ -1191,6 +1274,10 @@ public class RegisteredServicesCache {
 
     public boolean setShouldDefaultToObserveModeForService(int userId, int uid,
             ComponentName componentName, boolean enable) {
+        if (DEBUG) {
+            Log.d(TAG, "setShouldDefaultToObserveModeForService: componentName="
+                    + componentName.flattenToString() + " enable=" + enable);
+        }
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
             // Check if we can find this service
@@ -1220,9 +1307,63 @@ public class RegisteredServicesCache {
         return true;
     }
 
+    public void setRequireDeviceScreenOnForService(int userId, int uid,
+            ComponentName componentName, boolean enable) {
+        synchronized (mLock) {
+            UserServices services = findOrCreateUserLocked(userId);
+            ApduServiceInfo serviceInfo = services.services.get(componentName);
+            if (serviceInfo == null) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + componentName + " is not registered");
+            }
+            if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
+                Log.e(TAG, "setRequireDeviceScreenOnForService UID mismatch");
+                throw new IllegalArgumentException("UID mismatch between caller and service "
+                        + componentName);
+            }
+            if (serviceInfo.requiresScreenOn() == enable) {
+                return;
+            }
+            serviceInfo.setRequiresScreenOn(enable);
+            DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
+            settings.requireDeviceScreenOnStr = Boolean.toString(enable);
+            mCallback.onServicesUpdated(userId, List.of(serviceInfo), true);
+        }
+    }
+
+    public void setRequireDeviceUnlockForService(int userId, int uid,
+            ComponentName componentName, boolean enable) {
+        synchronized (mLock) {
+            UserServices services = findOrCreateUserLocked(userId);
+            ApduServiceInfo serviceInfo = services.services.get(componentName);
+            if (serviceInfo == null) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + componentName + " is not registered");
+            }
+            if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
+                Log.e(TAG, "setRequireDeviceUnlockForService UID mismatch");
+                throw new IllegalArgumentException("UID mismatch between caller and service "
+                        + componentName);
+            }
+            if (serviceInfo.requiresUnlock() == enable) {
+                return;
+            }
+            serviceInfo.setRequiresUnlock(enable);
+            DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
+            settings.requireDeviceUnlockStr = Boolean.toString(enable);
+            mCallback.onServicesUpdated(userId, List.of(serviceInfo), true);
+        }
+    }
+
     public boolean registerPollingLoopFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopFilter,
             boolean autoTransact) {
+        if (DEBUG) {
+            Log.d(TAG,
+                    "registerPollingLoopFilterForService: componentName="
+                            + componentName.flattenToString() + ", pollingLoopFilter="
+                            + pollingLoopFilter + ", autoTransact=" + autoTransact);
+        }
         ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
@@ -1257,6 +1398,10 @@ public class RegisteredServicesCache {
 
     public boolean removePollingLoopFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopFilter) {
+        if (DEBUG) {
+            Log.d(TAG, "removePollingLoopFilterForService: componentName="
+                    + componentName.flattenToString() + ", pollingLoopFilter=" + pollingLoopFilter);
+        }
         ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
@@ -1311,6 +1456,12 @@ public class RegisteredServicesCache {
     public boolean registerPollingLoopPatternFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopPatternFilter,
             boolean autoTransact) {
+        if (DEBUG) {
+            Log.d(TAG,
+                    "registerPollingLoopPatternFilterForService: componentName="
+                            + componentName.flattenToString() + ", pollingLoopPatternFilter="
+                            + pollingLoopPatternFilter + ", autoTransact=" + autoTransact);
+        }
         ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
@@ -1345,6 +1496,12 @@ public class RegisteredServicesCache {
 
     public boolean removePollingLoopPatternFilterForService(int userId, int uid,
             ComponentName componentName, String pollingLoopPatternFilter) {
+        if (DEBUG) {
+            Log.d(TAG,
+                    "removePollingLoopPatternFilterForService: componentName="
+                            + componentName.flattenToString() + ", pollingLoopPatternFilter="
+                            + pollingLoopPatternFilter);
+        }
         ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
@@ -1399,6 +1556,11 @@ public class RegisteredServicesCache {
 
     public boolean registerAidGroupForService(int userId, int uid,
             ComponentName componentName, AidGroup aidGroup) {
+        if (DEBUG) {
+            Log.d(TAG,
+                    "registerAidGroupForService: componentName=" + componentName.flattenToString());
+        }
+
         ArrayList<ApduServiceInfo> newServices = null;
         boolean success;
         synchronized (mLock) {
@@ -1499,6 +1661,10 @@ public class RegisteredServicesCache {
 
     public AidGroup getAidGroupForService(int userId, int uid, ComponentName componentName,
             String category) {
+        if (DEBUG) {
+            Log.d(TAG, "getAidGroupForService: componentName=" + componentName.flattenToString());
+        }
+
         ApduServiceInfo serviceInfo = getService(userId, componentName);
         if (serviceInfo != null) {
             if (!NfcInjector.isPrivileged(uid) && serviceInfo.getUid() != uid) {
@@ -1514,6 +1680,10 @@ public class RegisteredServicesCache {
 
     public boolean removeAidGroupForService(int userId, int uid, ComponentName componentName,
             String category) {
+        if (DEBUG) {
+            Log.d(TAG, "removeAidGroupForService");
+        }
+
         boolean success = false;
         ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {

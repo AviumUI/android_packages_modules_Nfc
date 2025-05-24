@@ -40,7 +40,7 @@ import java.util.Objects;
 
 public class WalletRoleObserver {
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    private static final String TAG = "WalletRoleObserver";
+    private static final String TAG = "NfcWalletRoleObserver";
 
     public interface Callback {
         void onWalletRoleHolderChanged(String holder, int userId);

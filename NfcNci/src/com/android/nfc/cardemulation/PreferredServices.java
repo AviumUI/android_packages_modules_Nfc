@@ -63,7 +63,7 @@ import java.util.Objects;
  * mappings and the routing table).
  */
 public class PreferredServices implements com.android.nfc.ForegroundUtils.Callback {
-    static final String TAG = "PreferredCardEmulationServices";
+    static final String TAG = "NFCPreferredServices";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
     static final Uri paymentDefaultUri = Settings.Secure.getUriFor(
             Constants.SETTINGS_SECURE_NFC_PAYMENT_DEFAULT_COMPONENT);
