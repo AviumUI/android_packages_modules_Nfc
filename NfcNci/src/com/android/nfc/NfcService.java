@@ -493,6 +493,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     private int mReadErrorCount;
     private int mReadErrorCountMax;
     private boolean mPollDelayed;
+    private Handler mNfcBroadcastHandler;
 
     boolean mNotifyDispatchFailed;
     boolean mNotifyReadFailed;
@@ -1255,6 +1256,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         if (sToast_debounce_time_ms > MAX_TOAST_DEBOUNCE_TIME) {
             sToast_debounce_time_ms = MAX_TOAST_DEBOUNCE_TIME;
         }
+
+        mNfcBroadcastHandler = new Handler(mNfcInjector.getNfcBroadcastLooper());
 
         // Notification message variables
         mDispatchFailedCount = 0;
@@ -5544,12 +5547,21 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 return;
             }
             intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-            for (int userId : mNfcEventInstalledPackages.keySet()) {
-                for (String packageName : mNfcEventInstalledPackages.get(userId)) {
-                    intent.setPackage(packageName);
-                    mContext.sendBroadcastAsUser(intent, UserHandle.of(userId));
+
+            Runnable task = () -> {
+                Map<Integer, List<String>> packagesCopy = new HashMap<>(mNfcEventInstalledPackages);
+                Intent broadcastIntent = new Intent(intent);
+                for (int userId : packagesCopy.keySet()) {
+                    List<String> pkgList = new ArrayList<>(packagesCopy.get(userId));
+                    for (String packageName : pkgList) {
+                        broadcastIntent.setPackage(packageName);
+                        mContext.sendBroadcastAsUser(broadcastIntent, UserHandle.of(userId));
+                    }
                 }
-            }
+                Log.d(TAG, "Background task sendBroadcast " + intent.getAction());
+            };
+
+            mNfcBroadcastHandler.post(task);
         }
 
         /* Returns the list of packages request for nfc preferred payment service changed and
