@@ -1,0 +1,18 @@
+{
+  "wear-cts-postsubmit": [
+    {
+      "name": "CtsNfcTestCases",
+      "options": [
+       {
+         "include-filter": "android.nfc.cts.CardEmulationTest"
+       },
+       {
+         "include-filter": "android.nfc.cts.NfcFCardEmulationTest"
+       },
+       {
+         "include-filter": "android.nfc.cts.NfcAdapterTest"
+       }
+     ]
+    }
+  ]
+}

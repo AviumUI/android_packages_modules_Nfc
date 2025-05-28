@@ -4873,6 +4873,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     }
 
     public void onPreferredPaymentChanged(int reason) {
+        mHandler.removeMessages(MSG_PREFERRED_PAYMENT_CHANGED);
         sendMessage(MSG_PREFERRED_PAYMENT_CHANGED, reason);
     }
 

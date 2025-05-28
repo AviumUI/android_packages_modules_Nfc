@@ -326,6 +326,11 @@ static void nfaConnectionCallback(uint8_t connEvent,
       sNfaEnableDisablePollingEvent.notifyOne();
     } break;
 
+    case NFA_LISTEN_DISABLED_EVT:
+      LOG(DEBUG) << StringPrintf("%s: NFA_LISTEN_DISABLED_EVT:status= %u",
+                                 __func__, eventData->status);
+      break;
+
     case NFA_POLL_ENABLED_EVT:  // whether polling successfully started
     {
       LOG(DEBUG) << StringPrintf("%s: NFA_POLL_ENABLED_EVT: status = %u",
@@ -1515,11 +1520,7 @@ static jint nfcManager_doRegisterT3tIdentifier(JNIEnv* e, jobject,
   size_t bufLen = bytes.size();
   int handle = RoutingManager::getInstance().registerT3tIdentifier(buf, bufLen);
 
-  LOG(DEBUG) << StringPrintf("%s: handle=%d", __func__, handle);
-  if (handle != NFA_HANDLE_INVALID)
-    RoutingManager::getInstance().commitRouting();
-  LOG(DEBUG) << StringPrintf("%s: exit", __func__);
-
+  LOG(DEBUG) << StringPrintf("%s: exit, handle=%d", __func__, handle);
   return handle;
 }
 
@@ -1541,8 +1542,6 @@ static void nfcManager_doDeregisterT3tIdentifier(JNIEnv*, jobject,
   LOG(DEBUG) << StringPrintf("%s: enter; handle=%d", __func__, handle);
 
   RoutingManager::getInstance().deregisterT3tIdentifier(handle);
-  RoutingManager::getInstance().commitRouting();
-
   LOG(DEBUG) << StringPrintf("%s: exit", __func__);
 }
 

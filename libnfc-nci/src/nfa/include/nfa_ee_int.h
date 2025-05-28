@@ -110,9 +110,9 @@ typedef uint8_t tNFA_EE_CONN_ST;
 
 #define NFA_EE_MAX_AID_CFG_LEN (510)
 // Technology A/B/F reserved: 5*3 = 15
-// Protocol ISODEP/NFCDEP/T3T reserved: 5*3 = 15
-// Extends (APDU pattern/SC)reserved: 30
-#define NFA_EE_MAX_PROTO_TECH_EXT_ROUTE_LEN 60
+// Protocol ISODEP reserved: 5
+// Extends (default SC)reserved: 6
+#define NFA_EE_MAX_PROTO_TECH_EXT_ROUTE_LEN 26
 
 #define NFA_EE_SYSTEM_CODE_LEN 02
 #define NFA_EE_SYSTEM_CODE_TLV_SIZE 06

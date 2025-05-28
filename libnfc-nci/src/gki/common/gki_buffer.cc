@@ -307,9 +307,11 @@ void* GKI_getbuf(uint16_t size) {
   if (++Q->cur_cnt > Q->max_cnt) Q->max_cnt = Q->cur_cnt;
   GKI_enable();
 
+#if (GKI_ENABLE_BUF_CORRUPTION_CHECK == TRUE)
   LOG(VERBOSE) << StringPrintf("%s: %p %d:%d", __func__,
                                ((uint8_t*)p_hdr + BUFFER_HDR_SIZE), Q->cur_cnt,
                                Q->max_cnt);
+#endif
   UNUSED(gki_alloc_free_queue);
   return (void*)((uint8_t*)p_hdr + BUFFER_HDR_SIZE);
 #else
@@ -510,6 +512,11 @@ void GKI_freebuf(void* p_buf) {
   Q = &gki_cb.com.freeq[p_hdr->q_id];
   if (Q->cur_cnt > 0) Q->cur_cnt--;
   GKI_enable();
+#if (GKI_ENABLE_BUF_CORRUPTION_CHECK == TRUE)
+  LOG(VERBOSE) << StringPrintf("%s %p %d:%d", __func__,
+                               ((uint8_t*)p_hdr + BUFFER_HDR_SIZE), Q->cur_cnt,
+                               Q->max_cnt);
+#endif
 
   GKI_os_free(p_hdr);
 #else

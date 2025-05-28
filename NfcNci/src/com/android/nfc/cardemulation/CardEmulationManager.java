@@ -495,12 +495,15 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         // Update the AID cache
         mAidCache.onServicesUpdated(userId, services);
         // Update the preferred services list
-        mPreferredServices.onServicesUpdated();
+        boolean preferredServicesUpdated = mPreferredServices.onServicesUpdated();
         mHostEmulationManager.updatePollingLoopFilters(userId, services);
         if (Flags.exitFrames()) {
             updateFirmwareExitFramesForWalletRole(userId);
         }
-        NfcService.getInstance().onPreferredPaymentChanged(NfcAdapter.PREFERRED_PAYMENT_UPDATED);
+        if (preferredServicesUpdated) {
+            NfcService.getInstance().onPreferredPaymentChanged(
+                    NfcAdapter.PREFERRED_PAYMENT_UPDATED);
+        }
     }
 
     @Override

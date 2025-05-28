@@ -111,21 +111,6 @@ void nfc_ncif_cmd_timeout(void) {
 
 /*******************************************************************************
 **
-** Function         nfc_wait_2_deactivate_timeout
-**
-** Description      Handle a command timeout
-**
-** Returns          void
-**
-*******************************************************************************/
-void nfc_wait_2_deactivate_timeout(void) {
-  LOG(ERROR) << __func__;
-  nfc_cb.flags &= ~NFC_FL_DEACTIVATING;
-  nci_snd_deactivate_cmd((uint8_t)nfc_cb.deactivate_timer.param);
-}
-
-/*******************************************************************************
-**
 ** Function         nfc_ncif_send_data
 **
 ** Description      This function is called to add the NCI data header
@@ -154,20 +139,6 @@ uint8_t nfc_ncif_send_data(tNFC_CONN_CB* p_cb, NFC_HDR* p_data) {
                                p_cb->conn_id, p_cb->num_buff, p_cb->tx_q.count);
   if (p_cb->id == NFC_RF_CONN_ID) {
     if (nfc_cb.nfc_state != NFC_STATE_OPEN) {
-      if (nfc_cb.nfc_state == NFC_STATE_CLOSING) {
-        if ((p_data == nullptr) && /* called because credit from NFCC */
-            (nfc_cb.flags & NFC_FL_DEACTIVATING)) {
-          if (p_cb->init_credits == p_cb->num_buff) {
-            /* all the credits are back */
-            nfc_cb.flags &= ~NFC_FL_DEACTIVATING;
-            LOG(VERBOSE) << StringPrintf(
-                "%s: deactivating NFC-DEP init_credits=%d, num_buff=%d",
-                __func__, p_cb->init_credits, p_cb->num_buff);
-            nfc_stop_timer(&nfc_cb.deactivate_timer);
-            nci_snd_deactivate_cmd((uint8_t)nfc_cb.deactivate_timer.param);
-          }
-        }
-      }
       return NCI_STATUS_FAILED;
     }
   }
