@@ -9,7 +9,7 @@
       "name": "libnfc-nci-tests"
     }
   ],
-  "wear-cts-postsubmit": [
+  "wear-cts-presubmit": [
     {
       "name": "CtsNfcTestCases",
       "options": [
