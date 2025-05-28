@@ -1019,7 +1019,7 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateTechnologyABFRoute(int route,
   static const char fn[] = "RoutingManager::updateTechnologyABFRoute";
   LOG(DEBUG) << StringPrintf("%s:  New default A/B route=0x%x", fn, route);
   LOG(DEBUG) << StringPrintf("%s:  New default F route=0x%x", fn, felicaRoute);
-  mEeInfoChanged = true;
+  setEeTechRouteUpdateRequired();
   mDefaultFelicaRoute = felicaRoute;
   mDefaultOffHostRoute = route;
   return mSeTechMask;
@@ -1386,6 +1386,7 @@ int RoutingManager::registerT3tIdentifier(uint8_t* t3tId, uint8_t t3tIdLen) {
     if (nfaStat == NFA_STATUS_OK) {
       mRoutingEvent.wait();
     }
+    setEeTechRouteUpdateRequired();
     if ((nfaStat != NFA_STATUS_OK) || (mCbEventData.status != NFA_STATUS_OK)) {
       LOG(ERROR) << StringPrintf("%s: Fail to register system code on DH", fn);
       return NFA_HANDLE_INVALID;
@@ -1444,6 +1445,7 @@ void RoutingManager::deregisterT3tIdentifier(int handle) {
           LOG(ERROR) << StringPrintf("%s: Fail to deregister system Code on DH",
                                      fn);
         }
+        setEeTechRouteUpdateRequired();
       }
     }
   }
@@ -1569,6 +1571,7 @@ void RoutingManager::clearRoutingEntry(int clearFlags) {
     RoutingManager::getInstance().removeAidRouting((uint8_t*)NFA_REMOVE_ALL_AID,
                                                    NFA_REMOVE_ALL_AID_LEN);
     mDefaultAidRouteAdded = false;
+    setEeTechRouteUpdateRequired();
   }
 
   if (clearFlags & CLEAR_PROTOCOL_ENTRIES) {
