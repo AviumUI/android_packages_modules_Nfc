@@ -602,9 +602,11 @@ void NfcAdaptation::Initialize() {
 
   if (NfcConfig::hasKey(NAME_NFA_MAX_EE_SUPPORTED)) {
     nfa_ee_max_ee_cfg = NfcConfig::getUnsigned(NAME_NFA_MAX_EE_SUPPORTED);
-    LOG(VERBOSE) << StringPrintf(
-        "%s: Overriding NFA_EE_MAX_EE_SUPPORTED to use %d", func,
-        nfa_ee_max_ee_cfg);
+    if (NFA_EE_MAX_EE_SUPPORTED != nfa_ee_max_ee_cfg) {
+      LOG(WARNING) << StringPrintf(
+          "%s: Overriding NFA_EE_MAX_EE_SUPPORTED (%d) to use %d", func,
+          NFA_EE_MAX_EE_SUPPORTED, nfa_ee_max_ee_cfg);
+    }
   }
 
   if (NfcConfig::hasKey(NAME_NFA_POLL_BAIL_OUT_MODE)) {
