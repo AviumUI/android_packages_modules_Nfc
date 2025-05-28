@@ -326,6 +326,11 @@ static void nfaConnectionCallback(uint8_t connEvent,
       sNfaEnableDisablePollingEvent.notifyOne();
     } break;
 
+    case NFA_LISTEN_DISABLED_EVT:
+      LOG(DEBUG) << StringPrintf("%s: NFA_LISTEN_DISABLED_EVT:status= %u",
+                                 __func__, eventData->status);
+      break;
+
     case NFA_POLL_ENABLED_EVT:  // whether polling successfully started
     {
       LOG(DEBUG) << StringPrintf("%s: NFA_POLL_ENABLED_EVT: status = %u",
