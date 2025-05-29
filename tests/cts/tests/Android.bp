@@ -62,6 +62,7 @@ android_test {
         "mcts-nfc",
     ],
     min_sdk_version: "36",
+    jarjar_rules: ":nfc-cts-jarjar-rules",
 }
 
 android_test {
@@ -89,4 +90,12 @@ android_test {
     ],
     test_config: "InteractiveAndroidTest.xml",
     min_sdk_version: "36",
+    jarjar_rules: ":nfc-cts-jarjar-rules",
+}
+
+filegroup {
+    name: "nfc-cts-jarjar-rules",
+    srcs: [
+        "jarjar-rules.txt",
+    ],
 }
