@@ -31,9 +31,9 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyFloat;
@@ -125,7 +125,6 @@ import com.android.nfc.cardemulation.util.StatsdUtils;
 import com.android.nfc.flags.FeatureFlags;
 import com.android.nfc.flags.Flags;
 import com.android.nfc.wlc.NfcCharging;
-
 
 import org.junit.After;
 import org.junit.Assert;
@@ -250,6 +249,7 @@ public final class NfcServiceTest {
         when(mNfcInjector.isSatelliteModeSensitive()).thenReturn(true);
         when(mNfcInjector.getCardEmulationManager()).thenReturn(mCardEmulationManager);
         when(mNfcInjector.getNfcCharging(mDeviceHost)).thenReturn(mNfcCharging);
+        when(mNfcInjector.getNfcBroadcastLooper()).thenReturn(mLooper.getLooper());
         when(mApplication.getSharedPreferences(anyString(), anyInt())).thenReturn(mPreferences);
         when(mApplication.getSystemService(PowerManager.class)).thenReturn(mPowerManager);
         when(mApplication.getSystemService(UserManager.class)).thenReturn(mUserManager);
@@ -615,6 +615,7 @@ public final class NfcServiceTest {
         mNfcService.mIsRequestUnlockShowed = false;
         when(mNfcInjector.isDeviceLocked()).thenReturn(true);
         handler.handleMessage(msg);
+        mLooper.dispatchAll();
         verify(mApplication).sendBroadcastAsUser(mIntentArgumentCaptor.capture(), any());
         Intent intent = mIntentArgumentCaptor.getValue();
         Assert.assertNotNull(intent);
@@ -633,6 +634,7 @@ public final class NfcServiceTest {
         userlist.add("com.android.nfc");
         mNfcService.mNfcEventInstalledPackages.put(1, userlist);
         handler.handleMessage(msg);
+        mLooper.dispatchAll();
         verify(mApplication).sendBroadcastAsUser(mIntentArgumentCaptor.capture(), any());
         Intent intent = mIntentArgumentCaptor.getValue();
         Assert.assertNotNull(intent);
