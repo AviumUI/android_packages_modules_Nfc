@@ -353,7 +353,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
     public static final int WAIT_FOR_OEM_CALLBACK_TIMEOUT_MS = 3000;
 
-    public static final int WAIT_FOR_COMMIT_ROUTING_TIMEOUT_MS = 10000;
+    public static final int WAIT_FOR_COMMIT_ROUTING_TIMEOUT_MS = 3_000;
 
     private static final long TIME_TO_MONITOR_AFTER_FIELD_ON_MS = 10000L;
 
