@@ -163,12 +163,12 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
     };
 
     @TargetApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    public void onWalletRoleHolderChanged(String defaultWalletHolderPackageName, int userId) {
+    public boolean onWalletRoleHolderChanged(String defaultWalletHolderPackageName, int userId) {
         if (defaultWalletHolderPackageName == null) {
             mDefaultWalletHolderPaymentService = null;
             mUserIdDefaultWalletHolder = userId;
             mCallback.onPreferredPaymentServiceChanged(new ComponentNameAndUser(userId, null));
-            return;
+            return true;
         }
         List<ApduServiceInfo> serviceInfos = mServiceCache.getInstalledServices(userId);
         List<ComponentName> roleHolderPaymentServices = new ArrayList<>();
@@ -197,7 +197,9 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
             mDefaultWalletHolderPaymentService = candidate;
             mUserIdDefaultWalletHolder = userId;
             mCallback.onPreferredPaymentServiceChanged(new ComponentNameAndUser(userId, candidate));
+            return true;
         }
+        return false;
     }
 
     void loadDefaultsFromSettings(int userId, boolean force) {
@@ -326,7 +328,10 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
         return true;
     }
 
-    public void onServicesUpdated() {
+    /**
+     * @return true if the foreground service or wallet role holder has changed.
+     */
+    public boolean onServicesUpdated() {
         // If this service is the current foreground service, verify
         // there are no conflicts
         boolean foregroundChanged = false;
@@ -350,12 +355,15 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
             computePreferredForegroundService();
         }
 
+        boolean walletRoleHolderChanged = false;
         if (mWalletRoleObserver.isWalletRoleFeatureEnabled()
                 && mUserIdDefaultWalletHolder >= 0) {
             PackageAndUser roleHolder = mWalletRoleObserver
                     .getDefaultWalletRoleHolder(mUserIdDefaultWalletHolder);
-            onWalletRoleHolderChanged(roleHolder.getPackage(), roleHolder.getUserId());
+            walletRoleHolderChanged =
+                onWalletRoleHolderChanged(roleHolder.getPackage(), roleHolder.getUserId());
         }
+        return foregroundChanged || walletRoleHolderChanged;
     }
 
     // Verifies whether a service is allowed to register as preferred
