@@ -549,8 +549,6 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     private  INfcVendorNciCallback mNfcVendorNciCallBack = null;
     private  INfcOemExtensionCallback mNfcOemExtensionCallback = null;
 
-    private CountDownLatch mCommitRoutingCountDownLatch = null;
-    private int mCommitRoutingStatus;
     private final DisplayListener mDisplayListener = new DisplayListener() {
         @Override
         public void onDisplayAdded(int displayId) {
@@ -3680,7 +3678,13 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             }
             if (DBG) Log.i(TAG, "commitRouting");
             NfcPermissions.enforceAdminPermissions(mContext);
-            return mDeviceHost.commitRouting();
+
+            @NfcOemExtension.StatusCode int status = mDeviceHost.commitRouting();
+            if (mCardEmulationManager.onRoutingChangeCompleted(status)) {
+                return status;
+            } else {
+                return NfcOemExtension.STATUS_UNKNOWN_ERROR;
+            }
         }
 
         @Override
@@ -4859,27 +4863,12 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             mHandler.sendEmptyMessage(MSG_COMMIT_ROUTING);
             return STATUS_OK;
         }
-        if (mCommitRoutingCountDownLatch != null) {
-            Log.e(TAG, "Routing commit already in progress, ignoring...");
-            return STATUS_OK;
+        if (mCardEmulationManager.onRoutingChangeStarted()) {
+            mHandler.sendEmptyMessage(MSG_COMMIT_ROUTING);
+        } else {
+            Log.d(TAG, "Routing commit already in progress, ignoring...");
         }
-        mCommitRoutingCountDownLatch = new CountDownLatch(1);
-        mHandler.sendEmptyMessage(MSG_COMMIT_ROUTING);
-        try {
-            boolean success = mCommitRoutingCountDownLatch
-                    .await(WAIT_FOR_COMMIT_ROUTING_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-            if (!success) {
-                Log.e(TAG, "commitRouting: timed out!");
-                return STATUS_UNKNOWN_ERROR;
-            } else {
-                Log.i(TAG, "commitRouting: status= " + mCommitRoutingStatus);
-                return mCommitRoutingStatus;
-            }
-        } catch (InterruptedException e) {
-            return STATUS_UNKNOWN_ERROR;
-        } finally {
-            mCommitRoutingCountDownLatch = null;
-        }
+        return STATUS_OK;
     }
 
     public boolean sendScreenMessageAfterNfcCharging() {
@@ -5057,27 +5046,20 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         if (isNfcDisabledOrDisabling()) {
                             Log.d(TAG, "handleMessage: Skip commit routing when NFCC is off "
                                     + "or turning off");
-                            if (mCommitRoutingCountDownLatch != null) {
-                                mCommitRoutingStatus = STATUS_UNKNOWN_ERROR;
-                                mCommitRoutingCountDownLatch.countDown();
-                            }
+                            mCardEmulationManager.onRoutingChangeCompleted(STATUS_UNKNOWN_ERROR);
                             return;
                         }
                         if (mCurrentDiscoveryParameters.shouldEnableDiscovery()) {
                             if (mNfcOemExtensionCallback != null) {
+                                // OemExtension will call the commit routing after some actions
                                 if (receiveOemCallbackResult(ACTION_ON_ROUTING_CHANGED)) {
                                     Log.e(TAG, "handleMessage: Oem skip commitRouting");
-                                    if (mCommitRoutingCountDownLatch != null) {
-                                        mCommitRoutingStatus = STATUS_UNKNOWN_ERROR;
-                                        mCommitRoutingCountDownLatch.countDown();
-                                    }
                                     return;
                                 }
                             }
-                            mCommitRoutingStatus = mDeviceHost.commitRouting();
-                            if (mCommitRoutingCountDownLatch != null) {
-                                mCommitRoutingCountDownLatch.countDown();
-                            }
+                            mCardEmulationManager.onRoutingChangeCompleted(
+                                    mDeviceHost.commitRouting());
+
                             if (mNfcOemExtensionCallback != null) {
                                 try {
                                     mNfcOemExtensionCallback.onRoutingChangeCompleted();
