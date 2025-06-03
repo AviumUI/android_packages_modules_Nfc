@@ -1519,14 +1519,15 @@ public final class NfcServiceTest {
     }
 
     @Test
-    public void testSetPowerSavingMode() throws RemoteException {
+    public void testSetPowerSavingModeNciMessage() throws RemoteException {
         mNfcService.mState = NfcAdapter.STATE_ON;
         byte[] payload = { 0x01, 0x01, 0x00, 0x00 };
+        when(mDeviceHost.isPowerSavingModeSupported()).thenReturn(true);
         when(mDeviceHost.setPowerSavingMode(true)).thenReturn(true);
         int result = mNfcService.mNfcAdapter.sendVendorNciMessage(1,0x0f,0x0c, payload);
         mLooper.dispatchAll();
         assertThat(result).isEqualTo(0x00);
-        verify(mDeviceHost).setPowerSavingMode(anyBoolean());
+        verify(mDeviceHost).setPowerSavingMode(eq(true));
     }
 
     @Test

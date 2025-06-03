@@ -62,10 +62,12 @@ import android.nfc.cardemulation.CardEmulation;
 import android.nfc.cardemulation.NfcFServiceInfo;
 import android.nfc.cardemulation.PollingFrame;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.test.TestLooper;
 import android.provider.Settings;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -149,6 +151,7 @@ public class CardEmulationManagerTest {
                     "com.android.test.walletroleholder.WalletRoleHolderApduService");
     private static final String PAYMENT_AID_1 = "A000000004101012";
 
+    private TestLooper mLooper;
     @Mock
     private Context mContext;
     @Mock
@@ -231,6 +234,7 @@ public class CardEmulationManagerTest {
         when(mDeviceConfigFacade.getIndicateUserActivityForHce()).thenReturn(true);
         when(android.nfc.Flags.nfcEventListener()).thenReturn(true);
         when(android.nfc.Flags.enableCardEmulationEuicc()).thenReturn(true);
+        mLooper = new TestLooper();
         mCardEmulationManager = createInstanceWithMockParams();
     }
 
@@ -461,6 +465,7 @@ public class CardEmulationManagerTest {
         when(mPreferredServices.onServicesUpdated()).thenReturn(true);
 
         mCardEmulationManager.onServicesUpdated(USER_ID, UPDATED_SERVICES, false);
+        mLooper.dispatchAll();
 
         verify(mWalletRoleObserver, times(2)).isWalletRoleFeatureEnabled();
         verify(mRegisteredAidCache).onServicesUpdated(eq(USER_ID), mServiceListCaptor.capture());
@@ -2279,6 +2284,7 @@ public class CardEmulationManagerTest {
                 mContext,
                 mForegroundUtils,
                 mWalletRoleObserver,
+                new Handler(mLooper.getLooper()),
                 mRegisteredAidCache,
                 mRegisteredT3tIdentifiersCache,
                 mHostEmulationManager,
@@ -2672,6 +2678,7 @@ public class CardEmulationManagerTest {
         when(mNfcService.getNumberOfFirmwareExitFramesSupported()).thenReturn(0);
 
         mCardEmulationManager.onWalletRoleHolderChanged("com.android.test", 0);
+        mLooper.dispatchAll();
 
         verify(mNfcService, never()).setFirmwareExitFrameTable(any(), anyInt());
     }
@@ -2704,6 +2711,7 @@ public class CardEmulationManagerTest {
         when(service2.getShouldAutoTransact(any())).thenReturn(true);
 
         mCardEmulationManager.onWalletRoleHolderChanged("com.android.test", 0);
+        mLooper.dispatchAll();
 
         ArgumentCaptor<List<ExitFrame>> frameCaptor = ArgumentCaptor.forClass(List.class);
         verify(mNfcService).setFirmwareExitFrameTable(frameCaptor.capture(), anyInt());
@@ -2732,6 +2740,7 @@ public class CardEmulationManagerTest {
         when(service1.getShouldAutoTransact(any())).thenReturn(true);
 
         mCardEmulationManager.onWalletRoleHolderChanged("com.android.test", 0);
+        mLooper.dispatchAll();
 
         ArgumentCaptor<List<ExitFrame>> frameCaptor = ArgumentCaptor.forClass(List.class);
         verify(mNfcService).setFirmwareExitFrameTable(frameCaptor.capture(), anyInt());

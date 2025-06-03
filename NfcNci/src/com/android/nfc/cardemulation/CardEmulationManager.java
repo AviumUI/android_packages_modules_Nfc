@@ -43,6 +43,7 @@ import android.nfc.cardemulation.NfcFServiceInfo;
 import android.nfc.cardemulation.PollingFrame;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
@@ -131,6 +132,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     static final byte[] SELECT_AID_HDR = new byte[] {0x00, (byte) 0xa4, 0x04, 0x00};
     private static final int FIRMWARE_EXIT_FRAME_TIMEOUT_MS = 5000;
 
+    final Handler mHandler;
     final RegisteredAidCache mAidCache;
     final RegisteredT3tIdentifiersCache mT3tIdentifiersCache;
     final RegisteredServicesCache mServiceCache;
@@ -187,6 +189,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mTelephonyUtils = TelephonyUtils.getInstance(mContext);
         mTelephonyUtils.setMepMode(mRoutingOptionManager.getMepMode());
 
+        mHandler = new Handler(Looper.getMainLooper());
         mAidCache = new RegisteredAidCache(context, mWalletRoleObserver);
         mT3tIdentifiersCache = new RegisteredT3tIdentifiersCache(context);
         mHostEmulationManager =
@@ -212,6 +215,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     CardEmulationManager(Context context,
             ForegroundUtils foregroundUtils,
             WalletRoleObserver walletRoleObserver,
+            Handler handler,
             RegisteredAidCache registeredAidCache,
             RegisteredT3tIdentifiersCache registeredT3tIdentifiersCache,
             HostEmulationManager hostEmulationManager,
@@ -233,6 +237,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mNfcFCardEmulationInterface = new NfcFCardEmulationInterface();
         mForegroundUtils = foregroundUtils;
         mWalletRoleObserver = walletRoleObserver;
+        mHandler = handler;
         mAidCache = registeredAidCache;
         mT3tIdentifiersCache = registeredT3tIdentifiersCache;
         mHostEmulationManager = hostEmulationManager;
@@ -498,7 +503,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         boolean preferredServicesUpdated = mPreferredServices.onServicesUpdated();
         mHostEmulationManager.updatePollingLoopFilters(userId, services);
         if (Flags.exitFrames()) {
-            updateFirmwareExitFramesForWalletRole(userId);
+            mHandler.post(() -> {
+                updateFirmwareExitFramesForWalletRole(userId);
+            });
         }
         if (preferredServicesUpdated) {
             NfcService.getInstance().onPreferredPaymentChanged(
@@ -1896,7 +1903,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mPreferredServices.onWalletRoleHolderChanged(holder, userId);
         mAidCache.onWalletRoleHolderChanged(holder, userId);
         if (Flags.exitFrames()) {
-            updateFirmwareExitFramesForWalletRole(userId);
+            mHandler.post(() -> {
+                updateFirmwareExitFramesForWalletRole(userId);
+            });
         }
     }
 
