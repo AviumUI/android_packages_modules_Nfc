@@ -1256,6 +1256,47 @@ public final class NfcAdapter {
     }
 
     /**
+     * Returns whether the device supports power-saving mode or not.
+     *
+     * @return True if the device supports power-saving mode, false otherwise
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
+    public boolean isPowerSavingModeSupported() {
+        return callServiceReturn(sService::isPowerSavingModeSupported, false);
+    }
+
+    /**
+     * Returns whether power-saving mode is currently enabled or not.
+     *
+     * @return True if power saving mode is enabled, false otherwise
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
+    public boolean isPowerSavingModeEnabled() {
+        return callServiceReturn(sService::isPowerSavingModeEnabled, false);
+    }
+
+
+    /**
+     * Sets whether or not the NFC chip should be in power-saving mode next time it is disabled
+     * with {@link NfcAdapter#disable()}. If the chip is already disabled, power-saving mode will
+     * take effect immediately.
+     *
+     * <p>This mode puts the NFC chip in a very low power mode, but not fully turned off. This mode
+     * limits communication between the NFC chip and the host processor to conserve power, although
+     * the exact implementation may depend on the device's underlying hardware. Other NFC APIs are
+     * disabled while this mode is active.
+     *
+     * @throws UnsupportedOperationException If the device does not support power-saving mode.
+     * @throws IllegalStateException If a transient failure related to current device state
+     * prevented power-saving mode from being set.
+     */
+    @RequiresPermission(Manifest.permission.WRITE_SECURE_SETTINGS)
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
+    public void setPowerSavingMode(boolean enabled) {
+        callService(() -> sService.setPowerSavingMode(enabled));
+    }
+
+    /**
      * Resumes default NFC tag reader mode polling for the current device state if polling is
      * paused. Calling this while already in polling is a no-op.
      * @hide

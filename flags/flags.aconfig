@@ -66,3 +66,11 @@ flag {
     description: "API to toggle requireDeviceUnlock and requireDeviceScreenOn attributes for HCE service."
     bug: "417742419"
 }
+
+flag {
+    name: "nfc_power_saving_mode"
+    is_exported: true
+    namespace: "nfc"
+    description: "API to get and set power saving mode."
+    bug: "311419563"
+}

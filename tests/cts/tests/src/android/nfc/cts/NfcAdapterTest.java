@@ -103,7 +103,7 @@ public class NfcAdapterTest {
 
     private boolean supportsHardware() {
         final PackageManager pm = mContext.getPackageManager();
-        return pm.hasSystemFeature(PackageManager.FEATURE_NFC);
+        return pm.hasSystemFeature(PackageManager.FEATURE_NFC_ANY);
     }
 
     @Before
@@ -125,6 +125,7 @@ public class NfcAdapterTest {
 
     @Test
     public void testAddAndRemoveNfcUnlockHandler() {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         CtsNfcUnlockHandler unlockHandler = new CtsNfcUnlockHandler();
 
@@ -162,6 +163,7 @@ public class NfcAdapterTest {
 
     @Test
     public void testEnableAndDisableForegroundDispatch() throws RemoteException {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         Activity activity = createAndResumeActivity();
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(),
@@ -178,6 +180,7 @@ public class NfcAdapterTest {
 
     @Test
     public void testEnableAndDisableReaderMode() {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         Activity activity = createAndResumeActivity();
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(),
@@ -198,6 +201,7 @@ public class NfcAdapterTest {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_READER_OPTION)
     public void testEnableAndDisableReaderOption() throws NoSuchFieldException, RemoteException {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         assumeTrue("Device must support reader option", adapter.isReaderOptionSupported());
 
@@ -333,6 +337,7 @@ public class NfcAdapterTest {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_MAINLINE)
     public void testSetReaderMode() {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         // Verify the API does not crash or throw any exceptions.
         adapter.setReaderModePollingEnabled(true);
@@ -675,6 +680,19 @@ public class NfcAdapterTest {
             cardEmulation.unsetPreferredService(activity);
             adapter.notifyHceDeactivated();
         }
+    }
+
+    @Test
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
+    public void testTogglePowerSavingMode() {
+        assumeTrue(getDefaultAdapter().isPowerSavingModeSupported());
+
+        NfcAdapter adapter = getDefaultAdapter();
+        adapter.setPowerSavingMode(true);
+        assertTrue(adapter.isPowerSavingModeEnabled());
+
+        adapter.setPowerSavingMode(false);
+        assertFalse(adapter.isPowerSavingModeEnabled());
     }
 
     @Test
@@ -1278,6 +1296,7 @@ public class NfcAdapterTest {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_NFC_CHECK_TAG_INTENT_PREFERENCE)
     public void testSetTagIntentAppPreference() throws NoSuchFieldException, RemoteException {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         assumeTrue("Device must support tag intent app preference",
             adapter.isTagIntentAppPreferenceSupported());
