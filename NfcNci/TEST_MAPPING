@@ -20,7 +20,7 @@
       "keywords": ["primary-device"]
     }
   ],
-  "wear-cts-postsubmit": [
+  "wear-cts-presubmit": [
     {
       "name": "CtsNfcTestCases",
       "options": [
