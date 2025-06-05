@@ -55,6 +55,7 @@ public final class NfcVendorNciCallbackListener extends INfcVendorNciCallback.St
                                                 NfcAdapter.getService()
                                                         .registerVendorExtensionCallback(
                                                                 NfcVendorNciCallbackListener.this));
+                                        linkToNfcDeath();
                                     }
                                 }
                             } catch (Throwable t) {
