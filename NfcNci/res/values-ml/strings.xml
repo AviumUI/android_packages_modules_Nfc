@@ -24,7 +24,7 @@
     <string name="pairing_peripheral" msgid="5319926791325775305">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>, ജോടിയാക്കുന്നു"</string>
     <string name="pairing_peripheral_failed" msgid="5905500974914016272">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>, ജോടിയാക്കാനായില്ല"</string>
     <string name="failed_to_enable_bt" msgid="5978409523818027926">"ബ്ലൂടൂത്ത് പ്രവർത്തനക്ഷമമാക്കാനായില്ല"</string>
-    <string name="confirm_pairing" msgid="6587809107551647782">"നിങ്ങൾക്ക് <xliff:g id="DEVICE_NAME">%1$s</xliff:g> എന്ന Bluetooth ഉപകരണം ജോടിയാക്കണമെന്ന് തീർച്ചയാണോ?"</string>
+    <string name="confirm_pairing" msgid="6587809107551647782">"നിങ്ങൾക്ക് <xliff:g id="DEVICE_NAME">%1$s</xliff:g> എന്ന ബ്ലൂടൂത്ത് ഉപകരണം ജോടിയാക്കണമെന്ന് തീർച്ചയാണോ?"</string>
     <string name="pair_yes" msgid="3624986519335168604">"വേണം"</string>
     <string name="pair_no" msgid="1333098406083837138">"വേണ്ട"</string>
     <string name="tap_again_to_pay" msgid="4338572813931564301">"<xliff:g id="APP">%1$s</xliff:g> എന്നതുപയോഗിച്ച് പണമടയ്‌ക്കുന്നതിന് വീണ്ടും ടാപ്പുചെയ്യുക"</string>
