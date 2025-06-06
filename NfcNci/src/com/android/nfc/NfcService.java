@@ -3534,7 +3534,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 throws RemoteException {
             if (DBG) Log.i(TAG, "registerOemExtensionCallback");
             NfcPermissions.enforceAdminPermissions(mContext);
-            mNfcOemExtensionCallback = callbacks;
+            synchronized (NfcService.this) {
+                mNfcOemExtensionCallback = callbacks;
+                mNfcOemExtensionCallback.asBinder().linkToDeath(mOemExtensionCbDeathRecipient, 0);
+            }
             updateNfCState();
             if (mCardEmulationManager != null) {
                 mCardEmulationManager.setOemExtension(mNfcOemExtensionCallback);
@@ -3549,7 +3552,11 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 throws RemoteException {
             if (DBG) Log.i(TAG, "unregisterOemExtensionCallback");
             NfcPermissions.enforceAdminPermissions(mContext);
-            mNfcOemExtensionCallback = null;
+            synchronized (NfcService.this) {
+                if (mNfcOemExtensionCallback == null) return;
+                mNfcOemExtensionCallback.asBinder().unlinkToDeath(mOemExtensionCbDeathRecipient, 0);
+                mNfcOemExtensionCallback = null;
+            }
             if (mCardEmulationManager != null) {
                 mCardEmulationManager.setOemExtension(mNfcOemExtensionCallback);
             }
@@ -3733,6 +3740,12 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
     }
 
+    private final IBinder.DeathRecipient mOemExtensionCbDeathRecipient = () -> {
+        synchronized (NfcService.this) {
+            Log.w(TAG, "binderDied: OEM extension died");
+            mNfcOemExtensionCallback = null;
+        }
+    };
 
     final class SeServiceDeathRecipient implements IBinder.DeathRecipient {
         @Override
