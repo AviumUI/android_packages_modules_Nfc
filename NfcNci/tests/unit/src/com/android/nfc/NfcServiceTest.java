@@ -868,6 +868,7 @@ public final class NfcServiceTest {
     public void testAllowOemOnTagDispatchCallback() throws Exception {
         when(mPreferences.getBoolean(eq(PREF_NFC_ON), anyBoolean())).thenReturn(true);
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
         Handler handler = mNfcService.getHandler();
         Assert.assertNotNull(handler);
@@ -914,6 +915,7 @@ public final class NfcServiceTest {
     public void testAllowOemOnNdefReadCallback() throws Exception {
         when(mPreferences.getBoolean(eq(PREF_NFC_ON), anyBoolean())).thenReturn(true);
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
         Handler handler = mNfcService.getHandler();
         Assert.assertNotNull(handler);
@@ -959,6 +961,7 @@ public final class NfcServiceTest {
     @Test
     public void testAllowOemOnApplyRoutingCallback() throws Exception {
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
         mNfcService.mState = NfcAdapter.STATE_ON;
         INfcUnlockHandler binder = mock(INfcUnlockHandler.class);
@@ -1236,6 +1239,7 @@ public final class NfcServiceTest {
     public void testOnHostCardEmulationActivated() throws RemoteException {
         when(mPreferences.getBoolean(eq(PREF_NFC_ON), anyBoolean())).thenReturn(true);
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
         verify(callback).onCardEmulationActivated(anyBoolean());
         when(android.nfc.Flags.nfcPersistLog()).thenReturn(true);
@@ -1248,6 +1252,7 @@ public final class NfcServiceTest {
     public void testOnHostCardEmulationDeactivated()  throws RemoteException {
         when(mPreferences.getBoolean(eq(PREF_NFC_ON), anyBoolean())).thenReturn(true);
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
         verify(callback).onCardEmulationActivated(false);
         when(android.nfc.Flags.nfcPersistLog()).thenReturn(true);
@@ -1325,6 +1330,7 @@ public final class NfcServiceTest {
         when(mNfcInjector.isDeviceLocked()).thenReturn(true);
         mNfcService.mNfcEventInstalledPackages.put(1, userlist);
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
         when(android.nfc.Flags.nfcPersistLog()).thenReturn(true);
         mNfcService.onRemoteFieldActivated();
@@ -1347,6 +1353,7 @@ public final class NfcServiceTest {
         when(mKeyguardManager.isKeyguardLocked()).thenReturn(true);
         mNfcService.mNfcEventInstalledPackages.put(1, userlist);
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
         when(android.nfc.Flags.nfcPersistLog()).thenReturn(true);
         mNfcService.onRemoteFieldDeactivated();
@@ -1519,14 +1526,15 @@ public final class NfcServiceTest {
     }
 
     @Test
-    public void testSetPowerSavingMode() throws RemoteException {
+    public void testSetPowerSavingModeNciMessage() throws RemoteException {
         mNfcService.mState = NfcAdapter.STATE_ON;
         byte[] payload = { 0x01, 0x01, 0x00, 0x00 };
+        when(mDeviceHost.isPowerSavingModeSupported()).thenReturn(true);
         when(mDeviceHost.setPowerSavingMode(true)).thenReturn(true);
         int result = mNfcService.mNfcAdapter.sendVendorNciMessage(1,0x0f,0x0c, payload);
         mLooper.dispatchAll();
         assertThat(result).isEqualTo(0x00);
-        verify(mDeviceHost).setPowerSavingMode(anyBoolean());
+        verify(mDeviceHost).setPowerSavingMode(eq(true));
     }
 
     @Test
@@ -1665,6 +1673,7 @@ public final class NfcServiceTest {
     public void testEnableReaderOption() throws RemoteException {
         when(mPreferences.getBoolean(eq(PREF_NFC_ON), anyBoolean())).thenReturn(true);
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
         mNfcService.mReaderOptionCapable = true;
         when(android.nfc.Flags.nfcPersistLog()).thenReturn(true);
@@ -2134,13 +2143,17 @@ public final class NfcServiceTest {
     public void testUnregisterOemExtensionCallback() throws RemoteException {
         when(mPreferences.getBoolean(eq(PREF_NFC_ON), anyBoolean())).thenReturn(true);
         INfcOemExtensionCallback callback = mock(INfcOemExtensionCallback.class);
+        IBinder binder = mock(IBinder.class);
+        when(callback.asBinder()).thenReturn(binder);
         mNfcService.mNfcAdapter.registerOemExtensionCallback(callback);
+        verify(binder).linkToDeath(any(), anyInt());
         ArgumentCaptor<INfcOemExtensionCallback> captor = ArgumentCaptor
                 .forClass(INfcOemExtensionCallback.class);
         verify(mCardEmulationManager).setOemExtension(captor.capture());
         assertThat(captor.getValue()).isEqualTo(callback);
 
         mNfcService.mNfcAdapter.unregisterOemExtensionCallback(callback);
+        verify(binder).unlinkToDeath(any(), anyInt());
         mNfcService.onHostCardEmulationActivated(Ndef.NDEF);
         verify(callback, times(1)).onCardEmulationActivated(anyBoolean());
     }
@@ -2251,6 +2264,7 @@ public final class NfcServiceTest {
         Assert.assertNotNull(callback);
         when(mPreferences.getBoolean(eq(PREF_NFC_ON), anyBoolean())).thenReturn(true);
         INfcOemExtensionCallback oemExtensionCallback = mock(INfcOemExtensionCallback.class);
+        when(oemExtensionCallback.asBinder()).thenReturn(mock(IBinder.class));
         mNfcService.mNfcAdapter.registerOemExtensionCallback(oemExtensionCallback);
         callback.onTagDisconnected();
         assertThat(mNfcService.mCookieUpToDate).isLessThan(0);

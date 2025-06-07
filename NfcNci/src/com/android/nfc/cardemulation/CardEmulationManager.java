@@ -43,6 +43,7 @@ import android.nfc.cardemulation.NfcFServiceInfo;
 import android.nfc.cardemulation.PollingFrame;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
@@ -81,6 +82,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -130,7 +136,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     /** Select APDU header */
     static final byte[] SELECT_AID_HDR = new byte[] {0x00, (byte) 0xa4, 0x04, 0x00};
     private static final int FIRMWARE_EXIT_FRAME_TIMEOUT_MS = 5000;
+    private static final int WAIT_FOR_ROUTING_CHANGE_TIMEOUT_MS = 1000;
 
+    final Handler mHandler;
     final RegisteredAidCache mAidCache;
     final RegisteredT3tIdentifiersCache mT3tIdentifiersCache;
     final RegisteredServicesCache mServiceCache;
@@ -163,6 +171,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     private final DeviceConfigFacade mDeviceConfigFacade;
     private final NfcInjector mNfcInjector;
 
+    private CompletableFuture<Integer> mRoutingChangeFuture = null;
+    private final ExecutorService mCommitRoutingExecutor = Executors.newSingleThreadExecutor();
+
     private boolean mIsEuiccCapable;
 
     // TODO: Move this object instantiation and dependencies to NfcInjector.
@@ -187,6 +198,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mTelephonyUtils = TelephonyUtils.getInstance(mContext);
         mTelephonyUtils.setMepMode(mRoutingOptionManager.getMepMode());
 
+        mHandler = new Handler(Looper.getMainLooper());
         mAidCache = new RegisteredAidCache(context, mWalletRoleObserver);
         mT3tIdentifiersCache = new RegisteredT3tIdentifiersCache(context);
         mHostEmulationManager =
@@ -212,6 +224,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     CardEmulationManager(Context context,
             ForegroundUtils foregroundUtils,
             WalletRoleObserver walletRoleObserver,
+            Handler handler,
             RegisteredAidCache registeredAidCache,
             RegisteredT3tIdentifiersCache registeredT3tIdentifiersCache,
             HostEmulationManager hostEmulationManager,
@@ -233,6 +246,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mNfcFCardEmulationInterface = new NfcFCardEmulationInterface();
         mForegroundUtils = foregroundUtils;
         mWalletRoleObserver = walletRoleObserver;
+        mHandler = handler;
         mAidCache = registeredAidCache;
         mT3tIdentifiersCache = registeredT3tIdentifiersCache;
         mHostEmulationManager = hostEmulationManager;
@@ -431,6 +445,18 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mT3tIdentifiersCache.onTriggerRoutingTableUpdate();
     }
 
+    public boolean onRoutingChangeStarted() {
+        if (mRoutingChangeFuture != null) return false;
+        mRoutingChangeFuture = new CompletableFuture<>();
+        return true;
+    }
+
+    public boolean onRoutingChangeCompleted(@NfcOemExtension.StatusCode int status) {
+        Log.d(TAG, "onRoutingChangeComplete: " + status);
+        if (mRoutingChangeFuture == null) return false;
+        return mRoutingChangeFuture.complete(status);
+    }
+
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         mServiceCache.dump(fd, pw, args);
         mNfcFServicesCache.dump(fd, pw ,args);
@@ -498,7 +524,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         boolean preferredServicesUpdated = mPreferredServices.onServicesUpdated();
         mHostEmulationManager.updatePollingLoopFilters(userId, services);
         if (Flags.exitFrames()) {
-            updateFirmwareExitFramesForWalletRole(userId);
+            mHandler.post(() -> {
+                updateFirmwareExitFramesForWalletRole(userId);
+            });
         }
         if (preferredServicesUpdated) {
             NfcService.getInstance().onPreferredPaymentChanged(
@@ -1324,7 +1352,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultIsoDepRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultOffHostRoute(technologyRoute);
-            int result = mAidCache.onRoutingOverridedOrRecovered();
+            int result = callRoutingOverridedOrRecovered();
+
             switch (result) {
                 case AidRoutingManager.CONFIGURE_ROUTING_SUCCESS:
                     break;
@@ -1348,7 +1377,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             mForegroundUid = Process.INVALID_UID;
 
             mRoutingOptionManager.recoverOverridedRoutingTable();
-            if (mAidCache.onRoutingOverridedOrRecovered()
+            if (callRoutingOverridedOrRecovered()
                         != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
                 throw new IllegalArgumentException(
                         "recoverRoutingTable: " + "onRoutingOverridedOrRecovered() failed");
@@ -1398,7 +1427,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             if (aids != null || protocol != null || technology != null || sc != null) {
                 mRoutingOptionManager.overwriteRoutingTable();
             }
-            if (mAidCache.onRoutingOverridedOrRecovered()
+
+            if (callRoutingOverridedOrRecovered()
                         != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
                 throw new IllegalArgumentException("onRoutingOverridedOrRecovered() failed");
             }
@@ -1593,9 +1623,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     }
                     mForegroundUid = Process.INVALID_UID;
                     mRoutingOptionManager.recoverOverridedRoutingTable();
-                    if (mAidCache.onRoutingOverridedOrRecovered()
+                    if (callRoutingOverridedOrRecovered()
                             != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
-                        Log.e(TAG, "recoverRoutingTable: onRoutingOverridedOrRecovered() failed");
+                        throw new IllegalArgumentException(
+                                "recoverRoutingTable: " + "onRoutingOverridedOrRecovered() failed");
                     }
                 }
             }
@@ -1896,7 +1927,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mPreferredServices.onWalletRoleHolderChanged(holder, userId);
         mAidCache.onWalletRoleHolderChanged(holder, userId);
         if (Flags.exitFrames()) {
-            updateFirmwareExitFramesForWalletRole(userId);
+            mHandler.post(() -> {
+                updateFirmwareExitFramesForWalletRole(userId);
+            });
         }
     }
 
@@ -1942,6 +1975,35 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     .filter(subscriptionInfo ->
                                 subscriptionInfo.getSubscriptionId() == subscriptionId)
                     .findFirst();
+        }
+    }
+
+    private int callRoutingOverridedOrRecovered() {
+        Callable<Integer> task = () -> {
+            @AidRoutingManager.ConfigureRoutingResult int status =
+                    mAidCache.onRoutingOverridedOrRecovered();
+
+            if (status == AidRoutingManager.CONFIGURE_ROUTING_SUCCESS
+                    && mRoutingChangeFuture != null) {
+                if (mRoutingChangeFuture.get() == NfcOemExtension.STATUS_OK) {
+                    return AidRoutingManager.CONFIGURE_ROUTING_SUCCESS;
+                } else {
+                    return AidRoutingManager.CONFIGURE_ROUTING_FAILURE_UNKNOWN;
+                }
+            }
+
+            return status;
+        };
+
+        try {
+            return mCommitRoutingExecutor
+                    .submit(task)
+                    .get(WAIT_FOR_ROUTING_CHANGE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            Log.e(TAG, "callRoutingOverridedOrRecovered failed: " , e);
+            return AidRoutingManager.CONFIGURE_ROUTING_FAILURE_UNKNOWN;
+        } finally {
+            mRoutingChangeFuture = null;
         }
     }
 }
