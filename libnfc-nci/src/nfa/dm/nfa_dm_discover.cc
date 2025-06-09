@@ -3167,28 +3167,16 @@ bool nfa_dm_rf_removal_detection(uint8_t waiting_time) {
                                waiting_time);
 
   if (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_POLL_ACTIVE) {
-    if ((nfa_dm_cb.disc_cb.activated_protocol == NFC_PROTOCOL_T2T) ||
-        (nfa_dm_cb.disc_cb.activated_protocol == NFC_PROTOCOL_T3T) ||
-        (nfa_dm_cb.disc_cb.activated_protocol == NFC_PROTOCOL_ISO_DEP) ||
-        (nfa_dm_cb.disc_cb.activated_protocol == NFA_PROTOCOL_T5T)) {
-      /* state is OK: notify the status when the response is received from NFCC
-       */
-      detect_params.waiting_time = waiting_time;
+    /* state is OK: notify the status when the response is received from NFCC
+     */
+    detect_params.waiting_time = waiting_time;
 
-      nfa_dm_cb.disc_cb.disc_flags |= NFA_DM_DISC_FLAGS_NOTIFY;
-      nfa_dm_cb.flags |= NFA_DM_FLAGS_EP_REMOVAL_DETECT_PEND;
-      tNFA_DM_RF_DISC_DATA nfa_dm_rf_disc_data;
-      nfa_dm_rf_disc_data.detect_removal = detect_params;
-      nfa_dm_disc_sm_execute(NFA_DM_RF_REMOVAL_DETECT_START_CMD,
-                             &nfa_dm_rf_disc_data);
-    } else {
-      LOG(ERROR) << __func__
-                 << ": Activated RF interface not ISO-DEP "
-                    "or Frame RF Interface";
-      conn_evt.status = NFA_STATUS_FAILED;
-      nfa_dm_conn_cback_event_notify(NFA_DETECT_REMOVAL_STARTED_EVT, &conn_evt);
-      return false;
-    }
+    nfa_dm_cb.disc_cb.disc_flags |= NFA_DM_DISC_FLAGS_NOTIFY;
+    nfa_dm_cb.flags |= NFA_DM_FLAGS_EP_REMOVAL_DETECT_PEND;
+    tNFA_DM_RF_DISC_DATA nfa_dm_rf_disc_data;
+    nfa_dm_rf_disc_data.detect_removal = detect_params;
+    nfa_dm_disc_sm_execute(NFA_DM_RF_REMOVAL_DETECT_START_CMD,
+                           &nfa_dm_rf_disc_data);
   } else {
     /* Wrong state: notify failed status right away */
     LOG(ERROR) << __func__ << ": NFCC not in poll active state";
