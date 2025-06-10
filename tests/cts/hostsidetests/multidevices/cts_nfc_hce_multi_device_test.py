@@ -216,7 +216,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
 
     def _get_casimir_id_for_device(self):
         host = "localhost"
-        conn = HTTPSConnection(host, 1443, context=ssl._create_unverified_context())
+        conn = HTTPSConnection(host, 1443, context=ssl.create_default_context())
         path = '/devices'
         headers = {'Content-type': 'application/json'}
         conn.request("GET", path, {}, headers)
