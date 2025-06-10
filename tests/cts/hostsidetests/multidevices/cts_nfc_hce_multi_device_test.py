@@ -392,6 +392,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
             payment_default_service=_PAYMENT_SERVICE_1,
             should_disable_services_on_destroy=False # Don't disable services on shutdown.
         )
+        time.sleep(3) # Let NFC stack complete set up emulator
         self._reboot(self.emulator)
         # Setup the payment service activity to handle the transaction after
         # reboot.
