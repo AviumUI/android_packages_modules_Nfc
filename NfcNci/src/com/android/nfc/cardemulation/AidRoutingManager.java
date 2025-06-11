@@ -380,7 +380,8 @@ public class AidRoutingManager {
             if (!aidEntry.getValue().isOnHost) {
                 String offHostSE = aidEntry.getValue().offHostSE;
                 if (offHostSE == null) {
-                    route = mDefaultOffHostRoute;
+                    route = mRoutingOptionManager.getRouteForSecureElement(
+                            RoutingOptionManager.SE_PREFIX_SIM);
                 } else {
                     route = mRoutingOptionManager.getRouteForSecureElement(offHostSE);
                     if (route == 0) {
