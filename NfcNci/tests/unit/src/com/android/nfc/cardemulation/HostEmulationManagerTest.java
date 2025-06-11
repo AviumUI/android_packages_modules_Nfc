@@ -32,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -141,6 +142,7 @@ public class HostEmulationManagerTest {
                         .mockStatic(NfcService.class)
                         .mockStatic(NfcInjector.class)
                         .mockStatic(PerfettoTrigger.class)
+                        .mockStatic(ActivityManager.class)
                         .strictness(Strictness.LENIENT)
                         .startMocking();
         MockitoAnnotations.initMocks(this);
@@ -154,6 +156,7 @@ public class HostEmulationManagerTest {
         when(mNfcInjector.getNfcPackageName()).thenReturn(NFC_PACKAGE);
         when(mNfcInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
         when(com.android.nfc.flags.Flags.statsdCeEventsFlag()).thenReturn(true);
+        when(ActivityManager.getCurrentUser()).thenReturn(0);
         when(mContext.getSystemService(eq(PowerManager.class))).thenReturn(mPowerManager);
         when(mPowerManager.newWakeLock(anyInt(), anyString())).thenReturn(mWakeLock);
         when(mContext.getSystemService(eq(KeyguardManager.class))).thenReturn(mKeyguardManager);
