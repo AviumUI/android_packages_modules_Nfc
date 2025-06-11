@@ -1625,11 +1625,11 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
                 List<PackageInfo> packagesNfcEvents = pm.getPackagesHoldingPermissions(
                         new String[] {android.Manifest.permission.NFC_TRANSACTION_EVENT},
-                        PackageManager.GET_ACTIVITIES);
+                        0);
                 List<PackageInfo> packagesNfcPreferredPaymentChanged =
                         pm.getPackagesHoldingPermissions(
                         new String[] {android.Manifest.permission.NFC_PREFERRED_PAYMENT_INFO},
-                        PackageManager.GET_ACTIVITIES);
+                        0);
                 List<String> packageListNfcEvent = new ArrayList<String>();
                 for (int i = 0; i < packagesNfcEvents.size(); i++) {
                     packageListNfcEvent.add(packagesNfcEvents.get(i).packageName);
