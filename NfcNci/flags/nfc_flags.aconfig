@@ -62,13 +62,6 @@ flag {
 }
 
 flag {
-    name: "check_passed_in_package"
-    namespace: "nfc"
-    description: "Enable checking package name in nfc service"
-    bug: "364020298"
-}
-
-flag {
     name: "nfc_alert_tag_app_launch"
     namespace: "nfc"
     description: "Notify user when tag app launched for the first time"
