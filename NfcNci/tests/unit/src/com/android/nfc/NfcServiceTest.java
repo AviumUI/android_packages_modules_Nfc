@@ -57,6 +57,7 @@ import static org.mockito.Mockito.when;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.Application;
+import android.app.AppOpsManager;
 import android.app.KeyguardManager;
 import android.app.VrManager;
 import android.app.backup.BackupManager;
@@ -191,6 +192,7 @@ public final class NfcServiceTest {
     @Mock NfcCharging mNfcCharging;
     @Mock VrManager mVrManager;
     @Mock RoleManager mRoleManager;
+    @Mock AppOpsManager mAppOpsManager;
     @Captor ArgumentCaptor<DeviceHost.DeviceHostListener> mDeviceHostListener;
     @Captor ArgumentCaptor<BroadcastReceiver> mGlobalReceiver;
     @Captor ArgumentCaptor<IBinder> mIBinderArgumentCaptor;
@@ -264,6 +266,7 @@ public final class NfcServiceTest {
         when(mApplication.getSystemService(DisplayManager.class)).thenReturn(mDisplayManager);
         when(mApplication.getSystemService(VrManager.class)).thenReturn(mVrManager);
         when(mApplication.getSystemService(RoleManager.class)).thenReturn(mRoleManager);
+        when(mApplication.getSystemService(AppOpsManager.class)).thenReturn(mAppOpsManager);
         when(mUserManager.getUserRestrictions()).thenReturn(mUserRestrictions);
         when(mResources.getStringArray(R.array.nfc_allow_list)).thenReturn(new String[0]);
         when(mResources.getBoolean(R.bool.tag_intent_app_pref_supported)).thenReturn(true);
