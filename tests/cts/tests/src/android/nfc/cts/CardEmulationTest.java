@@ -122,12 +122,6 @@ public class CardEmulationTest {
         mAdapter = NfcAdapter.getDefaultAdapter(mContext);
         assertNotNull("NFC Adapter is null", mAdapter);
         assertTrue("NFC Adapter could not be enabled", NfcUtils.enableNfc(mAdapter, mContext));
-
-        CardEmulation cardEmulation = CardEmulation.getInstance(mAdapter);
-        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                CustomHostApduService.class), false);
-        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                CtsMyHostApduService.class), false);
     }
 
     @After
@@ -138,11 +132,6 @@ public class CardEmulationTest {
         } else {
             Log.w("CardEmulationTest", "mAdapter or mContext is null");
         }
-        CardEmulation cardEmulation = CardEmulation.getInstance(mAdapter);
-        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                CustomHostApduService.class), false);
-        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                CtsMyHostApduService.class), false);
         sCurrentPollLoopReceiver = null;
     }
 
