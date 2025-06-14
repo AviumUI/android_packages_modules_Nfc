@@ -1393,6 +1393,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 + ", technology: " + technology + ", systemCode: " + sc);
 
             NfcPermissions.enforceAdminPermissions(mContext);
+            if (mForegroundUid != Process.INVALID_UID) {
+                throw new IllegalStateException(
+                    "overwriteRoutingTable(): Fg app has overridden routing table");
+            }
 
             int aidRoute = (aids != null && aids.equals("default"))
                     ? mRoutingOptionManager.getDefaultRoute()

@@ -327,6 +327,7 @@ bool RoutingManager::addAidRouting(const uint8_t* aid, uint8_t aidLen,
   if (route != NFC_DH_ID &&
       !isTypeATypeBTechSupportedInEe(route | NFA_HANDLE_GROUP_EE)) {
     route = NFC_DH_ID;
+    power = 0x11;
   }
 
   if (!mSecureNfcEnabled) {

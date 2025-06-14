@@ -873,6 +873,8 @@ public final class NfcOemExtension {
      *                 {@link ProtocolAndTechnologyRoute}
      * @param systemCode System Code route destination, where the possible inputs are defined in
      *                   {@link ProtocolAndTechnologyRoute}
+     * @throws IllegalArgumentException if the input parameters are invalid
+     * @throws IllegalStateException if routing table is already overridden by fg app
      */
     @RequiresPermission(Manifest.permission.WRITE_SECURE_SETTINGS)
     @FlaggedApi(Flags.FLAG_NFC_OEM_EXTENSION)
