@@ -1909,7 +1909,12 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
       } else if (!reader_mode && sReaderModeEnabled) {
         struct nfc_jni_native_data* nat = getNative(e, o);
         sReaderModeEnabled = false;
-        NFA_EnableListening();
+        SyncEventGuard guard(sNfaEnableDisablePollingEvent);
+        tNFA_STATUS status = NFA_EnableListening();
+
+        if (status == NFA_STATUS_OK) {
+          sNfaEnableDisablePollingEvent.wait();
+        }
 
         // configure NFCC_CONFIG_CONTROL- NFCC allowed to manage RF configuration.
         nfcManager_configNfccConfigControl(true);
@@ -1927,7 +1932,12 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
           "%s: if reader mode disable, enable listen again", __func__);
       struct nfc_jni_native_data* nat = getNative(e, o);
       sReaderModeEnabled = false;
-      NFA_EnableListening();
+      SyncEventGuard guard(sNfaEnableDisablePollingEvent);
+      tNFA_STATUS status = NFA_EnableListening();
+
+      if (status == NFA_STATUS_OK) {
+        sNfaEnableDisablePollingEvent.wait();
+      }
 
       // configure NFCC_CONFIG_CONTROL- NFCC allowed to manage RF configuration.
       nfcManager_configNfccConfigControl(true);
