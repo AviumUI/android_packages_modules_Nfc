@@ -73,7 +73,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.nfc.flags.FeatureFlags;
-import com.android.nfc.flags.Flags;
 import com.android.nfc.handover.HandoverDataParser;
 import com.android.nfc.handover.PeripheralHandoverService;
 
@@ -134,6 +133,8 @@ public final class NfcDispatcherTest {
     AtomicBoolean mAtomicBoolean;
     @Mock
     DeviceConfigFacade mDeviceConfigFacade;
+    @Mock
+    NfcTagAllowNotification mNfcTagAllowNotification;
 
     @Before
     public void setUp() throws PackageManager.NameNotFoundException {
@@ -168,6 +169,8 @@ public final class NfcDispatcherTest {
         when(mockContext.getResources()).thenReturn(mResources);
         when(NfcAdapter.getDefaultAdapter(mockContext)).thenReturn(mNfcAdapter);
         when(mNfcInjector.createAtomicBoolean()).thenReturn(mAtomicBoolean);
+        when(mNfcInjector.createNfcTagAllowNotification(any(), any()))
+                .thenReturn(mNfcTagAllowNotification);
 
         mNfcDispatcher = new NfcDispatcher(mockContext,
                 new HandoverDataParser(), mNfcInjector, true, mDeviceConfigFacade);
@@ -292,7 +295,6 @@ public final class NfcDispatcherTest {
         Assert.assertNotNull(dispatchInfo.intent);
         dispatchInfo.intent.setAction(NfcAdapter.ACTION_TECH_DISCOVERED);
         when(android.nfc.Flags.enableNfcMainline()).thenReturn(true);
-        when(com.android.nfc.flags.Flags.nfcAlertTagAppLaunch()).thenReturn(false);
         dispatchInfo.checkPrefList(activities, 0);
 
         assertThat(dispatchInfo.rootIntent).isNotNull();
@@ -785,7 +787,6 @@ public final class NfcDispatcherTest {
         when(pm.getApplicationLabel(appInfo)).thenReturn("appname");
         when(userHandle.getIdentifier()).thenReturn(0);
         when(mNfcAdapter.getTagIntentAppPreferenceForUser(0)).thenReturn(prefList);
-        when(Flags.nfcAlertTagAppLaunch()).thenReturn(false);
         when(dispatch.tryStartActivity()).thenReturn(true);
 
         assertTrue(mNfcDispatcher.tryTech(dispatch, tag));

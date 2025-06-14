@@ -72,7 +72,6 @@ import android.widget.TextView;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.nfc.RegisteredComponentCache.ComponentInfo;
-import com.android.nfc.flags.Flags;
 import com.android.nfc.handover.HandoverDataParser;
 import com.android.nfc.handover.PeripheralHandoverService;
 
@@ -379,9 +378,7 @@ class NfcDispatcher {
                     // Default sets allow to the preference list
                     if (DBG) Log.d(TAG, "checkPrefList: add:" + pkgName);
                     mNfcAdapter.setTagIntentAppPreferenceForUser(userId, pkgName, true);
-                    if (Flags.nfcAlertTagAppLaunch()) {
-                        notifyAppNames.add(appName);
-                    }
+                    notifyAppNames.add(appName);
                 }
             }
             if (muteAppCount > 0) {
@@ -1087,9 +1084,7 @@ class NfcDispatcher {
                                     if (DBG) Log.d(TAG, "tryTech: add:" + pkgName);
                                     mNfcAdapter.setTagIntentAppPreferenceForUser(userId,
                                             pkgName, true);
-                                    if (Flags.nfcAlertTagAppLaunch()) {
-                                        notifyAppNames.add(appName);
-                                    }
+                                    notifyAppNames.add(appName);
                                 } else {
                                     if (DBG) Log.d(TAG, "tryTech: allow:" + pkgName);
                                 }
