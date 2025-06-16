@@ -1697,7 +1697,7 @@ int RoutingManager::com_android_nfc_cardemulation_doGetDefaultRouteDestination(
 *******************************************************************************/
 int RoutingManager::
     com_android_nfc_cardemulation_doGetDefaultOffHostRouteDestination(JNIEnv*) {
-  return getInstance().mDefaultOffHostRoute;
+  return NfcConfig::getUnsigned(NAME_DEFAULT_OFFHOST_ROUTE, 0x00);
 }
 
 /*******************************************************************************
@@ -1711,7 +1711,7 @@ int RoutingManager::
 *******************************************************************************/
 int RoutingManager::
     com_android_nfc_cardemulation_doGetDefaultFelicaRouteDestination(JNIEnv*) {
-  return getInstance().mDefaultFelicaRoute;
+  return NfcConfig::getUnsigned(NAME_DEFAULT_NFCF_ROUTE, 0x00);
 }
 
 /*******************************************************************************
@@ -1801,7 +1801,7 @@ int RoutingManager::com_android_nfc_cardemulation_doGetAidMatchingMode(
 *******************************************************************************/
 int RoutingManager::
     com_android_nfc_cardemulation_doGetDefaultIsoDepRouteDestination(JNIEnv*) {
-  return getInstance().mDefaultIsoDepRoute;
+  return NfcConfig::getUnsigned(NAME_DEFAULT_ISODEP_ROUTE, 0x0);
 }
 
 /*******************************************************************************
@@ -1815,5 +1815,5 @@ int RoutingManager::
 *******************************************************************************/
 int RoutingManager::com_android_nfc_cardemulation_doGetDefaultScRouteDestination(
     JNIEnv*) {
-  return getInstance().mDefaultSysCodeRoute;
+  return NfcConfig::getUnsigned(NAME_DEFAULT_SYS_CODE_ROUTE, 0xC0);
 }

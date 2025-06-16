@@ -263,17 +263,26 @@ public class RoutingOptionManager {
 
     public void overrideDefaultIsoDepRoute(int isoDepRoute) {
         mOverrideDefaultIsoDepRoute = isoDepRoute;
+        if (isoDepRoute == ROUTE_DEFAULT) {
+            isoDepRoute = doGetDefaultIsoDepRouteDestination();
+        }
         NfcService.getInstance().setIsoDepProtocolRoute(isoDepRoute);
     }
 
     public void overrideDefaultOffHostRoute(int offHostRoute) {
         mOverrideDefaultOffHostRoute = offHostRoute;
         mOverrideDefaultFelicaRoute = offHostRoute;
+        if (offHostRoute == ROUTE_DEFAULT) {
+            offHostRoute = doGetDefaultOffHostRouteDestination();
+        }
         NfcService.getInstance().setTechnologyABFRoute(offHostRoute, offHostRoute);
     }
 
     public void overrideDefaultScRoute(int scRoute) {
         mOverrideDefaultScRoute = scRoute;
+        if (scRoute == ROUTE_DEFAULT) {
+            scRoute = doGetDefaultScRouteDestination();
+        }
         NfcService.getInstance().setSystemCodeRoute(scRoute);
     }
 
