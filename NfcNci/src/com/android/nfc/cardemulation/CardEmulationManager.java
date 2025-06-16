@@ -1398,37 +1398,39 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     "overwriteRoutingTable(): Fg app has overridden routing table");
             }
 
-            int aidRoute = (aids != null && aids.equals("default"))
-                    ? mRoutingOptionManager.getDefaultRoute()
-                    : getRouteForSecureElement(aids);
-            int protocolRoute = (protocol != null && protocol.equals("default"))
-                    ? mRoutingOptionManager.getDefaultIsoDepRoute()
-                    : getRouteForSecureElement(protocol);
-            int technologyRoute = (technology != null && technology.equals("default"))
-                    ? mRoutingOptionManager.getDefaultOffHostRoute()
-                    : getRouteForSecureElement(technology);
-            int scRoute = (sc != null && sc.equals("default"))
-                    ? mRoutingOptionManager.getDefaultScRoute()
-                    : getRouteForSecureElement(sc);
+            if (aids != null) {
+                mRoutingOptionManager.overrideDefaultRoute(
+                        aids.equals("default") ? RoutingOptionManager.ROUTE_DEFAULT
+                            : getRouteForSecureElement(aids));
+            }
+            if (protocol != null) {
+                mRoutingOptionManager.overrideDefaultIsoDepRoute(
+                        protocol.equals("default") ? RoutingOptionManager.ROUTE_DEFAULT
+                                : getRouteForSecureElement(protocol));
+            }
+            if (technology != null) {
+                mRoutingOptionManager.overrideDefaultOffHostRoute(
+                        technology.equals("default") ? RoutingOptionManager.ROUTE_DEFAULT
+                                : getRouteForSecureElement(technology));
+            }
+            if (sc != null) {
+                mRoutingOptionManager.overrideDefaultScRoute(
+                        sc.equals("default") ? RoutingOptionManager.ROUTE_DEFAULT
+                                : getRouteForSecureElement(sc));
+            }
 
-            if (DBG)  {
+            if (DBG) {
+                int aidRoute = mRoutingOptionManager.getOverrideDefaultRoute();
+                int protocolRoute = mRoutingOptionManager.getOverrideDefaultIsoDepRoute();
+                int technologyRoute = mRoutingOptionManager.getOverrideDefaultOffHostRoute();
+                int scRoute = mRoutingOptionManager.getOverrideDefaultScRoute();
+
                 Log.d(TAG, "overwriteRoutingTable(): aidRoute: " + Integer.toHexString(aidRoute)
                         + ", protocolRoute: " + Integer.toHexString(protocolRoute)
                         + ", technologyRoute: " + Integer.toHexString(technologyRoute)
                         + ", scRoute: " + Integer.toHexString(scRoute));
             }
-            if (aids != null) {
-                mRoutingOptionManager.overrideDefaultRoute(aidRoute);
-            }
-            if (protocol != null) {
-                mRoutingOptionManager.overrideDefaultIsoDepRoute(protocolRoute);
-            }
-            if (technology != null) {
-                mRoutingOptionManager.overrideDefaultOffHostRoute(technologyRoute);
-            }
-            if (sc != null) {
-                mRoutingOptionManager.overrideDefaultScRoute(scRoute);
-            }
+
             if (aids != null || protocol != null || technology != null || sc != null) {
                 mRoutingOptionManager.overwriteRoutingTable();
             }
