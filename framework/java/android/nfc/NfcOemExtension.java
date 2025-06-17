@@ -852,7 +852,8 @@ public final class NfcOemExtension {
                 NfcAdapter.sCardEmulationService.getRoutingStatus(), new ArrayList<>());
         return new RoutingStatus(routeStringToInt(status.get(0)),
                 routeStringToInt(status.get(1)),
-                routeStringToInt(status.get(2)));
+                routeStringToInt(status.get(2)),
+                routeStringToInt(status.get(3)));
     }
 
     /**
@@ -866,9 +867,9 @@ public final class NfcOemExtension {
      *
      * @param protocol ISO-DEP route destination, where the possible inputs are defined in
      *                 {@link ProtocolAndTechnologyRoute}.
-     * @param technology Tech-A, Tech-B and Tech-F route destination, where the possible inputs
-     *                   are defined in
-     *                   {@link ProtocolAndTechnologyRoute}
+     * @param technology Tech-A, Tech-B, and Tech-F route destination, where the possible inputs
+     *                     are defined in
+     *                     {@link ProtocolAndTechnologyRoute}
      * @param emptyAid Zero-length AID route destination, where the possible inputs are defined in
      *                 {@link ProtocolAndTechnologyRoute}
      * @param systemCode System Code route destination, where the possible inputs are defined in
@@ -895,6 +896,56 @@ public final class NfcOemExtension {
                         emptyAidRoute,
                         protocolRoute,
                         technologyRoute,
+                        technologyRoute,
+                        systemCodeRoute
+                ));
+    }
+
+    /**
+     * Overwrites NFC controller routing table, which includes Protocol Route, Technology Route,
+     * and Empty AID Route.
+     *
+     * The parameter set to
+     * {@link ProtocolAndTechnologyRoute#PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET}
+     * can be used to keep current values for that entry. At least one route should be overridden
+     * when calling this API, otherwise throw {@link IllegalArgumentException}.
+     *
+     * @param protocol ISO-DEP route destination, where the possible inputs are defined in
+     *                 {@link ProtocolAndTechnologyRoute}.
+     * @param technologyAB Tech-A and Tech-B route destination, where the possible inputs
+     *                     are defined in
+     *                     {@link ProtocolAndTechnologyRoute}
+     * @param technologyF Tech-F route destination, where the possible inputs
+     *                    are defined in
+     *                    {@link ProtocolAndTechnologyRoute}
+     * @param emptyAid Zero-length AID route destination, where the possible inputs are defined in
+     *                 {@link ProtocolAndTechnologyRoute}
+     * @param systemCode System Code route destination, where the possible inputs are defined in
+     *                   {@link ProtocolAndTechnologyRoute}
+     * @see #overwriteRoutingTable(int protocol, int technology, int emptyAid, int systemCode)
+     */
+    @RequiresPermission(Manifest.permission.WRITE_SECURE_SETTINGS)
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public void overwriteRoutingTable(
+            @CardEmulation.ProtocolAndTechnologyRoute int protocol,
+            @CardEmulation.ProtocolAndTechnologyRoute int technologyAB,
+            @CardEmulation.ProtocolAndTechnologyRoute int technologyF,
+            @CardEmulation.ProtocolAndTechnologyRoute int emptyAid,
+            @CardEmulation.ProtocolAndTechnologyRoute int systemCode) {
+
+        String protocolRoute = routeIntToString(protocol);
+        String technologyABRoute = routeIntToString(technologyAB);
+        String technologyFRoute = routeIntToString(technologyF);
+        String emptyAidRoute = routeIntToString(emptyAid);
+        String systemCodeRoute = routeIntToString(systemCode);
+
+        NfcAdapter.callService(() ->
+                NfcAdapter.sCardEmulationService.overwriteRoutingTable(
+                        mContext.getUser().getIdentifier(),
+                        emptyAidRoute,
+                        protocolRoute,
+                        technologyABRoute,
+                        technologyFRoute,
                         systemCodeRoute
                 ));
     }

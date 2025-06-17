@@ -25,11 +25,12 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.text.TextUtils;
 
+import androidx.annotation.VisibleForTesting;
+
 import com.android.modules.utils.BasicShellCommandHandler;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
-import androidx.annotation.VisibleForTesting;
 
 /**
  * Interprets and executes 'adb shell cmd nfc [args]'.
@@ -189,6 +190,19 @@ public class NfcShellCommand extends BasicShellCommandHandler {
                             .removeAidGroupForService(userId, componentName, category);
                     return 0;
                 }
+                case "overwrite-routing-table": {
+                    int userId = Integer.parseInt(getNextArg());
+                    String protocol = getNextArg();
+                    String technologyAB = getNextArg();
+                    String technologyF = getNextArg();
+                    String defaultAid = getNextArg();
+                    String defaultSystemCode = getNextArg();
+                    mNfcService.mCardEmulationManager
+                            .getNfcCardEmulationInterface()
+                            .overwriteRoutingTable(userId, defaultAid, protocol, technologyAB,
+                                    technologyF, defaultSystemCode);
+                    return 0;
+                }
                 default:
                     return handleDefaultCommands(cmd);
             }
@@ -273,6 +287,9 @@ public class NfcShellCommand extends BasicShellCommandHandler {
         pw.println("    Register AID group for a registered service");
         pw.println("  remove-aid-group <userId> <package> <service_class> <category>");
         pw.println("    Remove AID group for a registered service");
+        pw.println("  overwrite-routing-table <userId> <protocol> <technologyAB> <technolygyF> "
+                + "<defaultAID> <defaultSystemCode>");
+        pw.println("    Overwrite default route destinations in the routing table");
     }
 
     @Override

@@ -31,13 +31,16 @@ public class RoutingStatus {
     private final @CardEmulation.ProtocolAndTechnologyRoute int mDefaultRoute;
     private final @CardEmulation.ProtocolAndTechnologyRoute int mDefaultIsoDepRoute;
     private final @CardEmulation.ProtocolAndTechnologyRoute int mDefaultOffHostRoute;
+    private final @CardEmulation.ProtocolAndTechnologyRoute int mDefaultFelicaRoute;
 
     RoutingStatus(@CardEmulation.ProtocolAndTechnologyRoute int mDefaultRoute,
                   @CardEmulation.ProtocolAndTechnologyRoute int mDefaultIsoDepRoute,
-                  @CardEmulation.ProtocolAndTechnologyRoute int mDefaultOffHostRoute) {
+                  @CardEmulation.ProtocolAndTechnologyRoute int mDefaultOffHostRoute,
+                  @CardEmulation.ProtocolAndTechnologyRoute int mDefaultFelicaRoute) {
         this.mDefaultRoute = mDefaultRoute;
         this.mDefaultIsoDepRoute = mDefaultIsoDepRoute;
         this.mDefaultOffHostRoute = mDefaultOffHostRoute;
+        this.mDefaultFelicaRoute = mDefaultFelicaRoute;
     }
 
     /**
@@ -65,7 +68,7 @@ public class RoutingStatus {
     }
 
     /**
-     * Getter of the default off-host route.
+     * Getter of the default Tech-A and Tech-B route.
      * @return an integer defined in
      * {@link android.nfc.cardemulation.CardEmulation.ProtocolAndTechnologyRoute}
      */
@@ -74,6 +77,18 @@ public class RoutingStatus {
     @CardEmulation.ProtocolAndTechnologyRoute
     public int getDefaultOffHostRoute() {
         return mDefaultOffHostRoute;
+    }
+
+    /**
+     * Getter of the default Tech-F route.
+     * @return an integer defined in
+     * {@link android.nfc.cardemulation.CardEmulation.ProtocolAndTechnologyRoute}
+     */
+    @FlaggedApi(Flags.FLAG_NFC_OEM_EXTENSION)
+    @RequiresPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
+    @CardEmulation.ProtocolAndTechnologyRoute
+    public int getDefaultFelicaRoute() {
+        return mDefaultFelicaRoute;
     }
 
 }
