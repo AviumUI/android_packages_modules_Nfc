@@ -96,7 +96,7 @@ public class RegisteredServicesCache {
     static final String OTHER_STATUS_PATH = "other_status.xml";
     static final String PACKAGE_DATA = "package";
     static final boolean DEBUG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
 
     final Context mContext;
     final AtomicReference<BroadcastReceiver> mReceiver;
