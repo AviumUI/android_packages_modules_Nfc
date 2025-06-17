@@ -92,7 +92,7 @@ import java.util.regex.Pattern;
 public class HostEmulationManager {
     static final String TAG = "NfcHostEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
 
     static final int STATE_IDLE = 0;
     static final int STATE_W4_SELECT = 1;
