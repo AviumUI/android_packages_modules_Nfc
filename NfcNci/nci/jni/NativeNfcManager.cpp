@@ -2639,7 +2639,8 @@ static void nfcManager_updateIsoDepProtocolRoute(JNIEnv* e, jobject o,
 static void nfcManager_updateTechnologyABFRoute(JNIEnv* e, jobject o,
                                                 jint route, jint felicaRoute) {
   if (sIsShuttingDown) return;
-  LOG(DEBUG) << StringPrintf("%s: route=0x%X", __func__, route);
+  LOG(DEBUG) << StringPrintf("%s: route=0x%X, felicaRoute=0x%X", __func__,
+                             route, felicaRoute);
   RoutingManager::getInstance().updateTechnologyABFRoute(route, felicaRoute);
 }
 

@@ -29,6 +29,7 @@
 #include "nci_hmsgs.h"
 #include "nfa_api.h"
 #include "nfa_dm_int.h"
+#include "nfa_hci_int.h"
 
 #if (NFC_NFCEE_INCLUDED == TRUE)
 #include "nfa_ee_api.h"
@@ -2990,6 +2991,7 @@ void nfa_dm_disc_sm_execute(tNFA_DM_RF_DISC_SM_EVENT event,
   if (((nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_IDLE) ||
         (nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_DISCOVERY)) &&
       (!(nfa_dm_cb.disc_cb.disc_flags & NFA_DM_DISC_FLAGS_W4_RSP)) &&
+      (nfa_hci_cb.hci_state != NFA_HCI_STATE_EE_RECOVERY) &&
       (nfc_cb.is_nfcee_discovery_required)) {
     LOG(VERBOSE) << StringPrintf("%s: Triggering Pending EE discovery...",
         __func__);

@@ -62,6 +62,7 @@ public class DeviceConfigFacade {
     private String mDefaultRoute;
     private String mDefaultIsoDepRoute;
     private String mDefaultOffHostRoute;
+    private String mDefaultFelicaRoute;
     private String mDefaultScRoute;
     private int mSlowTapThresholdMillis;
     private int mUnknownTagPollingDelay;
@@ -168,6 +169,10 @@ public class DeviceConfigFacade {
                 "nfc_default_offhost_route",
                 mContext.getResources().getString(R.string.nfc_default_offhost_route));
 
+        mDefaultFelicaRoute = DeviceConfig.getString(DEVICE_CONFIG_NAMESPACE_NFC,
+                "nfc_default_felica_route",
+                mContext.getResources().getString(R.string.nfc_default_felica_route));
+
         mDefaultScRoute = DeviceConfig.getString(DEVICE_CONFIG_NAMESPACE_NFC,
                 "nfc_default_sc_route",
                 mContext.getResources().getString(R.string.nfc_default_sc_route));
@@ -249,6 +254,9 @@ public class DeviceConfigFacade {
     }
     public String getDefaultOffHostRoute() {
         return mDefaultOffHostRoute;
+    }
+    public String getDefaultFelicaRoute() {
+        return mDefaultFelicaRoute;
     }
     public String getDefaultScRoute() {
         return mDefaultScRoute;

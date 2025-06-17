@@ -780,6 +780,41 @@ public class NfcAdapterTest {
                                 PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE);
                 entries.getFirst().getNfceeId();
             }
+
+            if (com.android.nfc.module.flags.Flags.oemExtension25q4()) {
+                nfcOemExtension.overwriteRoutingTable(PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE,
+                        PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE, PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET,
+                        PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET, PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET);
+
+                entries = nfcOemExtension.getRoutingTable();
+                assertThat(entries).isNotNull();
+                for (NfcRoutingTableEntry entry : entries) {
+                    switch (entry.getType()) {
+                        case TYPE_AID:
+                            ((RoutingTableAidEntry) entry).getAid();
+                            break;
+                        case TYPE_PROTOCOL:
+                            ((RoutingTableProtocolEntry) entry).getProtocol();
+                            break;
+                        case TYPE_TECHNOLOGY:
+                            ((RoutingTableTechnologyEntry) entry).getTechnology();
+                            break;
+                        case TYPE_SYSTEM_CODE:
+                            ((RoutingTableSystemCodeEntry) entry).getSystemCode();
+                            break;
+                        default:
+                    }
+                    assertThat(entries.getFirst().getRouteType())
+                            .isAnyOf(
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_DH,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE);
+                    entries.getFirst().getNfceeId();
+                }
+            }
             nfcOemExtension.forceRoutingTableCommit();
             assertEquals(MAX_POLLING_PAUSE_TIMEOUT,
                     nfcOemExtension.getMaxPausePollingTimeoutMills());

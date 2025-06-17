@@ -4236,7 +4236,8 @@ tNFC_STATUS RW_I93SetTagReadOnly(void) {
           "cc[2]=0x%02x, cc[3]=0x%02x",
           __func__, *cc_blk0, *(cc_blk0 + 1), *(cc_blk0 + 2), *(cc_blk0 + 3));
 
-      if (rw_i93_send_cmd_write_single_block(0, cc_blk0) == NFC_STATUS_OK) {
+      if (rw_cb.tcb.i93.block_size == 4 &&
+          rw_i93_send_cmd_write_single_block(0, cc_blk0) == NFC_STATUS_OK) {
         rw_cb.tcb.i93.state = RW_I93_STATE_SET_READ_ONLY;
         rw_cb.tcb.i93.sub_state = RW_I93_SUBSTATE_WAIT_UPDATE_CC;
       } else {
