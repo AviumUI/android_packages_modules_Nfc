@@ -32,6 +32,7 @@
 #include "nfa_hci_defs.h"
 #include "nfa_hci_int.h"
 #include "nfa_nv_co.h"
+#include "nfc_int.h"
 
 using android::base::StringPrintf;
 
@@ -557,8 +558,10 @@ void nfa_hci_enable_one_nfcee(void) {
       if (nfa_ee_cb.isDiscoveryStopped == true) {
         nfa_dm_act_start_rf_discovery(nullptr);
         nfa_ee_cb.isDiscoveryStopped = false;
-        tNFA_EE_CBACK_DATA nfa_ee_cback_data;
-        nfa_ee_report_event(nullptr, NFA_EE_ENABLED_EVT, &nfa_ee_cback_data);
+        if (!nfc_cb.is_nfcee_discovery_required) {
+          tNFA_EE_CBACK_DATA nfa_ee_cback_data;
+          nfa_ee_report_event(nullptr, NFA_EE_ENABLED_EVT, &nfa_ee_cback_data);
+        }
       }
     }
   }
