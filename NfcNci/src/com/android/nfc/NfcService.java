@@ -2484,6 +2484,14 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
 
         @Override
+        public boolean isExitFramesSupported() {
+            synchronized (NfcService.this) {
+                return NfcService.this.isFirmwareExitFramesSupported()
+                        && NfcService.this.getNumberOfFirmwareExitFramesSupported() > 0;
+            }
+        }
+
+        @Override
         public boolean isPowerSavingModeSupported() {
             synchronized (NfcService.this) {
                 if (!isNfcEnabled()) {
