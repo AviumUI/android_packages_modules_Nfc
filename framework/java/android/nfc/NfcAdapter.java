@@ -1259,6 +1259,22 @@ public final class NfcAdapter {
     }
 
     /**
+     * Returns whether the device supports exit frames or not. Exit frames allow device firmware to
+     * handle the transition out of observe mode for certain auto-transacting
+     * <a href="{@docRoot}/develop/connectivity/nfc/hce#polling-loop-filters">
+     *   polling loop filters
+     * </a>.
+     * Polling loop filters set by the default wallet role holder ({@link
+     * android.app.role.RoleManager#ROLE_WALLET}) will be prioritized for use with exit frames.
+     *
+     * @return True if the device supports exit frames, false otherwise.
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public boolean isExitFramesSupported() {
+        return callServiceReturn(sService::isExitFramesSupported, false);
+    }
+
+    /**
      * Returns whether the device supports power-saving mode or not.
      *
      * @return True if the device supports power-saving mode, false otherwise

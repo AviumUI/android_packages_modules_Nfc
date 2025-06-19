@@ -697,6 +697,13 @@ public class NfcAdapterTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public void testIsExitFramesSupported() {
+        NfcAdapter adapter = getDefaultAdapter();
+        adapter.isExitFramesSupported();
+    }
+
+    @Test
     @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
     public void testTogglePowerSavingMode() {
         assumeTrue(getDefaultAdapter().isPowerSavingModeSupported());
