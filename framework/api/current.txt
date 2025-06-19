@@ -75,6 +75,7 @@ package android.nfc {
     method @FlaggedApi("android.nfc.enable_nfc_charging") @Nullable public android.nfc.WlcListenerDeviceInfo getWlcListenerDeviceInfo();
     method public boolean ignore(android.nfc.Tag, int, android.nfc.NfcAdapter.OnTagRemovedListener, android.os.Handler);
     method public boolean isEnabled();
+    method @FlaggedApi("com.android.nfc.module.flags.oem_extension_25q4") public boolean isExitFramesSupported();
     method public boolean isObserveModeEnabled();
     method public boolean isObserveModeSupported();
     method @FlaggedApi("com.android.nfc.module.flags.nfc_power_saving_mode") public boolean isPowerSavingModeEnabled();
