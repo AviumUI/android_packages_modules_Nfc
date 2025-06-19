@@ -17,6 +17,8 @@
 package com.android.nfc;
 
 import static android.Manifest.permission.BIND_NFC_SERVICE;
+import static android.Manifest.permission.NFC_PREFERRED_PAYMENT_INFO;
+import static android.Manifest.permission.NFC_TRANSACTION_EVENT;
 import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.content.Intent.ACTION_LOCKED_BOOT_COMPLETED;
 import static android.nfc.OemLogItems.EVENT_DISABLE;
@@ -179,7 +181,7 @@ import java.util.stream.Collectors;
 
 public class NfcService implements DeviceHostListener, ForegroundUtils.Callback {
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
     static final String TAG = "NfcService";
     private static final int APP_INFO_FLAGS_SYSTEM_APP =
             ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
@@ -1603,6 +1605,24 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
     }
 
+    /**
+     * If a package requested a permission and package's sharedUserId is {@code android.uid.system},
+     * the other packages having the same sharedUserId are considered to request the permission. So
+     * {@code PackageManager::getPackagesHoldingPermissions} returns these packages even though they
+     * don't request the permission. We need to check permissions of returned packages separately.
+     */
+    private List<String> getPackagesHoldingPermission(PackageManager pm, String permission) {
+        List<String> packages = pm.getPackagesHoldingPermissions(
+                new String[] { permission }, PackageManager.GET_PERMISSIONS)
+                .stream()
+                .filter((pkg) -> pkg.requestedPermissions != null
+                        && Arrays.asList(pkg.requestedPermissions).contains(permission))
+                .map((pkg) -> pkg.packageName)
+                .toList();
+        Log.d(TAG, "got " + packages.size() + " packages holding permission " + permission);
+        return packages;
+    }
+
     void updatePackageCache() {
         UserManager um = mContext.createContextAsUser(
                 UserHandle.of(ActivityManager.getCurrentUser()), /*flags=*/0)
@@ -1623,26 +1643,12 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     continue;
                 }
 
-                List<PackageInfo> packagesNfcEvents = pm.getPackagesHoldingPermissions(
-                        new String[] {android.Manifest.permission.NFC_TRANSACTION_EVENT},
-                        0);
-                List<PackageInfo> packagesNfcPreferredPaymentChanged =
-                        pm.getPackagesHoldingPermissions(
-                        new String[] {android.Manifest.permission.NFC_PREFERRED_PAYMENT_INFO},
-                        0);
-                List<String> packageListNfcEvent = new ArrayList<String>();
-                for (int i = 0; i < packagesNfcEvents.size(); i++) {
-                    packageListNfcEvent.add(packagesNfcEvents.get(i).packageName);
-                }
-                mNfcEventInstalledPackages.put(uh.getIdentifier(), packageListNfcEvent);
-
-                List<String> packageListNfcPreferredPaymentChanged = new ArrayList<String>();
-                for (int i = 0; i < packagesNfcPreferredPaymentChanged.size(); i++) {
-                    packageListNfcPreferredPaymentChanged.add(
-                            packagesNfcPreferredPaymentChanged.get(i).packageName);
-                }
+                mNfcEventInstalledPackages.put(
+                        uh.getIdentifier(),
+                        getPackagesHoldingPermission(pm, NFC_TRANSACTION_EVENT));
                 mNfcPreferredPaymentChangedInstalledPackages.put(
-                        uh.getIdentifier(), packageListNfcPreferredPaymentChanged);
+                        uh.getIdentifier(),
+                        getPackagesHoldingPermission(pm, NFC_PREFERRED_PAYMENT_INFO));
             }
         }
     }

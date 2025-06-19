@@ -46,7 +46,7 @@ public class AidRoutingManager {
     static final String TAG = "NfcAidRoutingManager";
 
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
 
     static final int ROUTE_HOST = 0x00;
 

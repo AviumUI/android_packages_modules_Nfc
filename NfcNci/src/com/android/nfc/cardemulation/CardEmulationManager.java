@@ -117,7 +117,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         HostEmulationManager.NfcAidRoutingListener {
     static final String TAG = "NfcCardEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
 
     static final int NFC_HCE_APDU = 0x01;
     static final int NFC_HCE_NFCF = 0x04;

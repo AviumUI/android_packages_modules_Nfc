@@ -60,7 +60,7 @@ public class RegisteredAidCache {
     private INfcOemExtensionCallback mNfcOemExtensionCallback;
 
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
 
     static final int AID_ROUTE_QUAL_SUBSET = 0x20;
     static final int AID_ROUTE_QUAL_PREFIX = 0x10;
@@ -344,7 +344,7 @@ public class RegisteredAidCache {
                 }
                 resolveInfo.services.add(serviceAidInfo.service);
             } else {
-                if (DBG) {
+                if (VDBG) {
                     Log.d(TAG, "nonDefaultResolution: " + serviceAidInfo.service.getComponent()
                             + " is unselected other service");
                 }
@@ -352,7 +352,7 @@ public class RegisteredAidCache {
                     String offHostName = serviceAidInfo.service.getOffHostSecureElement();
                     if (offHostName != null &&
                             !resolveInfo.unCheckedOffHostSecureElement.contains(offHostName)) {
-                        if (DBG) {
+                        if (VDBG) {
                             Log.d(TAG, "nonDefaultResolution: add " + offHostName
                                     + " to disabled offHosts");
                         }
