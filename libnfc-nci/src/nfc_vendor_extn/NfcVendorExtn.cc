@@ -264,6 +264,10 @@ void phNfcExtn_LibClose() {
                                  mLibPathName.c_str());
     }
     p_oem_extn_handle = NULL;
+    fp_extn_init = NULL;
+    fp_extn_deinit = NULL;
+    fp_extn_handle_nfc_event = NULL;
+    fp_extn_on_config_update = NULL;
   }
 }
 
