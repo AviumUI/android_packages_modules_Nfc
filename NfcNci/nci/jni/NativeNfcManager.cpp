@@ -1431,7 +1431,7 @@ bool isObserveModeSupportedWithoutRfDeactivation(JNIEnv* e, jobject o) {
 
 static jboolean nfcManager_setObserveMode(JNIEnv* e, jobject o,
                                           jboolean enable) {
-  if (sIsShuttingDown) return false;
+  if (sIsShuttingDown || !sIsNfaEnabled) return false;
   if (isObserveModeSupported(e, o) == JNI_FALSE) {
     LOG(DEBUG) << "setObserveMode called when it isn't supported, returning false";
     return false;
