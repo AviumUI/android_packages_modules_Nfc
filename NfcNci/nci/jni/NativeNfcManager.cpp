@@ -960,8 +960,6 @@ void nfaDeviceManagementCallback(uint8_t dmEvent,
         LOG(ERROR) << StringPrintf("%s: toggle NFC state to recovery nfc",
                                    __func__);
         sIsRecovering = true;
-        e->CallVoidMethod(nat->manager,
-                          android::gCachedNfcManagerNotifyHwErrorReported);
         {
           LOG(DEBUG) << StringPrintf(
               "%s: aborting  sNfaEnableDisablePollingEvent", __func__);
@@ -1004,6 +1002,8 @@ void nfaDeviceManagementCallback(uint8_t dmEvent,
           SyncEventGuard guard(RoutingManager::getInstance().mEeUpdateEvent);
           RoutingManager::getInstance().mEeUpdateEvent.notifyOne();
         }
+        e->CallVoidMethod(nat->manager,
+                          android::gCachedNfcManagerNotifyHwErrorReported);
       } else {
         nativeNfcTag_abortWaits();
         NfcTag::getInstance().abort();
@@ -1431,7 +1431,7 @@ bool isObserveModeSupportedWithoutRfDeactivation(JNIEnv* e, jobject o) {
 
 static jboolean nfcManager_setObserveMode(JNIEnv* e, jobject o,
                                           jboolean enable) {
-  if (sIsShuttingDown) return false;
+  if (sIsShuttingDown || !sIsNfaEnabled) return false;
   if (isObserveModeSupported(e, o) == JNI_FALSE) {
     LOG(DEBUG) << "setObserveMode called when it isn't supported, returning false";
     return false;
