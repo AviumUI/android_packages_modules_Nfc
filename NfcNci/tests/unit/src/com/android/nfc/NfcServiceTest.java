@@ -56,8 +56,8 @@ import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
-import android.app.Application;
 import android.app.AppOpsManager;
+import android.app.Application;
 import android.app.KeyguardManager;
 import android.app.VrManager;
 import android.app.backup.BackupManager;
@@ -2105,7 +2105,6 @@ public final class NfcServiceTest {
                 .thenReturn(ScreenStateHelper.SCREEN_STATE_OFF_LOCKED);
         mNfcService.mScreenState = ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED;
         when(mDeviceHost.getNciVersion()).thenReturn(NCI_VERSION_1_0);
-        when(mFeatureFlags.reduceStateTransition()).thenReturn(true);
         mNfcService.mIsWatchType = true;
         mNfcService.mState = NfcAdapter.STATE_ON;
         when(mCardEmulationManager.isRequiresScreenOnServiceExist()).thenReturn(false);
