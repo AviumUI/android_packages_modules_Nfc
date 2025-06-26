@@ -180,7 +180,8 @@ public class BluetoothPeripheralHandover implements BluetoothProfile.ServiceList
 
         mAudioManager = mContext.getSystemService(AudioManager.class);
 
-        mDeviceConfigFacade = NfcInjector.getInstance().getDeviceConfigFacade();
+        // Don't use injector here since this can run on different process for multi user scenarios.
+        mDeviceConfigFacade = DeviceConfigFacade.getInstance(mContext, new Handler());
 
         mState = STATE_INIT;
     }
