@@ -1618,8 +1618,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 .filter((pkg) -> pkg.requestedPermissions != null
                         && Arrays.asList(pkg.requestedPermissions).contains(permission))
                 .map((pkg) -> pkg.packageName)
-                .toList();
-        Log.d(TAG, "got " + packages.size() + " packages holding permission " + permission);
+                .collect(Collectors.toList());
+        if (VDBG) {
+            Log.v(TAG, "got " + packages.size() + " packages holding permission " + permission);
+        }
         return packages;
     }
 
@@ -1643,12 +1645,23 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     continue;
                 }
 
-                mNfcEventInstalledPackages.put(
-                        uh.getIdentifier(),
-                        getPackagesHoldingPermission(pm, NFC_TRANSACTION_EVENT));
+                List<String> nfcEventInstalledPackages =
+                        getPackagesHoldingPermission(pm, NFC_TRANSACTION_EVENT);
+                // Add "android" to the list of installed packages.
+                if (nfcEventInstalledPackages != null
+                        && !nfcEventInstalledPackages.contains("android")) {
+                    nfcEventInstalledPackages.add("android");
+                }
+                mNfcEventInstalledPackages.put(uh.getIdentifier(), nfcEventInstalledPackages);
+                List<String> nfcPreferredPaymentChangedInstalledPackages =
+                        getPackagesHoldingPermission(pm, NFC_PREFERRED_PAYMENT_INFO);
+                // Add "android" to the list of installed packages.
+                if (nfcPreferredPaymentChangedInstalledPackages != null
+                        && !nfcPreferredPaymentChangedInstalledPackages.contains("android")) {
+                    nfcPreferredPaymentChangedInstalledPackages.add("android");
+                }
                 mNfcPreferredPaymentChangedInstalledPackages.put(
-                        uh.getIdentifier(),
-                        getPackagesHoldingPermission(pm, NFC_PREFERRED_PAYMENT_INFO));
+                        uh.getIdentifier(), nfcPreferredPaymentChangedInstalledPackages);
             }
         }
     }

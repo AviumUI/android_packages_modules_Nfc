@@ -84,7 +84,7 @@ public class RoutingStatus {
      * @return an integer defined in
      * {@link android.nfc.cardemulation.CardEmulation.ProtocolAndTechnologyRoute}
      */
-    @FlaggedApi(Flags.FLAG_NFC_OEM_EXTENSION)
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
     @RequiresPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
     @CardEmulation.ProtocolAndTechnologyRoute
     public int getDefaultFelicaRoute() {
