@@ -39,5 +39,6 @@
         <permission name="android.permission.WRITE_SECURITY_LOG"/>
         <permission name="android.permission.SUBSCRIBE_TO_KEYGUARD_LOCKED_STATE"/>
         <permission name="android.permission.UPDATE_DEVICE_STATS"/>
+        <permission name="android.permission.OBSERVE_ROLE_HOLDERS"/>
     </privapp-permissions>
 </permissions>
