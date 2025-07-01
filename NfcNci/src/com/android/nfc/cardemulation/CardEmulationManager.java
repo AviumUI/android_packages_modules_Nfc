@@ -1295,7 +1295,23 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             if (!mDeviceConfigFacade.getEnableServiceOther())
               return SET_SERVICE_ENABLED_STATUS_FAILURE_FEATURE_UNSUPPORTED;
             NfcPermissions.enforceUserPermissions(mContext);
-
+            mNfcEventLog.logEvent(
+                    NfcEventProto.EventType.newBuilder()
+                            .setServiceOtherStateChange(
+                                NfcEventProto.NfcServiceOtherStateChange.newBuilder()
+                                    .setAppInfo(NfcEventProto.NfcAppInfo.newBuilder()
+                                            .setUid(Binder.getCallingUid())
+                                            .build())
+                                    .setComponentInfo(
+                                        NfcEventProto.NfcComponentInfo.newBuilder()
+                                            .setPackageName(
+                                                app.getPackageName())
+                                            .setClassName(
+                                                app.getClassName())
+                                            .build())
+                                    .setEnabled(status)
+                                    .build())
+                            .build());
             return mServiceCache.registerOtherForService(userId, app, status);
         }
 
