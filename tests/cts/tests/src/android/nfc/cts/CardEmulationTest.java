@@ -1991,6 +1991,7 @@ public class CardEmulationTest {
     @Test
     @RequiresFlagsEnabled(android.permission.flags.Flags.FLAG_WALLET_ROLE_ENABLED)
     public void testDisallowNonDefaultSetObserveMode() throws NoSuchFieldException {
+        assumeVsrApiGreaterThanUdc();
         runWithRole(mContext,  WalletRoleTestUtils.WALLET_HOLDER_PACKAGE_NAME, () -> {
             NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
             assertTrue(NfcUtils.enableNfc(adapter, mContext));

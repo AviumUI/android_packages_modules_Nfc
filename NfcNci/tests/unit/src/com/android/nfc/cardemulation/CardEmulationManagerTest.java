@@ -383,6 +383,7 @@ public class CardEmulationManagerTest {
         verify(mHostNfcFEmulationManager).onHostEmulationDeactivated();
         verify(mRegisteredNfcFServicesCache).onHostEmulationDeactivated();
         verify(mEnabledNfcFServices).onHostEmulationDeactivated();
+        verify(mHostEmulationManager).onNfcFHostEmulationDeactivated();
         verify(mHostEmulationManager).setAidRoutingListener(any());
         verifyNoMoreInteractions(mHostEmulationManager);
         verifyNoMoreInteractions(mPreferredServices);

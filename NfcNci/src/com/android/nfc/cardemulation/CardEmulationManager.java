@@ -370,6 +370,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             mHostNfcFEmulationManager.onHostEmulationDeactivated();
             mNfcFServicesCache.onHostEmulationDeactivated();
             mEnabledNfcFServices.onHostEmulationDeactivated();
+            mHostEmulationManager.onNfcFHostEmulationDeactivated();
         }
         if (mNfcOemExtensionCallback != null) {
             try {

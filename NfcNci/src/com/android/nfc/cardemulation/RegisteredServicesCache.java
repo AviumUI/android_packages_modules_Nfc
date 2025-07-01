@@ -1309,6 +1309,11 @@ public class RegisteredServicesCache {
 
     public void setRequireDeviceScreenOnForService(int userId, int uid,
             ComponentName componentName, boolean enable) {
+        if (DEBUG) {
+            Log.d(TAG, "setRequireDeviceScreenOnForService: componentName="
+                    + componentName.flattenToString() + " enable=" + enable);
+        }
+        ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
             ApduServiceInfo serviceInfo = services.services.get(componentName);
@@ -1327,12 +1332,18 @@ public class RegisteredServicesCache {
             serviceInfo.setRequiresScreenOn(enable);
             DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
             settings.requireDeviceScreenOnStr = Boolean.toString(enable);
-            mCallback.onServicesUpdated(userId, List.of(serviceInfo), true);
+            newServices = new ArrayList<ApduServiceInfo>(services.services.values());
         }
+        mCallback.onServicesUpdated(userId, newServices, true);
     }
 
     public void setRequireDeviceUnlockForService(int userId, int uid,
             ComponentName componentName, boolean enable) {
+        if (DEBUG) {
+            Log.d(TAG, "setRequireDeviceUnlockForService: componentName="
+                    + componentName.flattenToString() + " enable=" + enable);
+        }
+        ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
             ApduServiceInfo serviceInfo = services.services.get(componentName);
@@ -1351,8 +1362,9 @@ public class RegisteredServicesCache {
             serviceInfo.setRequiresUnlock(enable);
             DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
             settings.requireDeviceUnlockStr = Boolean.toString(enable);
-            mCallback.onServicesUpdated(userId, List.of(serviceInfo), true);
+            newServices = new ArrayList<ApduServiceInfo>(services.services.values());
         }
+        mCallback.onServicesUpdated(userId, newServices, true);
     }
 
     public boolean registerPollingLoopFilterForService(int userId, int uid,
