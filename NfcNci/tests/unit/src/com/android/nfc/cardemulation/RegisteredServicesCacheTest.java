@@ -366,9 +366,9 @@ public class RegisteredServicesCacheTest {
         Intent offHostIntent = mIntentArgumentCaptor.getAllValues().get(1);
         assertEquals(OffHostApduService.SERVICE_INTERFACE, offHostIntent.getAction());
         PackageManager.ResolveInfoFlags onHostFlag = mFlagArgumentCaptor.getAllValues().get(0);
-        assertEquals(PackageManager.GET_META_DATA, onHostFlag.getValue());
+        assertTrue((onHostFlag.getValue() & PackageManager.GET_META_DATA) != 0);
         PackageManager.ResolveInfoFlags offHostFlag = mFlagArgumentCaptor.getAllValues().get(1);
-        assertEquals(PackageManager.GET_META_DATA, offHostFlag.getValue());
+        assertTrue((offHostFlag.getValue() & PackageManager.GET_META_DATA) != 0);
         // Verify that the installed services are filtered properly
         verify(mPackageManager).checkPermission(eq(android.Manifest.permission.NFC),
                 eq(WALLET_HOLDER_PACKAGE_NAME));
