@@ -613,6 +613,11 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
         return HceUtils.RESPONSE_APDUS_BY_SERVICE.get(serviceClassName);
     }
 
+    @Rpc(description = "Resets the wallet role holder before tests")
+    public void resetWalletRoleHolder() {
+        HceUtils.setDefaultWalletRoleHolder(mContext, null);
+    }
+
     /** Builds intent to launch polling loop emulators */
     private Intent buildPollingLoopEmulatorIntent(Instrumentation instrumentation, int nfcTech) {
         Intent intent = new Intent(Intent.ACTION_MAIN);
