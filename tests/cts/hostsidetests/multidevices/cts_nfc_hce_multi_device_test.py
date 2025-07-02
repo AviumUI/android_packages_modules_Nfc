@@ -263,6 +263,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
             except adb.AdbError:
                 _LOG.info("Could not enable nfc through adb.")
                 self.emulator.nfc_emulator.setNfcState(True)
+            # Ensure any wallet role holder is reset before tests.
+            self.emulator.nfc_emulator.resetWalletRoleHolder()
             if (
                 hasattr(self.emulator, 'dimensions')
                 and 'pn532_serial_path' in self.emulator.dimensions
