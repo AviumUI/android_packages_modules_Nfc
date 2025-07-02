@@ -70,6 +70,7 @@ public class DeviceConfigFacade {
     private int mUnknownTagPollingDelayLong;
     private boolean mCeDisableOtherServicesOnManagedProfiles;
     private int mCeWakeLockTimeoutMillis;
+    private String[] mOverwriteRoutingTableAllowListPkgs;
 
     private static DeviceConfigFacade sInstance;
     public static DeviceConfigFacade getInstance(Context context, Handler handler) {
@@ -198,6 +199,9 @@ public class DeviceConfigFacade {
         mCeWakeLockTimeoutMillis = DeviceConfig.getInt(DEVICE_CONFIG_NAMESPACE_NFC,
                 "ce_wake_lock_timeout_millis",
                 mContext.getResources().getInteger(R.integer.ce_wake_lock_timeout_millis));
+        // device config override with array is not supported, so just read the resource.
+        mOverwriteRoutingTableAllowListPkgs = mContext.getResources()
+            .getStringArray(R.array.overwrite_routing_table_allow_list_pkgs);
     }
 
     private boolean isSecureNfcCapableDefault() {
@@ -274,5 +278,9 @@ public class DeviceConfigFacade {
 
     public int getCeWakeLockTimeoutMillis() {
         return mCeWakeLockTimeoutMillis;
+    }
+
+    public String[] getOverwriteRoutingTableAllowListPkgs() {
+        return mOverwriteRoutingTableAllowListPkgs;
     }
 }
