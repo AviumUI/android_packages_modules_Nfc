@@ -200,7 +200,7 @@ public class NfcShellCommand extends BasicShellCommandHandler {
                     mNfcService.mCardEmulationManager
                             .getNfcCardEmulationInterface()
                             .overwriteRoutingTable(userId, defaultAid, protocol, technologyAB,
-                                    technologyF, defaultSystemCode);
+                                    technologyF, defaultSystemCode, SHELL_PACKAGE_NAME);
                     return 0;
                 }
                 default:

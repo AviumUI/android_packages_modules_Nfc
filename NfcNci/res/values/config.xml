@@ -77,4 +77,5 @@
     <bool name="ce_disable_other_services_on_managed_profiles">false</bool>
     <!-- Timeout for CE field on wake lock. Set to 0 to disable the CE wake lock. -->
     <integer name="ce_wake_lock_timeout_millis">1000</integer>
+    <string-array name="overwrite_routing_table_allow_list_pkgs" translatable="false" />
 </resources>
