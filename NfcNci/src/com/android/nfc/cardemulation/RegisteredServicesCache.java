@@ -494,11 +494,16 @@ public class RegisteredServicesCache {
 
         List<ResolveInfo> resolvedServices = new ArrayList<>(pm.queryIntentServicesAsUser(
                 mHostApduServiceIntent,
-                ResolveInfoFlags.of(PackageManager.GET_META_DATA), UserHandle.of(userId)));
-
+                ResolveInfoFlags.of(PackageManager.GET_META_DATA
+                                        | PackageManager.MATCH_DIRECT_BOOT_AWARE
+                                        | PackageManager.MATCH_DIRECT_BOOT_UNAWARE),
+                UserHandle.of(userId)));
         List<ResolveInfo> resolvedOffHostServices = pm.queryIntentServicesAsUser(
                 mOffHostApduServiceIntent,
-                ResolveInfoFlags.of(PackageManager.GET_META_DATA), UserHandle.of(userId));
+                ResolveInfoFlags.of(PackageManager.GET_META_DATA
+                                        | PackageManager.MATCH_DIRECT_BOOT_AWARE
+                                        | PackageManager.MATCH_DIRECT_BOOT_UNAWARE),
+                UserHandle.of(userId));
         resolvedServices.addAll(resolvedOffHostServices);
 
         for (ResolveInfo resolvedService : resolvedServices) {

@@ -1375,3 +1375,17 @@ tNFA_STATUS NFA_ChangeDiscoveryTech(tNFA_TECHNOLOGY_MASK pollTech,
 bool NFA_IsRfRemovalDetectionSupported() {
   return NFC_IsRfRemovalDetectionSupported();
 }
+
+/*******************************************************************************
+**
+** Function:        NFA_SetCustomConfig
+**
+** Description:     Allow to set NCI config for Listen A from upper layer
+**
+** Returns:         none:
+**
+*******************************************************************************/
+void NFA_SetCustomConfig(bool status) {
+  LOG(DEBUG) << StringPrintf("%s: custom_config=%d", __func__, status);
+  nfa_dm_cb.custom_config = status;
+}

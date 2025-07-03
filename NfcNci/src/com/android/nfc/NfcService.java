@@ -3718,6 +3718,72 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             return timeoutOverlay > 0 ? (long) timeoutOverlay : MAX_POLLING_PAUSE_TIMEOUT;
         }
 
+        @Override
+        public int emulateNfcATag(boolean setConfig, int bitFrameSdd, int platformConfig,
+                int selInfo, byte[] nfcid1, int rats, byte[] histBytes) {
+            Log.i(TAG, "emulateNfcACard: setConfig:" + setConfig);
+            NfcPermissions.enforceAdminPermissions(mContext);
+            if (!isNfcEnabled()) {
+                Log.e(TAG, "emulateNfcACard: NFC is not enabled, ignore");
+                return NfcOemExtension.EMULATE_NFC_A_TAG_STATUS_FAILED_NFC_NOT_ENABLED;
+            }
+            byte[] param = new byte[1];
+            synchronized (NfcService.this) {
+                // stop discovery
+                mDeviceHost.disableDiscovery();
+
+                // Set parameters
+                if (setConfig) {
+                    // Indicate custom config
+                    param[0] = 0x00;
+                    mDeviceHost.setNciConfig(0x85, param, param.length, false);
+
+                    // LA_BIT_FRAME_SDD
+                    param[0] = (byte) bitFrameSdd;
+                    mDeviceHost.setNciConfig(0x30, param, param.length, true);
+
+                    // LA_PLATFORM_CONFIG
+                    param[0] = (byte) platformConfig;
+                    mDeviceHost.setNciConfig(0x31, param, param.length, true);
+
+                    // LA_SEL_INFO
+                    param[0] = (byte) selInfo;
+                    mDeviceHost.setNciConfig(0x32, param, param.length, true);
+
+                    // LA_NFCID1
+                    mDeviceHost.setNciConfig(0x33, nfcid1, nfcid1.length, true);
+
+                    // LI_A_RATS_TB1
+                    param[0] = (byte) rats;
+                    mDeviceHost.setNciConfig(0x58, param, param.length, true);
+
+                    // LI_A_HIST_BY
+                    if (histBytes != null) {
+                        mDeviceHost.setNciConfig(0x59, histBytes, histBytes.length, true);
+                    }
+                } else {
+                    // Reset custom config
+                    param[0] = 0x01;
+                    mDeviceHost.setNciConfig(0x85, param, param.length, false);
+
+                    nfcid1 = new byte[]{};
+                    mDeviceHost.setNciConfig(0x33, nfcid1, nfcid1.length, false);
+
+                    // LI_A_RATS_TB1
+                    param[0] = 0x0;
+                    mDeviceHost.setNciConfig(0x58, param, param.length, false);
+
+                    histBytes = new byte[]{};
+                    mDeviceHost.setNciConfig(0x59, histBytes, histBytes.length, false);
+
+                }
+
+                applyRouting(true);
+            }
+
+            return NfcOemExtension.EMULATE_NFC_A_TAG_STATUS_OK;
+        }
+
         private void updateNfCState() {
             if (mNfcOemExtensionCallback != null) {
                 try {

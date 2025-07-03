@@ -335,7 +335,7 @@ public class HostEmulationManagerTest {
         verify(mNfcAdapter).setObserveModeEnabled(eq(false));
         assertTrue(mHostEmulationManager.mEnableObserveModeAfterTransaction);
         assertTrue(frame1.getTriggeredAutoTransact());
-        assertEquals(HostEmulationManager.STATE_POLLING_LOOP, mHostEmulationManager.mState);
+        assertEquals(HostEmulationManager.STATE_POLLING_LOOP, mHostEmulationManager.mState.get());
         verify(mStatsdUtils).logAutoTransactReported(StatsdUtils.PROCESSOR_HOST, data.getBytes());
         verify(mStatsdUtils).setNextObserveModeTriggerSource(
                 StatsdUtils.TRIGGER_SOURCE_AUTO_TRANSACT);
@@ -457,7 +457,7 @@ public class HostEmulationManagerTest {
 
     @Test
     public void testOnFieldChangeDetected_fieldOff_returnToIdle() {
-        mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_XFER);
 
         // Should not change state immediately
         mHostEmulationManager.onFieldChangeDetected(false);
@@ -509,7 +509,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateIdle() {
         byte[] emptyData = new byte[1];
-        mHostEmulationManager.mState = HostEmulationManager.STATE_IDLE;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_IDLE);
 
         mHostEmulationManager.onHostEmulationData(emptyData);
 
@@ -522,7 +522,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Deactivate() {
         byte[] emptyData = new byte[1];
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_DEACTIVATE;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_DEACTIVATE);
 
         mHostEmulationManager.onHostEmulationData(emptyData);
 
@@ -535,7 +535,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Select_hceAid() {
         byte[] hceAidData = createSelectAidData(HostEmulationManager.ANDROID_HCE_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
 
         mHostEmulationManager.onHostEmulationData(hceAidData);
 
@@ -548,7 +548,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Select_nullResolveInfo() {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         when(mRegisteredAidCache.resolveAid(eq(MOCK_AID))).thenReturn(null);
 
         mHostEmulationManager.onHostEmulationData(mockAidData);
@@ -563,7 +563,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Select_emptyResolveInfoServices() {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.services = new ArrayList<>();
         when(mRegisteredAidCache.resolveAid(eq(MOCK_AID))).thenReturn(aidResolveInfo);
@@ -580,7 +580,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Select_defaultServiceExists_requiresUnlock() {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.services = new ArrayList<>();
@@ -611,7 +611,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Select_defaultServiceExists_secureNfcEnabled() {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.services = new ArrayList<>();
@@ -641,7 +641,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Select_defaultServiceExists_requiresScreenOn() {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.category = CardEmulation.CATEGORY_PAYMENT;
@@ -671,7 +671,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Select_defaultServiceExists_notOnHost() {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.services = new ArrayList<>();
@@ -702,7 +702,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateW4Select_noDefaultService_noActiveService() {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.category = CardEmulation.CATEGORY_PAYMENT;
@@ -733,7 +733,7 @@ public class HostEmulationManagerTest {
             throws RemoteException {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
         IBinder binder = mock(IBinder.class);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.services = new ArrayList<>();
@@ -791,7 +791,7 @@ public class HostEmulationManagerTest {
         when(mWakeLock.isHeld()).thenReturn(true);
 
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.services = new ArrayList<>();
@@ -850,7 +850,7 @@ public class HostEmulationManagerTest {
 
     @Test
     public void testOnHostEmulationData_stateW4Select_noSelectAid() {
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         mHostEmulationManager.mPaymentServiceBound = true;
         mHostEmulationManager.mPaymentServiceName = WALLET_PAYMENT_SERVICE;
         mHostEmulationManager.mPaymentService = mMessenger;
@@ -866,7 +866,7 @@ public class HostEmulationManagerTest {
 
     @Test
     public void testOnHostEmulationData_stateW4Service() {
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SERVICE;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SERVICE);
 
         mHostEmulationManager.onHostEmulationData(null);
 
@@ -879,7 +879,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testOnHostEmulationData_stateXfer_nullAid_activeService() throws RemoteException {
         byte[] data = new byte[3];
-        mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_XFER);
         mHostEmulationManager.mActiveServiceName = WALLET_PAYMENT_SERVICE;
         mHostEmulationManager.mActiveService = mMessenger;
 
@@ -903,7 +903,7 @@ public class HostEmulationManagerTest {
     public void testOnHostEmulationData_stateXfer_selectAid_activeService() throws RemoteException {
         byte[] mockAidData = createSelectAidData(MOCK_AID);
         IBinder binder = mock(IBinder.class);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_XFER);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.services = new ArrayList<>();
@@ -944,7 +944,7 @@ public class HostEmulationManagerTest {
             throws RemoteException {
         when(mContext.bindServiceAsUser(any(), any(), anyInt(), any())).thenReturn(true);
         byte[] mockAidData = createSelectAidData(MOCK_AID);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_XFER);
         ApduServiceInfo apduServiceInfo = mock(ApduServiceInfo.class);
         RegisteredAidCache.AidResolveInfo aidResolveInfo = mRegisteredAidCache.new AidResolveInfo();
         aidResolveInfo.services = new ArrayList<>();
@@ -989,7 +989,7 @@ public class HostEmulationManagerTest {
 
     @Test
     public void testOnHostEmulationData_doesNotReturnToIdle() {
-        mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_XFER);
         mHostEmulationManager.onFieldChangeDetected(false);
 
         byte[] emptyData = new byte[1];
@@ -1072,7 +1072,7 @@ public class HostEmulationManagerTest {
     public void testOnOffHostAidSelected_noActiveService_stateXfer() {
         mHostEmulationManager.mActiveService = null;
         mHostEmulationManager.mServiceBound = false;
-        mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_XFER);
 
         mHostEmulationManager.onOffHostAidSelectedOrTransaction();
 
@@ -1094,7 +1094,7 @@ public class HostEmulationManagerTest {
     public void testOnOffHostAidSelected_activeServiceBound_stateXfer() throws RemoteException {
         mHostEmulationManager.mActiveService = mMessenger;
         mHostEmulationManager.mServiceBound = true;
-        mHostEmulationManager.mState = HostEmulationManager.STATE_XFER;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_XFER);
 
         mHostEmulationManager.onOffHostAidSelectedOrTransaction();
 
@@ -1121,7 +1121,7 @@ public class HostEmulationManagerTest {
     public void testOnOffHostAidSelected_activeServiceBound_stateNonXfer() throws RemoteException {
         mHostEmulationManager.mActiveService = mMessenger;
         mHostEmulationManager.mServiceBound = true;
-        mHostEmulationManager.mState = HostEmulationManager.STATE_IDLE;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_IDLE);
 
         mHostEmulationManager.onOffHostAidSelectedOrTransaction();
 
@@ -1145,7 +1145,7 @@ public class HostEmulationManagerTest {
     public void testServiceConnectionOnServiceConnected_stateSelectW4_selectApdu()
             throws RemoteException {
         IBinder service = mock(IBinder.class);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         mHostEmulationManager.mSelectApdu = new byte[3];
 
         mHostEmulationManager
@@ -1165,7 +1165,7 @@ public class HostEmulationManagerTest {
     public void testServiceConnectionOnServiceConnected_stateSelectW4_pollingLoopFrames()
             throws RemoteException {
         IBinder service = mock(IBinder.class);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_W4_SELECT;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_W4_SELECT);
         mHostEmulationManager.mSelectApdu = null;
         mHostEmulationManager.mPollingFramesToSend = new HashMap();
         mHostEmulationManager.mPollingFramesToSend.put(
@@ -1186,7 +1186,7 @@ public class HostEmulationManagerTest {
     @Test
     public void testServiceConnectionOnServiceConnected_stateIdle() {
         IBinder service = mock(IBinder.class);
-        mHostEmulationManager.mState = HostEmulationManager.STATE_IDLE;
+        mHostEmulationManager.mState.set(HostEmulationManager.STATE_IDLE);
 
         mHostEmulationManager
                 .getServiceConnection()
@@ -1378,7 +1378,7 @@ public class HostEmulationManagerTest {
 
         mHostEmulationManager.onPollingLoopDetected(List.of(frame1, offFrame));
 
-        assertEquals(HostEmulationManager.STATE_POLLING_LOOP, mHostEmulationManager.mState);
+        assertEquals(HostEmulationManager.STATE_POLLING_LOOP, mHostEmulationManager.mState.get());
         assertNotNull(mHostEmulationManager.mPollingFramesToSend);
         assertNotNull(mHostEmulationManager.mUnprocessedPollingFrames);
 
@@ -1386,7 +1386,7 @@ public class HostEmulationManagerTest {
         mTestableLooper.moveTimeForward(mHostEmulationManager.FIELD_OFF_IDLE_DELAY_MS);
         mTestableLooper.processAllMessages();
 
-        assertEquals(HostEmulationManager.STATE_IDLE, mHostEmulationManager.mState);
+        assertEquals(HostEmulationManager.STATE_IDLE, mHostEmulationManager.mState.get());
         assertNull(mHostEmulationManager.mPollingFramesToSend);
         assertNull(mHostEmulationManager.mUnprocessedPollingFrames);
     }

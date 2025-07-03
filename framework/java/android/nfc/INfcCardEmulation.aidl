@@ -64,7 +64,7 @@ interface INfcCardEmulation
     void setAutoChangeStatus(boolean state);
     boolean isAutoChangeEnabled();
     List<String> getRoutingStatus();
-    void overwriteRoutingTable(int userHandle, String emptyAid, String protocol, String techAB, String techF, String sc);
+    void overwriteRoutingTable(int userHandle, String emptyAid, String protocol, String techAB, String techF, String sc, in String pkg);
 
     void registerNfcEventCallback(in INfcEventCallback listener);
     void unregisterNfcEventCallback(in INfcEventCallback listener);

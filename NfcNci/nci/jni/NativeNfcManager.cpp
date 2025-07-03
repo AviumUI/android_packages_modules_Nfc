@@ -205,6 +205,7 @@ static int NFA_SCREEN_POLLING_TAG_MASK = 0x10;
 bool gIsDtaEnabled = false;
 static bool gObserveModeEnabled = false;
 static int gPartialInitMode = ENABLE_MODE_DEFAULT;
+Mutex gMutexConfig;
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
 
@@ -1321,6 +1322,7 @@ void static nfaVSCallback(uint8_t event, uint16_t param_len, uint8_t* p_param) {
                 e->CallVoidMethod(nat->manager,
                                   android::gCachedNfcManagerOnRestartRfDiscovery);
         } break;
+
         default:
           LOG(DEBUG) << StringPrintf("%s: Unknown Android sub opcode %x",
                                      __func__, android_sub_opcode);
@@ -1783,7 +1785,7 @@ static void nfcManager_configNfccConfigControl(bool flag) {
         uint8_t nfa_set_config[] = { 0x00 };
 
         nfa_set_config[0] = (flag == true ? 1 : 0);
-
+        gMutexConfig.lock();
         tNFA_STATUS status = NFA_SetConfig(NCI_PARAM_ID_NFCC_CONFIG_CONTROL,
                                            sizeof(nfa_set_config),
                                            &nfa_set_config[0]);
@@ -1791,6 +1793,7 @@ static void nfcManager_configNfccConfigControl(bool flag) {
             LOG(ERROR) << __func__
             << ": Failed to configure NFCC_CONFIG_CONTROL";
         }
+        gMutexConfig.unlock();
     }
 }
 
@@ -2370,14 +2373,17 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
   }
 
   if (!sIsAlwaysPolling) {
+    gMutexConfig.lock();
     SyncEventGuard guard(gNfaSetConfigEvent);
     status = NFA_SetConfig(NCI_PARAM_ID_CON_DISCOVERY_PARAM,
                            NCI_PARAM_LEN_CON_DISCOVERY_PARAM, &discovry_param);
     if (status == NFA_STATUS_OK) {
       gNfaSetConfigEvent.wait();
+      gMutexConfig.unlock();
     } else {
       LOG(ERROR) << StringPrintf("%s: Failed to update CON_DISCOVER_PARAM",
                                  __FUNCTION__);
+      gMutexConfig.unlock();
       return;
     }
   }
@@ -2811,7 +2817,46 @@ static void sendRawVsCmdCallback(uint8_t event, uint16_t param_len,
 
   SyncEventGuard guard(gSendRawVsCmdEvent);
   gSendRawVsCmdEvent.notifyOne();
-} /* namespace android */
+}
+
+/*******************************************************************************
+ **
+ ** Function:        nfcManager_setNciConfig
+ **
+ ** Description:     Set a NCI parameter through the NFA_SetConfig API.
+ **                  param_id : The param id
+ **                  param : value of the param
+ **                  length : length of the parameter payload
+ **
+ ** Returns:         void
+ **
+ *******************************************************************************/
+static void nfcManager_setNciConfig(JNIEnv* e, jobject o, jint param_id,
+                                    jbyteArray param, jint length,
+                                    jboolean custom) {
+  LOG(INFO) << StringPrintf("%s; enter", __func__);
+  tNFA_STATUS nfaStat = NFA_STATUS_FAILED;
+  uint8_t nfa_set_config[] = {0x00};
+  uint8_t* buf;
+
+  ScopedByteArrayRO bytes(e, param);
+  buf = const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(&bytes[0]));
+
+  NFA_SetCustomConfig(custom);
+
+  {
+    SyncEventGuard guard(gNfaSetConfigEvent);
+    android::gMutexConfig.lock();
+    nfaStat = NFA_SetConfig(param_id, length, buf);
+    if (nfaStat == NFA_STATUS_OK) {
+      gNfaSetConfigEvent.wait();  // wait for NFA_DM_SET_CONFIG_EVT
+    } else {
+      LOG(ERROR) << StringPrintf("%s; NFA_SetConfig() failed; error=0x%X",
+                                 __func__, nfaStat);
+    }
+    android::gMutexConfig.unlock();
+  }
+}
 
 /*****************************************************************************
 **
@@ -2921,6 +2966,7 @@ static JNINativeMethod gMethods[] = {
     {"setFirmwareExitFrameTable", "([Lcom/android/nfc/ExitFrame;[B)Z",
      (void*)nfcManager_setFirmwareExitFrameTable},
     {"doRestartRfDiscovery", "()V", (void*)nfcManager_restartRfDiscovery},
+    {"setNciConfig", "(I[BIZ)V", (void*)nfcManager_setNciConfig},
 };
 
 /*******************************************************************************
@@ -3039,6 +3085,7 @@ void startStopPolling(bool isStartPolling) {
   LOG(DEBUG) << StringPrintf("%s: enter; isStart=%u", __func__, isStartPolling);
 
   if (NFC_GetNCIVersion() >= NCI_VERSION_2_0) {
+    gMutexConfig.lock();
     SyncEventGuard guard(gNfaSetConfigEvent);
     if (isStartPolling) {
       discovry_param =
@@ -3055,6 +3102,7 @@ void startStopPolling(bool isStartPolling) {
       LOG(ERROR) << StringPrintf("%s: Failed to update CON_DISCOVER_PARAM",
                                  __FUNCTION__);
     }
+    gMutexConfig.unlock();
   } else {
     startRfDiscovery(false);
     if (isStartPolling)
