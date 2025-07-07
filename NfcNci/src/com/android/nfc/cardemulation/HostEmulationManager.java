@@ -1641,7 +1641,7 @@ public class HostEmulationManager {
                             new ComponentNameAndUser(mPaymentServiceUserId, name);
                     mComponentNameToConnectionsMap.remove(nameAndUser);
                 }
-                paymentServiceName = mPaymentServiceName;
+                if (mPaymentServiceName != null) paymentServiceName = mPaymentServiceName;
                 mPaymentService = null;
                 mPaymentServiceName = null;
             }
