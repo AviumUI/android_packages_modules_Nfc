@@ -1451,6 +1451,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         1. Verifies that no APDU exchange occurs when the listen tech mismatches with poll tech.
         2. Verifies a successful APDU exchange when no longer mismatched.
         """
+        asserts.skip_if(int(self.emulator.adb.getprop("ro.product.first_api_level")) < 36,
+            "Tech mismatch test is only supported on Android 16+")
         self._set_up_emulator(service_list=[_TRANSPORT_SERVICE_1],
                               expected_service=_TRANSPORT_SERVICE_1, is_payment=False)
         # Set listen to Type-F
