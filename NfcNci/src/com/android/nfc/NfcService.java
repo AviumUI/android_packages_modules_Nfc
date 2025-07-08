@@ -442,6 +442,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     // and the default AsyncTask thread so it is read unprotected from that thread
     int mAlwaysOnState;  // one of NfcAdapter.STATE_ON, STATE_TURNING_ON, etc
     int mAlwaysOnMode; // one of NfcOemExtension.ENABLE_DEFAULT, ENABLE_TRANSPARENT, etc
+    private final Object mOemExtensionCallbackLock = new Object();
     private final Object mPowerSavingModeLock = new Object();
     @GuardedBy("mPowerSavingModeLock")
     private @NfcAdapter.AdapterState int mPowerSavingState = NfcAdapter.STATE_OFF;
@@ -3551,7 +3552,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 throws RemoteException {
             if (DBG) Log.i(TAG, "registerOemExtensionCallback");
             NfcPermissions.enforceAdminPermissions(mContext);
-            synchronized (NfcService.this) {
+            synchronized (mOemExtensionCallbackLock) {
                 mNfcOemExtensionCallback = callbacks;
                 mNfcOemExtensionCallback.asBinder().linkToDeath(mOemExtensionCbDeathRecipient, 0);
             }
@@ -3569,7 +3570,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 throws RemoteException {
             if (DBG) Log.i(TAG, "unregisterOemExtensionCallback");
             NfcPermissions.enforceAdminPermissions(mContext);
-            synchronized (NfcService.this) {
+            synchronized (mOemExtensionCallbackLock) {
                 if (mNfcOemExtensionCallback == null) return;
                 mNfcOemExtensionCallback.asBinder().unlinkToDeath(mOemExtensionCbDeathRecipient, 0);
                 mNfcOemExtensionCallback = null;
@@ -3822,11 +3823,11 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     }
 
     private final IBinder.DeathRecipient mOemExtensionCbDeathRecipient = () -> {
-        synchronized (NfcService.this) {
+        synchronized (mOemExtensionCallbackLock) {
             Log.w(TAG, "binderDied: OEM extension died");
             mNfcOemExtensionCallback = null;
-            restartStack();
         }
+        restartStack();
     };
 
     final class SeServiceDeathRecipient implements IBinder.DeathRecipient {
