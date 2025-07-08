@@ -1913,8 +1913,6 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             int screen_state_mask = (mNfcUnlockManager.isLockscreenPollingEnabled()) ?
                              (ScreenStateHelper.SCREEN_POLLING_TAG_MASK | mScreenState) : mScreenState;
 
-            if (mNfcUnlockManager.isLockscreenPollingEnabled()) applyRouting(false);
-
             mDeviceHost.doSetScreenState(screen_state_mask, mIsWlcEnabled);
 
             sToast_debounce = false;
@@ -5426,18 +5424,15 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
                     mRoutingWakeLock.acquire();
                     try {
+                        int screen_state_mask = mScreenState;
                         if (mScreenState == ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED) {
-                            applyRouting(false);
                             mIsRequestUnlockShowed = false;
                         }
-                        int screen_state_mask = (mNfcUnlockManager.isLockscreenPollingEnabled())
-                                ? (ScreenStateHelper.SCREEN_POLLING_TAG_MASK | mScreenState) :
-                                mScreenState;
-
-                        if (mNfcUnlockManager.isLockscreenPollingEnabled()) {
+                        if (mNfcUnlockManager.isLockscreenPollingEnabled()
+                                || mScreenState == ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED) {
+                            screen_state_mask |= ScreenStateHelper.SCREEN_POLLING_TAG_MASK;
                             applyRouting(false);
                         }
-
                         mDeviceHost.doSetScreenState(screen_state_mask, mIsWlcEnabled);
                     } finally {
                         if (mRoutingWakeLock.isHeld()) {
