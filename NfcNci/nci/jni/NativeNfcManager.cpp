@@ -355,9 +355,10 @@ static void nfaConnectionCallback(uint8_t connEvent,
       LOG(DEBUG) << StringPrintf(
           "%s: NFA_RF_DISCOVERY_STARTED_EVT: status = %u", __func__,
           eventData->status);
-
-      SyncEventGuard guard(sNfaEnableDisablePollingEvent);
-      sNfaEnableDisablePollingEvent.notifyOne();
+      {
+        SyncEventGuard guard(sNfaEnableDisablePollingEvent);
+        sNfaEnableDisablePollingEvent.notifyOne();
+      }
       struct nfc_jni_native_data* nat = getNative(NULL, NULL);
       if (!nat) {
         LOG(ERROR) << StringPrintf("%s: cached nat is null", __func__);
@@ -381,9 +382,10 @@ static void nfaConnectionCallback(uint8_t connEvent,
           eventData->status);
 
       gActivated = false;
-
-      SyncEventGuard guard(sNfaEnableDisablePollingEvent);
-      sNfaEnableDisablePollingEvent.notifyOne();
+      {
+        SyncEventGuard guard(sNfaEnableDisablePollingEvent);
+        sNfaEnableDisablePollingEvent.notifyOne();
+      }
       struct nfc_jni_native_data* nat = getNative(NULL, NULL);
       if (!nat) {
         LOG(ERROR) << StringPrintf("%s: cached nat is null", __func__);
@@ -1002,6 +1004,13 @@ void nfaDeviceManagementCallback(uint8_t dmEvent,
               __func__);
           SyncEventGuard guard(RoutingManager::getInstance().mEeUpdateEvent);
           RoutingManager::getInstance().mEeUpdateEvent.notifyOne();
+        }
+        {
+          LOG(DEBUG) << StringPrintf(
+              "%s: aborting RoutingManager::getInstance().mRoutingEvent",
+              __func__);
+          SyncEventGuard guard(RoutingManager::getInstance().mRoutingEvent);
+          RoutingManager::getInstance().mRoutingEvent.notifyOne();
         }
         e->CallVoidMethod(nat->manager,
                           android::gCachedNfcManagerNotifyHwErrorReported);

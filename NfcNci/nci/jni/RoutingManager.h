@@ -62,6 +62,7 @@ class RoutingManager {
   static const int CLEAR_TECHNOLOGY_ENTRIES = 0x04;
   static const int CLEAR_SC_ENTRIES = 0x08;
   SyncEvent mEeUpdateEvent;
+  SyncEvent mRoutingEvent;
 
  private:
   RoutingManager();
@@ -144,7 +145,6 @@ class RoutingManager {
   tNFA_TECHNOLOGY_MASK mSeTechMask;
   static const JNINativeMethod sMethods[];
   SyncEvent mEeRegisterEvent;
-  SyncEvent mRoutingEvent;
   SyncEvent mEeInfoEvent;
   SyncEvent mEeSetModeEvent;
   SyncEvent mEePwrAndLinkCtrlEvent;
