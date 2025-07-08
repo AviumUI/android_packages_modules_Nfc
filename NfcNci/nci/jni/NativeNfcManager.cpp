@@ -1003,6 +1003,13 @@ void nfaDeviceManagementCallback(uint8_t dmEvent,
           SyncEventGuard guard(RoutingManager::getInstance().mEeUpdateEvent);
           RoutingManager::getInstance().mEeUpdateEvent.notifyOne();
         }
+        {
+          LOG(DEBUG) << StringPrintf(
+              "%s: aborting RoutingManager::getInstance().mRoutingEvent",
+              __func__);
+          SyncEventGuard guard(RoutingManager::getInstance().mRoutingEvent);
+          RoutingManager::getInstance().mRoutingEvent.notifyOne();
+        }
         e->CallVoidMethod(nat->manager,
                           android::gCachedNfcManagerNotifyHwErrorReported);
       } else {
