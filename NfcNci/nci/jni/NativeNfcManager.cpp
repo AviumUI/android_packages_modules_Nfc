@@ -2377,18 +2377,12 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
       state == NFA_SCREEN_STATE_OFF_UNLOCKED) {
     // disable poll and enable listen on DH 0x00
     discovry_param |= NCI_POLLING_DH_DISABLE_MASK;
-  }
-
-  if (state == NFA_SCREEN_STATE_ON_LOCKED) {
-    // enable 01/disable 00 poll based on NFA_SCREEN_POLLING_TAG_MASK
+  } else if (state == NFA_SCREEN_STATE_ON_LOCKED ||
+             state == NFA_SCREEN_STATE_ON_UNLOCKED) {
+    // enable/disable poll based on NFA_SCREEN_POLLING_TAG_MASK
     discovry_param |= (screen_state_mask & NFA_SCREEN_POLLING_TAG_MASK)
                           ? NCI_POLLING_DH_ENABLE_MASK
                           : NCI_POLLING_DH_DISABLE_MASK;
-  }
-
-  if (state == NFA_SCREEN_STATE_ON_UNLOCKED) {
-    // enable both poll and listen on DH 0x01
-    discovry_param |= NCI_POLLING_DH_ENABLE_MASK;
   }
   LOG(DEBUG) << StringPrintf("%s: discovry_param = 0x%02x", __FUNCTION__,
                              discovry_param);
