@@ -200,8 +200,18 @@ tNFA_STATUS gVSCmdStatus = NFA_STATUS_OK;
 uint16_t gCurrentConfigLen;
 uint8_t gConfig[256];
 std::vector<uint8_t> gCaps(0);
-static int prevScreenState = NFA_SCREEN_STATE_UNKNOWN;
-static int NFA_SCREEN_POLLING_TAG_MASK = 0x10;
+
+// sPrevScreenStateMask contains screen state + polling enable/disable mask
+//  Possible screen states:
+//  NFA_SCREEN_STATE_UNKNOWN  0x00
+//  NFA_SCREEN_STATE_OFF_UNLOCKED  0x01
+//  NFA_SCREEN_STATE_OFF_LOCKED    0x02
+//  NFA_SCREEN_STATE_ON_LOCKED     0x04
+//  NFA_SCREEN_STATE_ON_UNLOCKED   0x08
+//  Polling:
+//  NFA_SCREEN_POLLING_TAG_MASK    0x10
+//  0x10 polling enable / 0x00 polling disable
+static int sPrevScreenStateMask = NFA_SCREEN_STATE_UNKNOWN;
 bool gIsDtaEnabled = false;
 static bool gObserveModeEnabled = false;
 static int gPartialInitMode = ENABLE_MODE_DEFAULT;
@@ -486,6 +496,7 @@ static void nfaConnectionCallback(uint8_t connEvent,
         }
 
         nativeNfcTag_resetPresenceCheck();
+        int prevScreenState = sPrevScreenStateMask & NFA_SCREEN_STATE_MASK;
         if (!isListenMode(eventData->activated) &&
             (prevScreenState == NFA_SCREEN_STATE_OFF_LOCKED ||
              prevScreenState == NFA_SCREEN_STATE_OFF_UNLOCKED)) {
@@ -1725,7 +1736,7 @@ static jboolean nfcManager_doInitialize(JNIEnv* e, jobject o) {
           }
         }
 
-        prevScreenState = NFA_SCREEN_STATE_UNKNOWN;
+        sPrevScreenStateMask = NFA_SCREEN_STATE_UNKNOWN;
 
         // Do custom NFCA startup configuration.
         doStartupConfig();
@@ -2305,14 +2316,15 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
                                         jboolean alwaysPoll) {
   if (sIsShuttingDown) return;
   tNFA_STATUS status = NFA_STATUS_OK;
+  uint8_t prevScreenState = sPrevScreenStateMask & NFA_SCREEN_STATE_MASK;
   uint8_t state = (screen_state_mask & NFA_SCREEN_STATE_MASK);
-  uint8_t discovry_param =
-      NCI_LISTEN_DH_NFCEE_ENABLE_MASK | NCI_POLLING_DH_ENABLE_MASK;
+  // Always enable listen on DH 0x00
+  uint8_t discovry_param = NCI_LISTEN_DH_NFCEE_ENABLE_MASK;
   sIsAlwaysPolling = alwaysPoll;
 
   LOG(DEBUG) << StringPrintf(
-      "%s: state = %d prevScreenState= %d, discovry_param = %d", __FUNCTION__,
-      state, prevScreenState, discovry_param);
+      "%s: state = %d sPrevScreenStateMask= %d, screen_state_mask= %d",
+      __FUNCTION__, state, sPrevScreenStateMask, screen_state_mask);
 
   if (gPartialInitMode != ENABLE_MODE_DEFAULT) {
     LOG(ERROR) << StringPrintf(
@@ -2320,7 +2332,8 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
     return;
   }
 
-  if (prevScreenState == state) {
+  // Compares screen state + polling mask here.
+  if (sPrevScreenStateMask == screen_state_mask) {
     LOG(DEBUG) << StringPrintf(
         "%s: New screen state is same as previous state. No action taken",
         __func__);
@@ -2329,13 +2342,13 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
 
   if (sIsDisabling || !sIsNfaEnabled ||
       (NFC_GetNCIVersion() < NCI_VERSION_2_0)) {
-    prevScreenState = state;
+    sPrevScreenStateMask = screen_state_mask;
     return;
   }
 
   // skip remaining SetScreenState tasks when trying to silent recover NFCC
   if (recovery_option && sIsRecovering) {
-    prevScreenState = state;
+    sPrevScreenStateMask = screen_state_mask;
     return;
   }
 
@@ -2356,30 +2369,29 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
 
   // skip remaining SetScreenState tasks when trying to silent recover NFCC
   if (recovery_option && sIsRecovering) {
-    prevScreenState = state;
+    sPrevScreenStateMask = screen_state_mask;
     return;
   }
 
   if (state == NFA_SCREEN_STATE_OFF_LOCKED ||
       state == NFA_SCREEN_STATE_OFF_UNLOCKED) {
     // disable poll and enable listen on DH 0x00
-    discovry_param =
-        NCI_POLLING_DH_DISABLE_MASK | NCI_LISTEN_DH_NFCEE_ENABLE_MASK;
+    discovry_param |= NCI_POLLING_DH_DISABLE_MASK;
   }
 
   if (state == NFA_SCREEN_STATE_ON_LOCKED) {
-    // disable poll and enable listen on DH 0x00
-    discovry_param =
-        (screen_state_mask & NFA_SCREEN_POLLING_TAG_MASK)
-            ? (NCI_LISTEN_DH_NFCEE_ENABLE_MASK | NCI_POLLING_DH_ENABLE_MASK)
-            : (NCI_POLLING_DH_DISABLE_MASK | NCI_LISTEN_DH_NFCEE_ENABLE_MASK);
+    // enable 01/disable 00 poll based on NFA_SCREEN_POLLING_TAG_MASK
+    discovry_param |= (screen_state_mask & NFA_SCREEN_POLLING_TAG_MASK)
+                          ? NCI_POLLING_DH_ENABLE_MASK
+                          : NCI_POLLING_DH_DISABLE_MASK;
   }
 
   if (state == NFA_SCREEN_STATE_ON_UNLOCKED) {
     // enable both poll and listen on DH 0x01
-    discovry_param =
-        NCI_LISTEN_DH_NFCEE_ENABLE_MASK | NCI_POLLING_DH_ENABLE_MASK;
+    discovry_param |= NCI_POLLING_DH_ENABLE_MASK;
   }
+  LOG(DEBUG) << StringPrintf("%s: discovry_param = 0x%02x", __FUNCTION__,
+                             discovry_param);
 
   if (!sIsAlwaysPolling) {
     gMutexConfig.lock();
@@ -2398,7 +2410,7 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
   }
   // skip remaining SetScreenState tasks when trying to silent recover NFCC
   if (recovery_option && sIsRecovering) {
-    prevScreenState = state;
+    sPrevScreenStateMask = screen_state_mask;
     return;
   }
 
@@ -2415,7 +2427,7 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
 
   // skip remaining SetScreenState tasks when trying to silent recover NFCC
   if (recovery_option && sIsRecovering) {
-    prevScreenState = state;
+    sPrevScreenStateMask = screen_state_mask;
     return;
   }
 
@@ -2428,7 +2440,7 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
     nativeNfcTag_doDisconnect(NULL, NULL);
   }
 
-  prevScreenState = state;
+  sPrevScreenStateMask = screen_state_mask;
 }
 
 /*******************************************************************************

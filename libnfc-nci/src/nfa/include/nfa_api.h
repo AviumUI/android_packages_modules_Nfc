@@ -214,6 +214,7 @@ typedef enum power_substate {
 } epower_substate_t;
 
 #define NFA_SCREEN_STATE_MASK 0x0F
+#define NFA_SCREEN_POLLING_TAG_MASK 0x10
 
 /* CONN_DISCOVER_PARAM */
 #define NFA_DM_PWR_MODE_FULL 0x04
