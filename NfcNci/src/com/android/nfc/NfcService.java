@@ -5813,6 +5813,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
 
         private void pollingDelay() {
+            if (isNfcDisabledOrDisabling()) {
+                Log.d(TAG, "Skip pollingDelay when NFCC is off or turning off");
+                return;
+            }
             if (mPollDelayTime <= NO_POLL_DELAY) return;
             synchronized (NfcService.this) {
                 if (!mPollDelayed) {
