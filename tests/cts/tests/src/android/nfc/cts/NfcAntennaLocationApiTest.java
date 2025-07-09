@@ -28,13 +28,20 @@ import android.nfc.NfcAntennaInfo;
 
 import androidx.test.InstrumentationRegistry;
 
-import java.util.ArrayList;
+import com.android.compatibility.common.util.DeviceReportLog;
+import com.android.compatibility.common.util.ResultType;
+import com.android.compatibility.common.util.ResultUnit;
+
+import com.google.common.collect.Iterables;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 public class NfcAntennaLocationApiTest {
+    private static final String REPORT_LOG_NAME = "CtsNfcTestCases";
 
     private static final int ANTENNA_X = 12;
     private static final int ANTENNA_Y = 13;
@@ -59,19 +66,31 @@ public class NfcAntennaLocationApiTest {
     public void tearDown() throws Exception {
     }
 
+    private void logAntennaInfo(String testName, NfcAntennaInfo info) {
+        DeviceReportLog log = new DeviceReportLog(REPORT_LOG_NAME, testName);
+        log.addValue("deviceWidth",
+                info.getDeviceWidth(), ResultType.NEUTRAL, ResultUnit.MILLIMETERS);
+        log.addValue("deviceHeight",
+                info.getDeviceHeight(), ResultType.NEUTRAL, ResultUnit.MILLIMETERS);
+        log.addValue("isDeviceFoldable",
+                info.isDeviceFoldable(), ResultType.NEUTRAL, ResultUnit.NONE);
+        log.addValues("antennaLocations",
+                info.getAvailableNfcAntennas().stream()
+                        .map(antenna -> antenna.getLocationX() + ", " + antenna.getLocationY())
+                        .toList(),
+                ResultType.NEUTRAL,
+                ResultUnit.MILLIMETERS);
+
+        log.submit(InstrumentationRegistry.getInstrumentation());
+    }
+
     /** Tests getNfcAntennaInfo API */
     @Test
     public void testGetNfcAntennaInfo() {
         NfcAntennaInfo nfcAntennaInfo = mAdapter.getNfcAntennaInfo();
 
         assertNotNull(nfcAntennaInfo);
-
-        AvailableNfcAntenna availableNfcAntenna = new AvailableNfcAntenna(ANTENNA_X, ANTENNA_Y);
-
-        assertEquals("Wrong nfc antenna X axis",
-                availableNfcAntenna.getLocationX(), ANTENNA_X);
-        assertEquals("Wrong nfc antenna Y axis",
-                availableNfcAntenna.getLocationY(), ANTENNA_Y);
+        logAntennaInfo(Thread.currentThread().getStackTrace()[1].getMethodName(), nfcAntennaInfo);
     }
 
     @Test
@@ -79,8 +98,10 @@ public class NfcAntennaLocationApiTest {
         int deviceWidth = 0;
         int deviceHeight = 0;
         boolean deviceFoldable = false;
-        NfcAntennaInfo nfcAntennaInfo = new NfcAntennaInfo(deviceWidth, deviceHeight,
-            deviceFoldable, new ArrayList<AvailableNfcAntenna>());
+        AvailableNfcAntenna availableAntenna = new AvailableNfcAntenna(ANTENNA_X, ANTENNA_Y);
+
+        NfcAntennaInfo nfcAntennaInfo = new NfcAntennaInfo(
+                deviceWidth, deviceHeight, deviceFoldable, List.of(availableAntenna));
 
         assertEquals("Device widths do not match", deviceWidth,
                 nfcAntennaInfo.getDeviceWidth());
@@ -88,7 +109,7 @@ public class NfcAntennaLocationApiTest {
                 nfcAntennaInfo.getDeviceHeight());
         assertEquals("Device foldable do not match", deviceFoldable,
                 nfcAntennaInfo.isDeviceFoldable());
-        assertEquals("Wrong number of available antennas", 0,
-                nfcAntennaInfo.getAvailableNfcAntennas().size());
+        assertEquals("Wrong available antennas", availableAntenna,
+                Iterables.getOnlyElement(nfcAntennaInfo.getAvailableNfcAntennas()));
     }
 }
