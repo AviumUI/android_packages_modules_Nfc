@@ -1247,7 +1247,7 @@ static void rw_mfc_handle_read_op(uint8_t* data) {
         p_mfc->ndef_status = MFC_NDEF_DETECTED;
         p_mfc->ndef_first_block = p_mfc->last_block_accessed.block;
         rw_mfc_ntf_tlv_detect_complete(NFC_STATUS_OK);
-      } else if (mfc_read_mad()) {
+      } else {
         tRW_DETECT_NDEF_DATA ndef_data;
         ndef_data.status = NFC_STATUS_FAILED;
         ndef_data.protocol = NFC_PROTOCOL_MIFARE;
