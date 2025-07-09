@@ -1686,13 +1686,17 @@ void nfc_ncif_proc_t3t_polling_ntf(uint8_t* p, uint16_t plen) {
   uint8_t num_responses;
 
   if (plen < NFC_TL_SIZE) {
-    return;
+    // Error case, wrongly formatted NTF
+    /* Pass result to RW_T3T for processing */
+    status = NCI_STATUS_FAILED;
+    num_responses = 0;
+  } else {
+    /* Pass result to RW_T3T for processing */
+    STREAM_TO_UINT8(status, p);
+    STREAM_TO_UINT8(num_responses, p);
+    plen -= NFC_TL_SIZE;
   }
 
-  /* Pass result to RW_T3T for processing */
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT8(num_responses, p);
-  plen -= NFC_TL_SIZE;
   rw_t3t_handle_nci_poll_ntf(status, num_responses, (uint8_t)plen, p);
 }
 

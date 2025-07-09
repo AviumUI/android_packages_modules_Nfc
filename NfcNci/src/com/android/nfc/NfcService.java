@@ -485,6 +485,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     boolean mIsRWCapable;
     boolean mIsRDCapable;
     boolean mIsEuiccCapable;
+    boolean mIsKeyguardLocked;
     WlcListenerDeviceInfo mWlcListenerDeviceInfo;
     public NfcDiagnostics  mNfcDiagnostics;
 
@@ -1240,6 +1241,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         mContext.registerReceiverForAllUsers(mOwnerReceiver, ownerFilter, null, null);
 
         addDeviceLockedStateListener();
+        addKeyguardLockedStateListener();
+        mIsKeyguardLocked = mKeyguard.isKeyguardLocked();
 
         updatePackageCache();
 
@@ -1910,10 +1913,20 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             } else {
                 mScreenState = mScreenStateHelper.checkScreenState(mCheckDisplayStateForScreenState);
             }
-            int screen_state_mask = (mNfcUnlockManager.isLockscreenPollingEnabled()) ?
-                             (ScreenStateHelper.SCREEN_POLLING_TAG_MASK | mScreenState) : mScreenState;
+            int screen_state_mask = mScreenState;
 
-            if (mNfcUnlockManager.isLockscreenPollingEnabled()) applyRouting(false);
+            if (mNfcUnlockManager.isLockscreenPollingEnabled()) {
+                screen_state_mask |= ScreenStateHelper.SCREEN_POLLING_TAG_MASK;
+            }
+            if (mScreenState == ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED) {
+                if (android.app.Flags.deviceUnlockListener()
+                        && Flags.useDeviceLockListener()
+                        && mIsKeyguardLocked) {
+                    Log.d(TAG, "Don't start polling when KeyguardLocked");
+                } else {
+                    screen_state_mask |= ScreenStateHelper.SCREEN_POLLING_TAG_MASK;
+                }
+            }
 
             mDeviceHost.doSetScreenState(screen_state_mask, mIsWlcEnabled);
 
@@ -4577,22 +4590,22 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     }
 
     private void addDeviceLockedStateListener() {
-        if (android.app.Flags.deviceUnlockListener() && Flags.useDeviceLockListener()) {
-            try {
-                mKeyguard.addDeviceLockedStateListener(
-                        mContext.getMainExecutor(), mDeviceLockedStateListener);
-            } catch (Exception e) {
-                Log.e(TAG, "addDeviceLockedStateListener: e=" + e);
-            }
-        } else {
-            try {
-                mKeyguard.addKeyguardLockedStateListener(mContext.getMainExecutor(),
-                        mIKeyguardLockedStateListener);
-            } catch (Exception e) {
-                Log.e(TAG,
-                        "addDeviceLockedStateListener: Exception in addKeyguardLockedStateListener "
-                                + e);
-            }
+        try {
+            mKeyguard.addDeviceLockedStateListener(
+                    mContext.getMainExecutor(), mDeviceLockedStateListener);
+        } catch (Exception e) {
+            Log.e(TAG, "addDeviceLockedStateListener: e=" + e);
+        }
+    }
+
+    private void addKeyguardLockedStateListener() {
+        try {
+            mKeyguard.addKeyguardLockedStateListener(mContext.getMainExecutor(),
+                    mIKeyguardLockedStateListener);
+        } catch (Exception e) {
+            Log.e(TAG,
+                    "addDeviceLockedStateListener: Exception in addKeyguardLockedStateListener "
+                    + e);
         }
     }
 
@@ -4601,12 +4614,28 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
      */
     private KeyguardLockedStateListener mIKeyguardLockedStateListener =
             new KeyguardLockedStateListener() {
-        @Override
-        public void onKeyguardLockedStateChanged(boolean isKeyguardLocked) {
-            if (!mIsWlcCapable || !mNfcCharging.NfcChargingOnGoing) {
-                applyScreenState(mScreenStateHelper.checkScreenState(mCheckDisplayStateForScreenState));
-            }
-        }
+                @Override
+                public void onKeyguardLockedStateChanged(boolean isKeyguardLocked) {
+                    Log.d(TAG, "onKeyguardLockedStateChanged: isKeyguardLocked = "
+                            + isKeyguardLocked);
+                    if (android.app.Flags.deviceUnlockListener()
+                            && Flags.useDeviceLockListener()) {
+                        if (mIsKeyguardLocked != isKeyguardLocked) {
+                            mIsKeyguardLocked = isKeyguardLocked;
+                            int screenState =
+                                    mScreenStateHelper.checkScreenState(
+                                            mCheckDisplayStateForScreenState);
+                            // Update screen state when keyguard unlocked/locked
+                            sendMessage(NfcService.MSG_APPLY_SCREEN_STATE, screenState);
+                        }
+                    } else {
+                        if (!mIsWlcCapable || !mNfcCharging.NfcChargingOnGoing) {
+                            applyScreenState(
+                                    mScreenStateHelper.checkScreenState(
+                                            mCheckDisplayStateForScreenState));
+                        }
+                    }
+                }
     };
 
     /**
@@ -5426,18 +5455,24 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
                     mRoutingWakeLock.acquire();
                     try {
-                        if (mScreenState == ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED) {
-                            applyRouting(false);
-                            mIsRequestUnlockShowed = false;
-                        }
-                        int screen_state_mask = (mNfcUnlockManager.isLockscreenPollingEnabled())
-                                ? (ScreenStateHelper.SCREEN_POLLING_TAG_MASK | mScreenState) :
-                                mScreenState;
-
+                        int screen_state_mask = mScreenState;
                         if (mNfcUnlockManager.isLockscreenPollingEnabled()) {
+                            screen_state_mask |= ScreenStateHelper.SCREEN_POLLING_TAG_MASK;
+                        }
+                        if (mScreenState == ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED) {
+                            mIsRequestUnlockShowed = false;
+                            if (android.app.Flags.deviceUnlockListener()
+                                    && Flags.useDeviceLockListener()
+                                    && mIsKeyguardLocked) {
+                                Log.d(TAG, "Don't start polling when KeyguardLocked");
+                            } else {
+                                screen_state_mask |= ScreenStateHelper.SCREEN_POLLING_TAG_MASK;
+                            }
+                        }
+                        if (mNfcUnlockManager.isLockscreenPollingEnabled()
+                                || mScreenState == ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED) {
                             applyRouting(false);
                         }
-
                         mDeviceHost.doSetScreenState(screen_state_mask, mIsWlcEnabled);
                     } finally {
                         if (mRoutingWakeLock.isHeld()) {
@@ -5813,6 +5848,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
 
         private void pollingDelay() {
+            if (isNfcDisabledOrDisabling()) {
+                Log.d(TAG, "Skip pollingDelay when NFCC is off or turning off");
+                return;
+            }
             if (mPollDelayTime <= NO_POLL_DELAY) return;
             synchronized (NfcService.this) {
                 if (!mPollDelayed) {

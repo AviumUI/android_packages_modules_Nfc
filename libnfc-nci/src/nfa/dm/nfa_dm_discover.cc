@@ -65,6 +65,7 @@ static void nfa_dm_disc_report_kovio_presence_check(tNFC_STATUS status);
 static std::string nfa_dm_disc_state_2_str(uint8_t state);
 static std::string nfa_dm_disc_event_2_str(uint8_t event);
 
+static int polling_start_cnt = 0;
 extern uint8_t mute_tech_route_option;
 /*
 ** static parameters
@@ -1815,6 +1816,7 @@ static void nfa_dm_disc_sm_idle(tNFA_DM_RF_DISC_SM_EVENT event,
       nfa_dm_cb.disc_cb.disc_flags &= ~NFA_DM_DISC_FLAGS_W4_RSP;
 
       if (p_data->nfc_discover.status == NFC_STATUS_OK) {
+        polling_start_cnt = 0;
         nfa_dm_disc_new_state(NFA_DM_RFST_DISCOVERY);
 
         /* if RF discovery was stopped while waiting for response */
@@ -1861,8 +1863,19 @@ static void nfa_dm_disc_sm_idle(tNFA_DM_RF_DISC_SM_EVENT event,
         /* in rare case that the discovery states of NFCC and DH mismatch and
          * NFCC rejects Discover Cmd
          * deactivate idle and then start disvocery when got deactivate rsp */
-        nfa_dm_cb.disc_cb.disc_flags |= NFA_DM_DISC_FLAGS_W4_RSP;
-        NFC_Deactivate(NFA_DEACTIVATE_TYPE_IDLE);
+        if (nfc_cb.nfc_state != NFC_STATE_CLOSING) {
+          if (polling_start_cnt < 10) {
+            nfa_dm_cb.disc_cb.disc_flags |= NFA_DM_DISC_FLAGS_W4_RSP;
+            NFC_Deactivate(NFA_DEACTIVATE_TYPE_IDLE);
+          } else {
+            polling_start_cnt = 0;
+            LOG(ERROR) << StringPrintf(
+                "%s; Polling loop was not started even "
+                "after retry, try restart stack or abort",
+                __func__);
+            (*nfa_dm_cb.p_dm_cback)(NFA_DM_NFCC_TRANSPORT_ERR_EVT, nullptr);
+          }
+        }
       }
       break;
 
@@ -1882,6 +1895,7 @@ static void nfa_dm_disc_sm_idle(tNFA_DM_RF_DISC_SM_EVENT event,
           /* check if need to restart discovery after resync discovery state
            * with NFCC */
           nfa_dm_start_rf_discover();
+          polling_start_cnt++;
         }
         /* Otherwise, deactivating when getting unexpected activation */
       }
