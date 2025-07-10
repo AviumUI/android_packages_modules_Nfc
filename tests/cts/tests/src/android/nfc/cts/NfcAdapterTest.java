@@ -709,11 +709,18 @@ public class NfcAdapterTest {
         assumeTrue(getDefaultAdapter().isPowerSavingModeSupported());
 
         NfcAdapter adapter = getDefaultAdapter();
-        adapter.setPowerSavingMode(true);
-        assertTrue(adapter.isPowerSavingModeEnabled());
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation().adoptShellPermissionIdentity(NFC_SET_CONTROLLER_ALWAYS_ON);
+        try {
+            adapter.setPowerSavingMode(true);
+            assertTrue(adapter.isPowerSavingModeEnabled());
 
-        adapter.setPowerSavingMode(false);
-        assertFalse(adapter.isPowerSavingModeEnabled());
+            adapter.setPowerSavingMode(false);
+            assertFalse(adapter.isPowerSavingModeEnabled());
+        } finally {
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                    .getUiAutomation().dropShellPermissionIdentity();
+        }
     }
 
     @Test

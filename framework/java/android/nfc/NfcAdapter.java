@@ -1309,7 +1309,7 @@ public final class NfcAdapter {
      * @throws IllegalStateException If a transient failure related to current device state
      * prevented power-saving mode from being set.
      */
-    @RequiresPermission(Manifest.permission.WRITE_SECURE_SETTINGS)
+    @RequiresPermission(Manifest.permission.NFC_SET_CONTROLLER_ALWAYS_ON)
     @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
     public void setPowerSavingMode(boolean enabled) {
         callService(() -> sService.setPowerSavingMode(enabled));
