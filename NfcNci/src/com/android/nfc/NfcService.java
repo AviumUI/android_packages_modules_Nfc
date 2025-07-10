@@ -4603,9 +4603,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             mKeyguard.addKeyguardLockedStateListener(mContext.getMainExecutor(),
                     mIKeyguardLockedStateListener);
         } catch (Exception e) {
-            Log.e(TAG,
-                    "addDeviceLockedStateListener: Exception in addKeyguardLockedStateListener "
-                    + e);
+            Log.e(TAG, "addKeyguardLockedStateListener: e=" + e);
         }
     }
 
@@ -4616,24 +4614,24 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             new KeyguardLockedStateListener() {
                 @Override
                 public void onKeyguardLockedStateChanged(boolean isKeyguardLocked) {
-                    Log.d(TAG, "onKeyguardLockedStateChanged: isKeyguardLocked = "
+                    if (mIsKeyguardLocked == isKeyguardLocked) return;
+
+                    Log.d(TAG, "onKeyguardLockedStateChanged: isKeyguardLocked ="
                             + isKeyguardLocked);
+                    mIsKeyguardLocked = isKeyguardLocked;
+
+                    if (mIsWlcCapable && mNfcCharging.NfcChargingOnGoing) {
+                        Log.d(TAG, "Charging ongoing, skip screen state update");
+                        mPendingPowerStateUpdate = true;
+                        return;
+                    }
+
                     if (android.app.Flags.deviceUnlockListener()
                             && Flags.useDeviceLockListener()) {
-                        if (mIsKeyguardLocked != isKeyguardLocked) {
-                            mIsKeyguardLocked = isKeyguardLocked;
-                            int screenState =
-                                    mScreenStateHelper.checkScreenState(
-                                            mCheckDisplayStateForScreenState);
-                            // Update screen state when keyguard unlocked/locked
-                            sendMessage(NfcService.MSG_APPLY_SCREEN_STATE, screenState);
-                        }
-                    } else {
-                        if (!mIsWlcCapable || !mNfcCharging.NfcChargingOnGoing) {
-                            applyScreenState(
-                                    mScreenStateHelper.checkScreenState(
-                                            mCheckDisplayStateForScreenState));
-                        }
+                        int screenState = mScreenStateHelper.checkScreenState(
+                                mCheckDisplayStateForScreenState);
+                        // Update screen state when keyguard unlocked/locked
+                        sendMessage(NfcService.MSG_APPLY_SCREEN_STATE, screenState);
                     }
                 }
     };
