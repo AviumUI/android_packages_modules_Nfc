@@ -1222,8 +1222,6 @@ public final class NfcOemExtension {
                     try {
                         ex.execute(() -> cb.onNdefMessage(
                                 tag, message, new ReceiverWrapper<>(hasOemExecutableContent)));
-                    } catch (RuntimeException exception) {
-                        throw exception;
                     } finally {
                         Binder.restoreCallingIdentity(identity);
                     }
@@ -1236,26 +1234,44 @@ public final class NfcOemExtension {
                                                   List<ApduServiceInfo> services,
                                                   ComponentName failedComponent, String category)
                 throws RemoteException {
-            mCallbackMap.forEach((cb, ex) -> {
-                synchronized (mLock) {
-                    final long identity = Binder.clearCallingIdentity();
-                    try {
-                        ex.execute(() -> cb.onLaunchHceAppChooserActivity(
-                                selectedAid, services, failedComponent, category));
-                    } catch (RuntimeException exception) {
-                        throw exception;
-                    } finally {
-                        Binder.restoreCallingIdentity(identity);
+            try {
+                mCallbackMap.forEach((cb, ex) -> {
+                    synchronized (mLock) {
+                        final long identity = Binder.clearCallingIdentity();
+                        try {
+                            ex.execute(() -> cb.onLaunchHceAppChooserActivity(
+                                    selectedAid, services, failedComponent, category));
+                        } finally {
+                            Binder.restoreCallingIdentity(identity);
+                        }
                     }
-                }
-            });
+                });
+            } catch (UnsupportedOperationException exception) {
+                // This allows the NFC stack to default to the AOSP implementation of the
+                // HCE app chooser activity.
+                throw new RemoteException(exception.getMessage());
+            }
         }
 
         @Override
         public void onLaunchHceTapAgainActivity(ApduServiceInfo service, String category)
                 throws RemoteException {
-            mCallbackMap.forEach((cb, ex) ->
-                    handleVoid2ArgCallback(service, category, cb::onLaunchHceTapAgainDialog, ex));
+            try {
+                mCallbackMap.forEach((cb, ex) -> {
+                    synchronized (mLock) {
+                        final long identity = Binder.clearCallingIdentity();
+                        try {
+                            ex.execute(() -> cb.onLaunchHceTapAgainDialog(service, category));
+                        } finally {
+                            Binder.restoreCallingIdentity(identity);
+                        }
+                    }
+                });
+            } catch (UnsupportedOperationException exception) {
+                // This allows the NFC stack to default to the AOSP implementation of the
+                // HCE tap again activity.
+                throw new RemoteException(exception.getMessage());
+            }
         }
 
         @Override
@@ -1279,8 +1295,6 @@ public final class NfcOemExtension {
                 final long identity = Binder.clearCallingIdentity();
                 try {
                     executor.execute(() -> callbackMethod.accept(input));
-                } catch (RuntimeException ex) {
-                    throw ex;
                 } finally {
                     Binder.restoreCallingIdentity(identity);
                 }
@@ -1293,8 +1307,6 @@ public final class NfcOemExtension {
                 final long identity = Binder.clearCallingIdentity();
                 try {
                     executor.execute(() -> callbackMethod.accept(input1, input2));
-                } catch (RuntimeException ex) {
-                    throw ex;
                 } finally {
                     Binder.restoreCallingIdentity(identity);
                 }
