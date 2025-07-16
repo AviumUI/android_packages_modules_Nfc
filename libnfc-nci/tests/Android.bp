@@ -72,7 +72,6 @@ cc_test {
         "libstatssocket",
         "server_configurable_flags",
         "libaconfig_storage_read_api_cc",
-        "libhardware_legacy",
     ],
     test_suites: [
         "general-tests",
