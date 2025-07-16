@@ -71,6 +71,7 @@ public class DeviceConfigFacade {
     private boolean mCeDisableOtherServicesOnManagedProfiles;
     private int mCeWakeLockTimeoutMillis;
     private String[] mOverwriteRoutingTableAllowListPkgs;
+    private boolean mDefaultPreferredSubscriptionToUicc;
 
     private static DeviceConfigFacade sInstance;
     public static DeviceConfigFacade getInstance(Context context, Handler handler) {
@@ -202,6 +203,9 @@ public class DeviceConfigFacade {
         // device config override with array is not supported, so just read the resource.
         mOverwriteRoutingTableAllowListPkgs = mContext.getResources()
             .getStringArray(R.array.overwrite_routing_table_allow_list_pkgs);
+        mDefaultPreferredSubscriptionToUicc = DeviceConfig.getBoolean(DEVICE_CONFIG_NAMESPACE_NFC,
+                "default_preferred_subscription_to_uicc",
+                mContext.getResources().getBoolean(R.bool.default_preferred_subscription_to_uicc));
     }
 
     private boolean isSecureNfcCapableDefault() {
@@ -250,6 +254,9 @@ public class DeviceConfigFacade {
     public boolean getEnableDeveloperNotification() { return mEnableDeveloperNotification; }
     public boolean getCheckDisplayStateForScreenState() { return mCheckDisplayStateForScreenState; }
     public boolean getIndicateUserActivityForHce() { return mIndicateUserActivityForHce; }
+    public boolean shouldDefaultPreferredSubscriptionToUicc() {
+        return mDefaultPreferredSubscriptionToUicc;
+    }
     public String getDefaultRoute() {
         return mDefaultRoute;
     }
