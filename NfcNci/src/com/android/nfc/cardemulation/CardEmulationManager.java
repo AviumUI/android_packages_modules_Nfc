@@ -215,7 +215,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mNfcEventLog = nfcInjector.getNfcEventLog();
         mVendorApiLevel = SystemProperties.getInt(
                 "ro.vendor.api_level", Build.VERSION.DEVICE_INITIAL_SDK_INT);
-        mPreferredSubscriptionService = new PreferredSubscriptionService(mContext, this);
+        mPreferredSubscriptionService = new PreferredSubscriptionService(mContext,
+                deviceConfigFacade, this);
         mStatsdUtils = nfcInjector.getStatsdUtils();
         mDeviceConfigFacade = deviceConfigFacade;
         mNfcPermissions = new NfcPermissions(mContext);

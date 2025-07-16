@@ -21,6 +21,7 @@ import android.content.pm.PackageManager;
 import android.telephony.SubscriptionInfo;
 import android.util.Log;
 
+import com.android.nfc.DeviceConfigFacade;
 import com.android.nfc.R;
 import com.android.nfc.cardemulation.util.TelephonyUtils;
 
@@ -47,7 +48,9 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
         void onPreferredSubscriptionChanged(int subscriptionId, boolean isActive);
     }
 
-    public PreferredSubscriptionService(Context context, Callback callback) {
+    public PreferredSubscriptionService(
+            Context context, DeviceConfigFacade deviceConfigFacade, Callback callback
+    ) {
         mContext = context;
         mCallback = callback;
 
@@ -62,7 +65,9 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
         // Initialize default subscription to UICC if there is no preference
         if (mIsUiccCapable || mIsEuiccCapable) {
             mDefaultSubscriptionId = getPreferredSubscriptionId();
-            if (mDefaultSubscriptionId == TelephonyUtils.SUBSCRIPTION_ID_UNKNOWN) {
+            if (deviceConfigFacade.shouldDefaultPreferredSubscriptionToUicc()
+                    && mDefaultSubscriptionId == TelephonyUtils.SUBSCRIPTION_ID_UNKNOWN
+            ) {
                 Log.d(TAG, "Set preferred subscription to UICC forcely, because currently unknown"
                     + " state");
                 setPreferredSubscriptionId(TelephonyUtils.SUBSCRIPTION_ID_UICC, false);
