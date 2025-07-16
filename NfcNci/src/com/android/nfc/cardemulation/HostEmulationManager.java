@@ -1558,7 +1558,7 @@ public class HostEmulationManager {
         }
     }
 
-    private void returnToIdleStateLocked() {
+    public void returnToIdleStateLocked() {
         mPendingPollingLoopFrames = null;
         mPollingFramesToSend = null;
         mUnprocessedPollingFrames = null;
