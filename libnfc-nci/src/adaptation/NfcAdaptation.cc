@@ -352,16 +352,24 @@ class NfcAidlClientCallback
   };
   ::ndk::ScopedAStatus sendData(const std::vector<uint8_t>& data) override {
     std::vector<uint8_t> copy = data;
+    if (data.empty()) {
+      ALOGI("sendData skipped: empty data!!!");
+      return ::ndk::ScopedAStatus::ok();
+    }
     if (sVndExtnsPresent) {
       bool isVndExtSpecRsp =
-          sNfcVendorExtn->processRspNtf(copy.size(), &copy[0]);
+          sNfcVendorExtn->processRspNtf(copy.size(), copy.data());
       // If true to be consumed by vendor extension, otherwise need to be
       // handled in libnfc-nci
       if (isVndExtSpecRsp) {
         return ::ndk::ScopedAStatus::ok();
       }
     }
-    mDataCallback(copy.size(), &copy[0]);
+    if (!mDataCallback) {
+      ALOGI("sendData skipped: null callback");
+      return ::ndk::ScopedAStatus::ok();
+    }
+    mDataCallback(static_cast<uint16_t>(copy.size()), copy.data());
     return ::ndk::ScopedAStatus::ok();
   };
 
