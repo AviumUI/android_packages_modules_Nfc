@@ -4694,7 +4694,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             Log.d(TAG, "applyRouting");
         }
         synchronized (this) {
-            if (isNfcDisabledOrDisabling()) {
+            if (!isNfcEnabled()) {
+                Log.d(TAG, "applyRouting: skip because nfc is not enabled");
                 return;
             }
             if (mNfcOemExtensionCallback != null
