@@ -35,6 +35,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.SystemProperties;
+import android.os.UserHandle;
 import android.os.VibrationEffect;
 import android.provider.Settings;
 import android.se.omapi.ISecureElementService;
@@ -86,7 +87,7 @@ public class NfcInjector {
     private final NfcDiagnostics mNfcDiagnostics;
     private final NfcServiceManager.ServiceRegisterer mNfcManagerRegisterer;
     private final NfcWatchdog mNfcWatchdog;
-    private final KeyguardManager mKeyguardManager;
+    private KeyguardManager mKeyguardManager;
     private static NfcInjector sInstance;
     private CardEmulationManager mCardEmulationManager;
 
@@ -136,7 +137,10 @@ public class NfcInjector {
         mNfcEventLog = new NfcEventLog(mContext, this, eventLogThread.getLooper(),
                 new AtomicFile(new File(NFC_DATA_DIR, EVENT_LOG_FILE_NAME)));
         mNfcWatchdog = new NfcWatchdog(mContext);
-        mKeyguardManager = mContext.getSystemService(KeyguardManager.class);
+
+        mKeyguardManager = mContext
+                .createContextAsUser(UserHandle.of(ActivityManager.getCurrentUser()), 0)
+                .getSystemService(KeyguardManager.class);
         sInstance = this;
     }
 
@@ -351,6 +355,9 @@ public class NfcInjector {
 
     /**
      * Returns whether the device unlocked or not.
+     *
+     * Need to update mKeyguardManager when user swithed
+     * @see #onUserSwitched()
      */
     public boolean isDeviceLocked() {
         return (isInProvisionMode()
@@ -380,5 +387,16 @@ public class NfcInjector {
         HandlerThread handlerThread = new HandlerThread("NfcBroadcastThread");
         handlerThread.start();
         return handlerThread.getLooper();
+    }
+
+    /**
+     * Refresh context when user switched
+     *
+     * isDeviceLocked() is based on context userId.
+     */
+    public void onUserSwitched() {
+        mKeyguardManager = mContext
+                .createContextAsUser(UserHandle.of(ActivityManager.getCurrentUser()), 0)
+                .getSystemService(KeyguardManager.class);
     }
 }
