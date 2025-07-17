@@ -1008,14 +1008,20 @@ public final class NfcOemExtension {
     }
 
     /**
+     * Status code returned when emulateNfcTechnologyATag request succeeded.
+     * @see #emulateNfcTechnologyATag(boolean, byte, byte, byte, byte[], byte, byte[])
      */
     @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
     public static final int EMULATE_NFC_A_TAG_STATUS_OK = 0;
     /**
+     * Status code returned when emulateNfcTechnologyATag request failed due to NFC is not enabled.
+     * @see #emulateNfcTechnologyATag(boolean, byte, byte, byte, byte[], byte, byte[])
      */
     @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
     public static final int EMULATE_NFC_A_TAG_STATUS_FAILED_NFC_NOT_ENABLED = 1;
     /**
+     * Status code returned when switching NFC route setting failed.
+     * @see #emulateNfcTechnologyATag(boolean, byte, byte, byte, byte[], byte, byte[])
      */
     @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
     public static final int EMULATE_NFC_A_TAG_STATUS_FAILED_INTERNAL = 2;
