@@ -6123,6 +6123,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 if (mIsHceCapable) {
                     mCardEmulationManager.onUserSwitched(getUserId());
                 }
+
+                mNfcInjector.onUserSwitched();
                 applyScreenState(mScreenStateHelper.checkScreenState(mCheckDisplayStateForScreenState));
 
                 if ((NFC_SNOOP_LOG_MODE.equals(NfcProperties.snoop_log_mode_values.FULL) ||
