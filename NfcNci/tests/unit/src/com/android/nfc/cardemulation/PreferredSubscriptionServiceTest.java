@@ -33,6 +33,7 @@ import android.content.res.Resources;
 import android.telephony.SubscriptionInfo;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.nfc.DeviceConfigFacade;
 import com.android.nfc.cardemulation.util.TelephonyUtils;
 
 import org.junit.After;
@@ -64,6 +65,8 @@ public class PreferredSubscriptionServiceTest {
     private PackageManager mPackageManager;
     @Mock
     private Resources mResources;
+    @Mock
+    private DeviceConfigFacade mDeviceConfigFacade;
     private MockitoSession mStaticMockSession;
     private PreferredSubscriptionService mPreferredSubscriptionService;
 
@@ -90,7 +93,9 @@ public class PreferredSubscriptionServiceTest {
         when(mEditor.putInt(PREF_PREFERRED_SUB_ID, TelephonyUtils.SUBSCRIPTION_ID_UICC)).thenReturn(
                 editor);
         when(editor.commit()).thenReturn(true);
-        mPreferredSubscriptionService = new PreferredSubscriptionService(mContext, mCallback);
+        when(mDeviceConfigFacade.shouldDefaultPreferredSubscriptionToUicc()).thenReturn(true);
+        mPreferredSubscriptionService =
+                new PreferredSubscriptionService(mContext, mDeviceConfigFacade, mCallback);
     }
 
     @After
