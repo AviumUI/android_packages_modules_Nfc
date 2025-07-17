@@ -16,6 +16,7 @@
   -->
 <permissions>
     <privapp-permissions package="com.android.nfc">
-        <permission name="android.permission.WRITE_SECURE_SETTINGS"/>
+        <permission name="android.permission.OBSERVE_ROLE_HOLDERS" />
+        <permission name="android.permission.WRITE_SECURE_SETTINGS" />
     </privapp-permissions>
 </permissions>
