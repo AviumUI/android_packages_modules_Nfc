@@ -1903,14 +1903,12 @@ public final class NfcAdapter {
                 throw new UnsupportedOperationException();
             }
         }
-        /*
-         * Allow priv apps to pass null in activity.
-         */
+        // Allow priv apps to pass null in activity.
         if (activity == null
                 || (pollTechnology & FLAG_SET_DEFAULT_TECH) == FLAG_SET_DEFAULT_TECH
                 || (listenTechnology & FLAG_SET_DEFAULT_TECH) == FLAG_SET_DEFAULT_TECH) {
             Binder token = new Binder();
-            callService( () ->
+            callService(() ->
                     sService.updateDiscoveryTechnology(
                             token, pollTechnology, listenTechnology, mContext.getPackageName()));
         } else {
@@ -1927,7 +1925,16 @@ public final class NfcAdapter {
 
     @FlaggedApi(Flags.FLAG_ENABLE_NFC_SET_DISCOVERY_TECH)
     public void resetDiscoveryTechnology(@NonNull Activity activity) {
-        mNfcActivityManager.resetDiscoveryTech(activity);
+        // Allow priv apps to pass null in activity.
+        if (activity == null) {
+            Binder token = new Binder();
+            callService(() ->
+                    sService.updateDiscoveryTechnology(
+                            token, NfcAdapter.FLAG_USE_ALL_TECH, NfcAdapter.FLAG_USE_ALL_TECH,
+                            mContext.getPackageName()));
+        } else {
+            mNfcActivityManager.resetDiscoveryTech(activity);
+        }
     }
 
     /**
