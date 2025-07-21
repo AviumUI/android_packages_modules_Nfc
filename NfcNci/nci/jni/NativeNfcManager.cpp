@@ -89,6 +89,7 @@ extern void updateNfcID0Param(uint8_t* nfcID0);
 **
 *****************************************************************************/
 bool gActivated = false;
+bool sIsRecovering = false;
 SyncEvent gDeactivatedEvent;
 SyncEvent sNfaSetPowerSubState;
 int recovery_option = 0;
@@ -161,7 +162,6 @@ static bool sReaderModeEnabled = false;  // whether we're only reading tags, not
 static bool sAbortConnlessWait = false;
 static jint sLfT3tMax = 0;
 static bool sRoutingInitialized = false;
-static bool sIsRecovering = false;
 static bool sIsAlwaysPolling = false;
 static std::vector<uint8_t> sRawVendorCmdResponse;
 static bool sEnableVendorNciNotifications = false;
@@ -3016,12 +3016,16 @@ void startRfDiscovery(bool isStart) {
   nativeNfcTag_acquireRfInterfaceMutexLock();
   SyncEventGuard guard(sNfaEnableDisablePollingEvent);
   status = isStart ? NFA_StartRfDiscovery() : NFA_StopRfDiscovery();
-  if (status == NFA_STATUS_OK) {
-    sNfaEnableDisablePollingEvent.wait();  // wait for NFA_RF_DISCOVERY_xxxx_EVT
-    sRfEnabled = isStart;
-  } else {
-    LOG(ERROR) << StringPrintf(
-        "%s: Failed to start/stop RF discovery; error=0x%X", __func__, status);
+  if (!sIsRecovering) {
+    if (status == NFA_STATUS_OK) {
+      sNfaEnableDisablePollingEvent
+          .wait();  // wait for NFA_RF_DISCOVERY_xxxx_EVT
+      sRfEnabled = isStart;
+    } else {
+      LOG(ERROR) << StringPrintf(
+          "%s: Failed to start/stop RF discovery; error=0x%X", __func__,
+          status);
+    }
   }
   nativeNfcTag_releaseRfInterfaceMutexLock();
 }

@@ -35,6 +35,7 @@
 using android::base::StringPrintf;
 
 extern bool gActivated;
+extern bool sIsRecovering;
 extern SyncEvent gDeactivatedEvent;
 
 const JNINativeMethod RoutingManager::sMethods[] = {
@@ -426,8 +427,10 @@ tNFA_STATUS RoutingManager::commitRouting() {
     {
       SyncEventGuard guard(mEeUpdateEvent);
       nfaStat = NFA_EeUpdateNow();
-      if (nfaStat == NFA_STATUS_OK) {
-        mEeUpdateEvent.wait();  // wait for NFA_EE_UPDATED_EVT
+      if (!sIsRecovering) {
+        if (nfaStat == NFA_STATUS_OK) {
+          mEeUpdateEvent.wait();  // wait for NFA_EE_UPDATED_EVT
+        }
       }
     }
   }
@@ -935,6 +938,7 @@ void RoutingManager::updateDefaultProtocolRoute() {
           mDefaultEe, protoMask, 0, 0, mSecureNfcEnabled ? 0 : protoMask,
           mSecureNfcEnabled ? 0 : protoMask, mSecureNfcEnabled ? 0 : protoMask);
     }
+    if (sIsRecovering) return;
     if (nfaStat == NFA_STATUS_OK)
       mRoutingEvent.wait();
     else
@@ -964,6 +968,7 @@ void RoutingManager::updateDefaultRoute() {
   {
     SyncEventGuard guard(mRoutingEvent);
     tNFA_STATUS stat = NFA_EeRemoveSystemCodeRouting(mDefaultSysCode);
+    if (sIsRecovering) return;
     if (stat == NFA_STATUS_OK) {
       mRoutingEvent.wait();
     } else {
@@ -976,6 +981,7 @@ void RoutingManager::updateDefaultRoute() {
   tNFA_STATUS nfaStat = NFA_EeAddSystemCodeRouting(
       mDefaultSysCode, mDefaultSysCodeRoute,
       mSecureNfcEnabled ? 0x01 : mDefaultSysCodePowerstate);
+  if (sIsRecovering) return;
   if (nfaStat == NFA_STATUS_NOT_SUPPORTED) {
     mIsScbrSupported = false;
     LOG(ERROR) << fn << ": SCBR not supported";
