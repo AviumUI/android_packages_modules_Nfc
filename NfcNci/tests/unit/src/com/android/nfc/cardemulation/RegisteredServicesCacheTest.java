@@ -357,7 +357,7 @@ public class RegisteredServicesCacheTest {
         // Verify that the installed services are populated properly
         verify(mContext)
                 .createPackageContextAsUser(eq(ANDROID_STRING), eq(0), eq(USER_HANDLE));
-        verify(mContext).getPackageManager();
+        verify(mContext, times(2)).getPackageManager();
         verify(mPackageManager, times(2))
                 .queryIntentServicesAsUser(mIntentArgumentCaptor.capture(),
                         mFlagArgumentCaptor.capture(), eq(USER_HANDLE));
