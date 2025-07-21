@@ -853,6 +853,22 @@ public class NfcAdapterTest {
 
     @Test
     @RequiresDevice
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public void testOemExtensionEmulateNfcTechnologyATag()
+            throws InterruptedException, RemoteException {
+        NfcAdapter nfcAdapter = getDefaultAdapter();
+        assertNotNull(nfcAdapter);
+        NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
+        assertNotNull(nfcOemExtension);
+
+        byte[] uid = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+        nfcOemExtension.emulateNfcTechnologyATag(true, 0x6, 0xC, 0x20, uid, 0x40, null);
+
+        nfcOemExtension.emulateNfcTechnologyATag(false, 0x4, 0x0, 0x20, uid, 0x40, null);
+    }
+
+    @Test
+    @RequiresDevice
     @Ignore("b/404565741")
     @RequiresFlagsEnabled(Flags.FLAG_NFC_OEM_EXTENSION)
     public void testOemExtensionMaybeTriggerFirmwareUpdateWhenEnabled()
