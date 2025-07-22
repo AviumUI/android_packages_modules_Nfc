@@ -47,6 +47,7 @@ java_aconfig_library {
     min_sdk_version: "36",
     mode: "exported",
     apex_available: [
+        "//apex_available:platform",
         "com.android.nfcservices",
     ],
     visibility: [

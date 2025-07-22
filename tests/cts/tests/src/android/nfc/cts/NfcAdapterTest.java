@@ -349,6 +349,19 @@ public class NfcAdapterTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_SET_DISCOVERY_TECH)
+    public void testResetDiscoveryTechnologyWithoutActivity() {
+        NfcAdapter adapter = getDefaultAdapter();
+        // CTS has privileged permission to set discovery technology with null activity.
+        // This test is to ensure that the API does not crash or throw any exceptions.
+        adapter.setDiscoveryTechnology(null,
+                NfcAdapter.FLAG_READER_KEEP,
+                NfcAdapter.FLAG_LISTEN_NFC_PASSIVE_B
+                        | NfcAdapter.FLAG_SET_DEFAULT_TECH);
+        adapter.resetDiscoveryTechnology(null);
+    }
+
+    @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_MAINLINE)
     public void testSetReaderMode() {
         assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
@@ -849,6 +862,22 @@ public class NfcAdapterTest {
         } finally {
             nfcOemExtension.unregisterCallback(cb);
         }
+    }
+
+    @Test
+    @RequiresDevice
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public void testOemExtensionEmulateNfcTechnologyATag()
+            throws InterruptedException, RemoteException {
+        NfcAdapter nfcAdapter = getDefaultAdapter();
+        assertNotNull(nfcAdapter);
+        NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
+        assertNotNull(nfcOemExtension);
+
+        byte[] uid = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+        nfcOemExtension.emulateNfcTechnologyATag(true, 0x6, 0xC, 0x20, uid, 0x40, null);
+
+        nfcOemExtension.emulateNfcTechnologyATag(false, 0x4, 0x0, 0x20, uid, 0x40, null);
     }
 
     @Test

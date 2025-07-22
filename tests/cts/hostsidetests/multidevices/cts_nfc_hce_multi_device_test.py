@@ -1434,6 +1434,9 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         asserts.assert_true(tag_detected, _FAILED_TAG_MSG)
         asserts.assert_true(transacted, _FAILED_TRANSACTION_MSG)
 
+        # Reset listen tech back.
+        self.emulator.nfc_emulator.resetListenTech()
+
 
     #@CddTest(requirements = {"7.4.4/C-2-2", "7.4.4/C-1-2"})
     def test_single_non_payment_service_with_listen_tech_poll_tech_mismatch(self):
@@ -1469,6 +1472,9 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         tag_detected, transacted = poll_and_transact(self.pn532, command_apdus[:1], response_apdus[:1])
         asserts.assert_true(tag_detected, _FAILED_TAG_MSG)
         asserts.assert_true(transacted, _FAILED_TRANSACTION_MSG)
+
+        # Reset listen tech back.
+        self.emulator.nfc_emulator.resetListenTech()
 
 if __name__ == '__main__':
     # Take test args

@@ -480,6 +480,10 @@ public class RegisteredServicesCache {
         return services;
     }
 
+    private boolean isWear() {
+        return mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH);
+    }
+
     ArrayList<ApduServiceInfo> getInstalledServices(int userId) {
         PackageManager pm;
         try {
@@ -491,18 +495,21 @@ public class RegisteredServicesCache {
         }
 
         ArrayList<ApduServiceInfo> validServices = new ArrayList<ApduServiceInfo>();
-
+        ResolveInfoFlags resolveInfoFlags = null;
+        // Change the flags for wear devices to avoid a performance hit because of
+        // this query.
+        if (!isWear()) {
+            resolveInfoFlags = ResolveInfoFlags.of(PackageManager.GET_META_DATA
+                    | PackageManager.MATCH_DIRECT_BOOT_AWARE
+                    | PackageManager.MATCH_DIRECT_BOOT_UNAWARE);
+        } else {
+            resolveInfoFlags = ResolveInfoFlags.of(PackageManager.GET_META_DATA);
+        }
         List<ResolveInfo> resolvedServices = new ArrayList<>(pm.queryIntentServicesAsUser(
-                mHostApduServiceIntent,
-                ResolveInfoFlags.of(PackageManager.GET_META_DATA
-                                        | PackageManager.MATCH_DIRECT_BOOT_AWARE
-                                        | PackageManager.MATCH_DIRECT_BOOT_UNAWARE),
+                mHostApduServiceIntent, resolveInfoFlags,
                 UserHandle.of(userId)));
         List<ResolveInfo> resolvedOffHostServices = pm.queryIntentServicesAsUser(
-                mOffHostApduServiceIntent,
-                ResolveInfoFlags.of(PackageManager.GET_META_DATA
-                                        | PackageManager.MATCH_DIRECT_BOOT_AWARE
-                                        | PackageManager.MATCH_DIRECT_BOOT_UNAWARE),
+                mOffHostApduServiceIntent, resolveInfoFlags,
                 UserHandle.of(userId));
         resolvedServices.addAll(resolvedOffHostServices);
 
