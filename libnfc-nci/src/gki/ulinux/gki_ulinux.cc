@@ -134,7 +134,10 @@ void GKI_init(void) {
   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 #endif
   p_os = &gki_cb.os;
-  pthread_mutex_init(&p_os->GKI_mutex, &attr);
+  /* initialize only once */
+  if (!gki_cb.os.gki_mutex_initialized.exchange(true)) {
+    pthread_mutex_init(&p_os->GKI_mutex, &attr);
+  }
   pthread_mutexattr_destroy(&attr);
   /* pthread_mutex_init(&GKI_sched_mutex, NULL); */
   /* pthread_mutex_init(&thread_delay_mutex, NULL); */ /* used in GKI_delay */
@@ -366,7 +369,10 @@ void GKI_shutdown(void) {
   }
 #endif
 
-  pthread_mutex_destroy(&gki_cb.os.GKI_mutex);
+  /* only destroy when already initialized */
+  if (gki_cb.os.gki_mutex_initialized.exchange(false)) {
+    pthread_mutex_destroy(&gki_cb.os.GKI_mutex);
+  }
   pthread_mutex_destroy(&gki_cb.os.gki_end_mutex);
   pthread_cond_destroy(&gki_cb.os.gki_end_cond);
 }
@@ -880,7 +886,9 @@ int8_t* GKI_map_taskname(uint8_t task_id) {
 **
 *******************************************************************************/
 void GKI_enable(void) {
-  pthread_mutex_unlock(&gki_cb.os.GKI_mutex);
+  if (gki_cb.os.gki_mutex_initialized.load()) {
+    pthread_mutex_unlock(&gki_cb.os.GKI_mutex);
+  }
   /* 	pthread_mutex_xx is nesting save, no need for this: already_disabled =
    * 0; */
   return;
@@ -903,7 +911,9 @@ void GKI_disable(void) {
   /*	pthread_mutex_xx is nesting save, no need for this: if
      (!already_disabled) {
       already_disabled = 1; */
-  pthread_mutex_lock(&gki_cb.os.GKI_mutex);
+  if (gki_cb.os.gki_mutex_initialized.load()) {
+    pthread_mutex_lock(&gki_cb.os.GKI_mutex);
+  }
   /*  } */
   // LOG(VERBOSE) <<
   // StringPrintf("Leaving GKI_disable");
