@@ -880,11 +880,31 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     public void onObserveModeDisabledInFirmware(PollingFrame exitFrame) {
         mCardEmulationManager.onObserveModeDisabledInFirmware(exitFrame);
         onObserveModeStateChanged(false);
+        mNfcEventLog.logEvent(
+                NfcEventProto.EventType.newBuilder()
+                        .setObserveModeChange(
+                                NfcEventProto.NfcObserveModeChange.newBuilder()
+                                        .setEnable(false)
+                                        .setLatencyMs(0)
+                                        .setResult(true)
+                                        .setFwTriggered(true)
+                                        .build())
+                        .build());
     }
 
     @Override
     public void onObserveModeEnabledInFirmware() {
         onObserveModeStateChanged(true);
+        mNfcEventLog.logEvent(
+                NfcEventProto.EventType.newBuilder()
+                        .setObserveModeChange(
+                                NfcEventProto.NfcObserveModeChange.newBuilder()
+                                        .setEnable(true)
+                                        .setLatencyMs(0)
+                                        .setResult(true)
+                                        .setFwTriggered(true)
+                                        .build())
+                        .build());
     }
 
     @Override

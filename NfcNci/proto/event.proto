@@ -90,6 +90,7 @@ message NfcObserveModeChange {
   required bool enable = 2;
   required bool result = 3;
   required int32 latency_ms = 4;
+  optional bool fw_triggered = 5;
 }
 
 message NfcWalletRoleHolderChange {
