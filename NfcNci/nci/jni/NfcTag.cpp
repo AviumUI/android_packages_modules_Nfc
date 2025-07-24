@@ -870,6 +870,9 @@ void NfcTag::fillNativeNfcTagMembers4(JNIEnv* e, jclass tag_cls, jobject tag,
         reinterpret_cast<jobjectArray>(e->NewGlobalRef(techActBytes.get()));
   } else {
     for (int j = 0; j < mTechListTail; j++) {
+      if (gtechActBytes != NULL) {
+        e->DeleteGlobalRef(gtechActBytes);
+      }
       gtechActBytes =
           reinterpret_cast<jobjectArray>(e->NewGlobalRef(techActBytes.get()));
       gtechActBytesObject = e->GetObjectArrayElement(gtechActBytes, j);
