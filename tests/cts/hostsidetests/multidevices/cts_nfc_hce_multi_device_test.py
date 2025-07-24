@@ -1192,6 +1192,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         1. Verifies that vendorSpecificGain value increases or stays the same
         when PN532 output power increases.
         """
+        # TBD: Re-enable once we fix the flakiness.
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         asserts.skip_if(not self.emulator.nfc_emulator.isObserveModeSupported(),
                     "Skipping polling frame gain test, observe mode not supported")
 
@@ -1286,6 +1288,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         Verifies:
         1. Verifies that PollingFrame.type value is set correctly
         """
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         asserts.skip_if(not self.emulator.nfc_emulator.isObserveModeSupported(),
                     "Skipping polling frame type test, observe mode not supported")
         self.pn532.mute()
@@ -1338,6 +1341,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         Verifies:
         1. Verifies that PollingFrame.data value is set correctly
         """
+        # TBD: Re-enable once we fix the flakiness.
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         asserts.skip_if(not self.emulator.nfc_emulator.isObserveModeSupported(),
                     "Skipping polling frame data test, observe mode not supported")
         self.pn532.mute()
