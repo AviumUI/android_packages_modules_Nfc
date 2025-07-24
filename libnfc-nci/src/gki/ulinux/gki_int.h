@@ -31,6 +31,7 @@
 
 typedef struct {
   pthread_mutex_t GKI_mutex;
+  std::atomic<bool> gki_mutex_initialized;
   pthread_t thread_id[GKI_MAX_TASKS];
   pthread_mutex_t thread_evt_mutex[GKI_MAX_TASKS];
   pthread_cond_t thread_evt_cond[GKI_MAX_TASKS];
