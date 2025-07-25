@@ -3764,8 +3764,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
 
         @Override
-        public int emulateNfcATag(boolean setConfig, int bitFrameSdd, int platformConfig,
-                int selInfo, byte[] nfcid1, int rats, byte[] histBytes) {
+        public int emulateNfcATag(boolean setConfig, byte bitFrameSdd, byte platformConfig,
+                byte selInfo, byte[] nfcid1, byte rats, byte[] histBytes) {
             Log.i(TAG, "emulateNfcACard: setConfig:" + setConfig);
             NfcPermissions.enforceAdminPermissions(mContext);
             if (!isNfcEnabled()) {
@@ -3784,22 +3784,22 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     mDeviceHost.setNciConfig(0x85, param, param.length, false);
 
                     // LA_BIT_FRAME_SDD
-                    param[0] = (byte) bitFrameSdd;
+                    param[0] = bitFrameSdd;
                     mDeviceHost.setNciConfig(0x30, param, param.length, true);
 
                     // LA_PLATFORM_CONFIG
-                    param[0] = (byte) platformConfig;
+                    param[0] = platformConfig;
                     mDeviceHost.setNciConfig(0x31, param, param.length, true);
 
                     // LA_SEL_INFO
-                    param[0] = (byte) selInfo;
+                    param[0] = selInfo;
                     mDeviceHost.setNciConfig(0x32, param, param.length, true);
 
                     // LA_NFCID1
                     mDeviceHost.setNciConfig(0x33, nfcid1, nfcid1.length, true);
 
                     // LI_A_RATS_TB1
-                    param[0] = (byte) rats;
+                    param[0] = rats;
                     mDeviceHost.setNciConfig(0x58, param, param.length, true);
 
                     // LI_A_HIST_BY

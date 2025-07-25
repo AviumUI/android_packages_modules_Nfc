@@ -875,9 +875,11 @@ public class NfcAdapterTest {
         assertNotNull(nfcOemExtension);
 
         byte[] uid = new byte[] { 0x01, 0x02, 0x03, 0x04 };
-        nfcOemExtension.emulateNfcTechnologyATag(true, 0x6, 0xC, 0x20, uid, 0x40, null);
+        nfcOemExtension.emulateNfcTechnologyATag(true, (byte) 0x6, (byte) 0xC,
+                (byte) 0x20, uid, (byte) 0x40, null);
 
-        nfcOemExtension.emulateNfcTechnologyATag(false, 0x4, 0x0, 0x20, uid, 0x40, null);
+        nfcOemExtension.emulateNfcTechnologyATag(false, (byte) 0x4, (byte) 0x0,
+                (byte) 0x20, uid, (byte) 0x40, null);
     }
 
     @Test
