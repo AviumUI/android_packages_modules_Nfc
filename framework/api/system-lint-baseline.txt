@@ -27,6 +27,16 @@ MissingNullability: android.nfc.cardemulation.OffHostApduService#onBind(android.
     Missing nullability on parameter `intent` in method `onBind`
 
 
+NoByteOrShort: android.nfc.NfcOemExtension#emulateNfcTechnologyATag(boolean, byte, byte, byte, byte[], byte, byte[]) parameter #1:
+    Should avoid odd sized primitives; use `int` instead of `byte` in parameter bitFrameSdd in android.nfc.NfcOemExtension.emulateNfcTechnologyATag(boolean enable, byte bitFrameSdd, byte platformConfig, byte selInfo, byte[] nfcid1, byte rats, byte[] histBytes)
+NoByteOrShort: android.nfc.NfcOemExtension#emulateNfcTechnologyATag(boolean, byte, byte, byte, byte[], byte, byte[]) parameter #2:
+    Should avoid odd sized primitives; use `int` instead of `byte` in parameter platformConfig in android.nfc.NfcOemExtension.emulateNfcTechnologyATag(boolean enable, byte bitFrameSdd, byte platformConfig, byte selInfo, byte[] nfcid1, byte rats, byte[] histBytes)
+NoByteOrShort: android.nfc.NfcOemExtension#emulateNfcTechnologyATag(boolean, byte, byte, byte, byte[], byte, byte[]) parameter #3:
+    Should avoid odd sized primitives; use `int` instead of `byte` in parameter selInfo in android.nfc.NfcOemExtension.emulateNfcTechnologyATag(boolean enable, byte bitFrameSdd, byte platformConfig, byte selInfo, byte[] nfcid1, byte rats, byte[] histBytes)
+NoByteOrShort: android.nfc.NfcOemExtension#emulateNfcTechnologyATag(boolean, byte, byte, byte, byte[], byte, byte[]) parameter #5:
+    Should avoid odd sized primitives; use `int` instead of `byte` in parameter rats in android.nfc.NfcOemExtension.emulateNfcTechnologyATag(boolean enable, byte bitFrameSdd, byte platformConfig, byte selInfo, byte[] nfcid1, byte rats, byte[] histBytes)
+
+
 RequiresPermission: android.nfc.NfcAdapter#disableForegroundDispatch(android.app.Activity):
     Method 'disableForegroundDispatch' documentation mentions permissions without declaring @RequiresPermission
 RequiresPermission: android.nfc.NfcAdapter#enableForegroundDispatch(android.app.Activity, android.app.PendingIntent, android.content.IntentFilter[], String[][]):

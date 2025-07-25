@@ -30,6 +30,7 @@ import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
+import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.content.ComponentName;
 import android.content.Context;
@@ -1063,8 +1064,9 @@ public final class NfcOemExtension {
     @EmulateNfcATagStatusCode
     @RequiresPermission(Manifest.permission.WRITE_SECURE_SETTINGS)
     @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
-    public int emulateNfcTechnologyATag(boolean enable, int bitFrameSdd, int platformConfig,
-            int selInfo, @NonNull byte[] nfcid1, int rats, @Nullable byte[] histBytes) {
+    @SuppressLint("NoByteOrShort")
+    public int emulateNfcTechnologyATag(boolean enable, byte bitFrameSdd, byte platformConfig,
+            byte selInfo, @NonNull byte[] nfcid1, byte rats, @Nullable byte[] histBytes) {
         int rslt = NfcAdapter.callServiceReturn(
                 () -> NfcAdapter.sService.emulateNfcATag(enable, bitFrameSdd, platformConfig,
                         selInfo, nfcid1, rats, histBytes),
