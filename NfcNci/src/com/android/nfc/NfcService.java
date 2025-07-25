@@ -2819,72 +2819,89 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             privilegedCaller |= packageName.equals(SYSTEM_UI);
             Log.d(TAG, "updateDiscoveryTechnology: uid=" + callingUid +
                     ", packageName: " + packageName);
+
+            boolean isSetDefault = (pollTech & NfcAdapter.FLAG_SET_DEFAULT_TECH) != 0
+                    || (listenTech & NfcAdapter.FLAG_SET_DEFAULT_TECH) != 0;
+
+            if (privilegedCaller && isSetDefault) {
+                handleSetDefaultTechnology(pollTech, listenTech);
+                return;
+            }
+
             if (!privilegedCaller) {
-                pollTech &= ~NfcAdapter.FLAG_SET_DEFAULT_TECH;
-                listenTech &= ~NfcAdapter.FLAG_SET_DEFAULT_TECH;
+                if (isSetDefault) {
+                    Log.e(TAG, "updateDiscoveryTechnology: "
+                            + "Requires admin permissions to set default technology.");
+                    return;
+                }
                 if (!mForegroundUtils.registerUidToBackgroundCallback(
                             NfcService.this, callingUid)) {
                     Log.e(TAG,
                           "updateDiscoveryTechnology: Unprivileged caller shall be in foreground");
                     return;
                 }
-            } else if (((pollTech & NfcAdapter.FLAG_SET_DEFAULT_TECH) != 0
-                        || (listenTech & NfcAdapter.FLAG_SET_DEFAULT_TECH) != 0)) {
+            }
+            handleTemporaryTechnologyUpdate(binder, pollTech, listenTech, packageName, callingUid);
+        }
 
-                if (!isNfcEnabled()) {
-                    Log.d(TAG, "updateDiscoveryTechnology: NFC is not enabled.");
-                    return;
-                }
-                if ((pollTech & NfcAdapter.FLAG_SET_DEFAULT_TECH) != 0) {
-                    if ((pollTech & NfcAdapter.FLAG_READER_KEEP) == 0 &&
-                        (pollTech & NfcAdapter.FLAG_USE_ALL_TECH)
-                            != NfcAdapter.FLAG_USE_ALL_TECH) {
-                        pollTech = getReaderModeTechMask(pollTech);
-                        saveNfcPollTech(pollTech & ~NfcAdapter.FLAG_SET_DEFAULT_TECH);
-                        Log.i(TAG, "updateDiscoveryTechnology: Default pollTech is set to 0x"
-                                + Integer.toHexString(pollTech));
-                    } else if ((pollTech
-                            & (NfcAdapter.FLAG_READER_KEEP | NfcAdapter.FLAG_USE_ALL_TECH))
-                            == (NfcAdapter.FLAG_READER_KEEP | NfcAdapter.FLAG_USE_ALL_TECH)) {
-                        saveNfcPollTech(DEFAULT_POLL_TECH);
-                    }
-                }
-                if ((listenTech & NfcAdapter.FLAG_SET_DEFAULT_TECH) != 0) {
-                    if ((listenTech & NfcAdapter.FLAG_LISTEN_KEEP) == 0 &&
-                        (listenTech & NfcAdapter.FLAG_USE_ALL_TECH)
-                            != NfcAdapter.FLAG_USE_ALL_TECH) {
-                        saveNfcListenTech(listenTech & ~NfcAdapter.FLAG_SET_DEFAULT_TECH);
-                        Log.i(TAG, "updateDiscoveryTechnology: Default listenTech is set to 0x"
-                                + Integer.toHexString(listenTech));
-                    } else if ((listenTech
-                            & (NfcAdapter.FLAG_LISTEN_KEEP | NfcAdapter.FLAG_USE_ALL_TECH))
-                            == (NfcAdapter.FLAG_LISTEN_KEEP | NfcAdapter.FLAG_USE_ALL_TECH)) {
-                       saveNfcListenTech(DEFAULT_LISTEN_TECH);
-                   }
-                }
-                if ((pollTech & NfcAdapter.FLAG_READER_KEEP) != 0) {
-                    pollTech = getNfcPollTech();
-                }
-                if ((listenTech & NfcAdapter.FLAG_LISTEN_KEEP) != 0) {
-                    listenTech = getNfcListenTech();
-                }
-
-                if (mCardEmulationManager != null) {
-                    mCardEmulationManager.resetToIdleState();
-                }
-                setDiscoveryTech(pollTech, listenTech);
-                applyRouting(true);
+        private void handleSetDefaultTechnology(int pollTech, int listenTech) {
+            if (!isNfcEnabled()) {
+                Log.d(TAG, "handleSetDefaultTechnology: NFC is not enabled.");
                 return;
             }
+            if ((pollTech & NfcAdapter.FLAG_SET_DEFAULT_TECH) != 0) {
+                if ((pollTech & NfcAdapter.FLAG_READER_KEEP) == 0
+                        && (pollTech & NfcAdapter.FLAG_USE_ALL_TECH)
+                        != NfcAdapter.FLAG_USE_ALL_TECH) {
+                    pollTech = getReaderModeTechMask(pollTech);
+                    saveNfcPollTech(pollTech & ~NfcAdapter.FLAG_SET_DEFAULT_TECH);
+                    Log.i(TAG, "handleSetDefaultTechnology: Default pollTech is set to 0x"
+                            + Integer.toHexString(pollTech));
+                } else if ((pollTech
+                        & (NfcAdapter.FLAG_READER_KEEP | NfcAdapter.FLAG_USE_ALL_TECH))
+                        == (NfcAdapter.FLAG_READER_KEEP | NfcAdapter.FLAG_USE_ALL_TECH)) {
+                    saveNfcPollTech(DEFAULT_POLL_TECH);
+                }
+            }
+            if ((listenTech & NfcAdapter.FLAG_SET_DEFAULT_TECH) != 0) {
+                if ((listenTech & NfcAdapter.FLAG_LISTEN_KEEP) == 0
+                        && (listenTech & NfcAdapter.FLAG_USE_ALL_TECH)
+                        != NfcAdapter.FLAG_USE_ALL_TECH) {
+                    saveNfcListenTech(listenTech & ~NfcAdapter.FLAG_SET_DEFAULT_TECH);
+                    Log.i(TAG, "handleSetDefaultTechnology: Default listenTech is set to 0x"
+                            + Integer.toHexString(listenTech));
+                } else if ((listenTech
+                        & (NfcAdapter.FLAG_LISTEN_KEEP | NfcAdapter.FLAG_USE_ALL_TECH))
+                        == (NfcAdapter.FLAG_LISTEN_KEEP | NfcAdapter.FLAG_USE_ALL_TECH)) {
+                    saveNfcListenTech(DEFAULT_LISTEN_TECH);
+                }
+            }
+            if ((pollTech & NfcAdapter.FLAG_READER_KEEP) != 0) {
+                pollTech = getNfcPollTech();
+            }
+            if ((listenTech & NfcAdapter.FLAG_LISTEN_KEEP) != 0) {
+                listenTech = getNfcListenTech();
+            }
+
+            if (mCardEmulationManager != null) {
+                mCardEmulationManager.resetToIdleState();
+            }
+            setDiscoveryTech(pollTech, listenTech);
+            applyRouting(true);
+        }
+
+        private void handleTemporaryTechnologyUpdate(IBinder binder, int pollTech, int listenTech,
+                String packageName, int callingUid) {
             checkAndHandleRemovalDetectionMode(false);
             synchronized (NfcService.this) {
                 if (!isNfcEnabled()) {
-                    Log.d(TAG, "updateDiscoveryTechnology: NFC is not enabled.");
+                    Log.d(TAG, "handleTemporaryTechnologyUpdate: NFC is not enabled.");
                     return;
                 }
 
-                Log.d(TAG, "updateDiscoveryTechnology: pollTech=0x" + Integer.toHexString(pollTech)
-                        + ", listenTech=0x" + Integer.toHexString(listenTech));
+                Log.d(TAG, "handleTemporaryTechnologyUpdate: pollTech=0x"
+                        + Integer.toHexString(pollTech) + ", listenTech=0x"
+                        + Integer.toHexString(listenTech));
                 if (pollTech == NfcAdapter.FLAG_USE_ALL_TECH &&
                         listenTech == NfcAdapter.FLAG_USE_ALL_TECH &&
                         mDiscoveryTechParams != null) {
@@ -2893,12 +2910,11 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         mDeviceHost.resetDiscoveryTech();
                         mDiscoveryTechParams = null;
                     } catch (NoSuchElementException e) {
-                        Log.e(TAG, "updateDiscoveryTechnology: Change Tech Binder was never "
-                                + "registered");
+                        Log.e(TAG, "handleTemporaryTechnologyUpdate: "
+                                + "Change Tech Binder was never registered");
                     }
-                } else if (!(pollTech == NfcAdapter.FLAG_USE_ALL_TECH && // Do not call for
-                                                                         // resetDiscoveryTech
-                        listenTech == NfcAdapter.FLAG_USE_ALL_TECH)) {
+                } else if (!(pollTech == NfcAdapter.FLAG_USE_ALL_TECH
+                        && listenTech == NfcAdapter.FLAG_USE_ALL_TECH)) {
                     if ((pollTech & NfcAdapter.FLAG_READER_KEEP) != 0) {
                         pollTech = getNfcPollTech();
                     } else {
@@ -2929,7 +2945,8 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                                             .build());
                         }
                     } catch (RemoteException e) {
-                        Log.e(TAG, "updateDiscoveryTechnology: Remote binder has already died");
+                        Log.e(TAG, "handleTemporaryTechnologyUpdate: "
+                                + "Remote binder has already died");
                         return;
                     }
                 } else {
