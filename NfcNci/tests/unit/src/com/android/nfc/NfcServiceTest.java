@@ -2338,4 +2338,19 @@ public final class NfcServiceTest {
         assertFalse("setFirmwareExitFrameTable should return false", result);
         verify(mDeviceHost, never()).setFirmwareExitFrameTable(any(), any());
     }
+
+    @Test
+    public void testApplyRouting_whenNfcDisabled_doesNothing() {
+        // Set NFC state to OFF
+        mNfcService.mState = NfcAdapter.STATE_OFF;
+
+        // applyRouting is package-private, can be called directly from test
+        mNfcService.applyRouting(true);
+
+        // Verify that discovery methods on DeviceHost are not called, as applyRouting should return
+        // early
+        verify(mDeviceHost, never()).enableDiscovery(any(), anyBoolean());
+        verify(mDeviceHost, never()).disableDiscovery();
+        verify(mDeviceHost, never()).commitRouting();
+    }
 }
