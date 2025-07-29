@@ -2788,8 +2788,10 @@ static jobject nfcManager_nativeSendRawVendorCmd(JNIEnv* env, jobject o,
   command.push_back((uint8_t)oid);
   command.push_back((uint8_t)payloaBytes.size());
   if (payloaBytes.size() > 0) {
-    command.insert(command.end(), &payloaBytes[0],
-                   &payloaBytes[payloaBytes.size()]);
+    const jbyte* data = payloaBytes.get();  // get the pointer to the data
+    command.insert(command.end(),
+                   reinterpret_cast<const uint8_t*>(data),
+                   reinterpret_cast<const uint8_t*>(data + payloaBytes.size()));
   }
 
   SyncEventGuard guard(gSendRawVsCmdEvent);
