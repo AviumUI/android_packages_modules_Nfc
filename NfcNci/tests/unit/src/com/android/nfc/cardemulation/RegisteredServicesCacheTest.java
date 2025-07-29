@@ -140,6 +140,8 @@ public class RegisteredServicesCacheTest {
     @Mock
     private NfcInjector mNfcInjector;
     @Mock
+    private NfcService mNfcService;
+    @Mock
     private DeviceConfigFacade mDeviceConfigFacade;
     @Captor
     private ArgumentCaptor<BroadcastReceiver> mReceiverArgumentCaptor;
@@ -184,6 +186,8 @@ public class RegisteredServicesCacheTest {
         when(ActivityManager.getCurrentUser()).thenReturn(USER_ID);
         when(NfcInjector.getInstance()).thenReturn(mNfcInjector);
         when(mNfcInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
+        when(NfcService.getInstance()).thenReturn(mNfcService);
+        when(mNfcService.isNdefNfceefeatureEnabled()).thenReturn(false);
         when(mContext.getSystemService(eq(UserManager.class))).thenReturn(mUserManager);
         when(mContext.getFilesDir()).thenReturn(DIR);
         when(mContext.createContextAsUser(
