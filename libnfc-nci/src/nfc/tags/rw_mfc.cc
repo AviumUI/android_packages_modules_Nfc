@@ -637,8 +637,12 @@ static bool rw_mfc_send_to_lower(NFC_HDR* p_data) {
   /* Indicate first attempt to send command, back up cmd buffer in case needed
    * for retransmission */
   rw_cb.cur_retry = 0;
-  memcpy(p_mfc->p_cur_cmd_buf, p_data,
-         sizeof(NFC_HDR) + p_data->offset + p_data->len);
+  if (!p_mfc->p_cur_cmd_buf) {
+    LOG(ERROR) << StringPrintf("%s: p_mfc->p_cur_cmd_buf null", __func__);
+  } else {
+    memcpy(p_mfc->p_cur_cmd_buf, p_data,
+           sizeof(NFC_HDR) + p_data->offset + p_data->len);
+  }
 
   if (NFC_SendData(NFC_RF_CONN_ID, p_data) != NFC_STATUS_OK) {
     LOG(ERROR) << __func__ << ": NFC_SendData () failed";
