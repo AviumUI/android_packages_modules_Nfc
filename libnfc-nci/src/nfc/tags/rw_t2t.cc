@@ -383,8 +383,12 @@ tNFC_STATUS rw_t2t_send_cmd(uint8_t opcode, uint8_t* p_dat) {
       /* Indicate first attempt to send command, back up cmd buffer in case
        * needed for retransmission */
       rw_cb.cur_retry = 0;
-      memcpy(p_t2t->p_cur_cmd_buf, p_data,
-             sizeof(NFC_HDR) + p_data->offset + p_data->len);
+      if (p_t2t->p_cur_cmd_buf == nullptr) {
+        LOG(ERROR) << StringPrintf("%s: p_t2t->p_cur_cmd_buf null", __func__);
+      } else {
+        memcpy(p_t2t->p_cur_cmd_buf, p_data,
+               sizeof(NFC_HDR) + p_data->offset + p_data->len);
+      }
 
 #if (RW_STATS_INCLUDED == TRUE)
       /* Update stats */
