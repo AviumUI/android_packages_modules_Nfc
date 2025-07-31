@@ -165,7 +165,7 @@ class NfcDispatcher {
                 mContext.getResources().getBoolean(R.bool.tag_intent_app_pref_supported);
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        mContext.registerReceiver(mBluetoothStatusReceiver, filter);
+        mContext.registerReceiver(mBluetoothStatusReceiver, filter, Context.RECEIVER_EXPORTED);
     }
 
     void setOemExtension(INfcOemExtensionCallback nfcOemExtensionCallback) {
