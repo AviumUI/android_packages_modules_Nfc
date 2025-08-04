@@ -28,6 +28,7 @@ cc_library {
         "libstatssocket",
         "server_configurable_flags",
         "libaconfig_storage_read_api_cc",
+        "libpower",
     ],
     defaults: [
         "aconfig_lib_cc_shared_link.defaults",
