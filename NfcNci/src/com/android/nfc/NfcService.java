@@ -6151,7 +6151,9 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     || action.equals(ACTION_LOCKED_BOOT_COMPLETED))
                     && mIsHceCapable) {
                 if (DBG) Log.d(TAG, action + " received");
-                mCardEmulationManager.onBootCompleted();
+                synchronized (NfcService.this) {
+                    mCardEmulationManager.onBootCompleted();
+                }
             } else if (action.equals(Intent.ACTION_USER_SWITCHED)) {
                 int userId = intent.getIntExtra(Intent.EXTRA_USER_HANDLE, 0);
                 mUserId = userId;
