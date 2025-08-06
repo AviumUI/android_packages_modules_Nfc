@@ -1439,7 +1439,6 @@ static void handle_debug_loopback(NFC_HDR* p_buf, uint8_t type,
 *******************************************************************************/
 bool nfa_hciu_check_sim_pipe_ids(uint8_t pipe_id) {
   std::vector<uint8_t> conn_pipe_ids;
-  bool is_conn_pipe = false;
 
   if (NfcConfig::hasKey(NAME_OFF_HOST_SIM_PIPE_IDS)) {
     conn_pipe_ids = NfcConfig::getBytes(NAME_OFF_HOST_SIM_PIPE_IDS);

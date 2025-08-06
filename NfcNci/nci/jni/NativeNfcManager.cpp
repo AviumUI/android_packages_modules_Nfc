@@ -2853,7 +2853,6 @@ static void nfcManager_setNciConfig(JNIEnv* e, jobject o, jint param_id,
                                     jboolean custom) {
   LOG(INFO) << StringPrintf("%s; enter", __func__);
   tNFA_STATUS nfaStat = NFA_STATUS_FAILED;
-  uint8_t nfa_set_config[] = {0x00};
   uint8_t* buf;
 
   ScopedByteArrayRO bytes(e, param);
