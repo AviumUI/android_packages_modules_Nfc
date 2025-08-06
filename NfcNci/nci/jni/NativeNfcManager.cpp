@@ -2783,6 +2783,14 @@ static jobject nfcManager_nativeSendRawVendorCmd(JNIEnv* env, jobject o,
 
   sRawVendorCmdResponse.clear();
 
+  resGid = gid;
+  resOid = oid;
+  if (payloaBytes.size() > 252) {
+    LOG(ERROR) << StringPrintf("%s: payload size too large: %zu", __func__,
+                               payloaBytes.size());
+    return env->NewObject(cls.get(), responseConstructor, mStatus, resGid,
+                          resOid, resPayload);
+  }
   std::vector<uint8_t> command;
   command.push_back((uint8_t)((mt << NCI_MT_SHIFT) | gid));
   command.push_back((uint8_t)oid);
