@@ -170,8 +170,7 @@ impl LogicalConnectionsRegistry {
         };
         assert!(
             self.conns.write().await.insert(conn_id, Mutex::new(conn_params)).is_none(),
-            "A logical connection with id {:?} already exists",
-            conn_id
+            "A logical connection with id {conn_id:?} already exists"
         );
     }
     /// Set static callback
@@ -302,8 +301,7 @@ impl EventRegistry {
     pub async fn register(&mut self, code: Opcode, sender: oneshot::Sender<Notification>) {
         assert!(
             self.handlers.lock().unwrap().insert(code, sender).is_none(),
-            "A handler for {:?} is already registered",
-            code
+            "A handler for {code:?} is already registered"
         );
     }
 
@@ -336,11 +334,11 @@ async fn dispatch(
                         match pending.take() {
                             Some(PendingCommand{cmd, response}) if cmd.get_op() == this_opcode => {
                                 if let Err(e) = response.send(rsp) {
-                                    error!("failure dispatching command status {:?}", e);
+                                    error!("failure dispatching command status {e:?}");
                                 }
                             },
                             Some(PendingCommand{cmd, ..}) => panic!("Waiting for {:?}, got {:?}", cmd.get_op(), this_opcode),
-                            None => panic!("Unexpected status event with opcode {:?}", this_opcode),
+                            None => panic!("Unexpected status event with opcode {this_opcode:?}"),
                         }
                     },
                     NciPacketChild::Notification(ntfy) => {
@@ -356,15 +354,15 @@ async fn dispatch(
                                 match ntfs.unregister(code).await {
                                     Some(sender) => {
                                         if let Err(e) = sender.send(ntfy) {
-                                            error!("notification channel closed {:?}", e);
+                                            error!("notification channel closed {e:?}");
                                         }
                                     },
-                                    None => panic!("Unhandled notification {:?}", code),
+                                    None => panic!("Unhandled notification {code:?}"),
                                 }
                             },
                         }
                     },
-                    _ => error!("Unexpected NCI data received {:?}", cmd),
+                    _ => error!("Unexpected NCI data received {cmd:?}"),
                 }
             },
             qc = cmd_rx.recv(), if pending.is_none() => if let Some(queued) = qc {
@@ -373,7 +371,7 @@ async fn dispatch(
                     ntfs.register(queued.pending.cmd.get_op(), nsender).await;
                 }
                 if let Err(e) = hc.out_cmd_tx.send(queued.pending.cmd.clone().into()) {
-                    error!("command queue closed: {:?}", e);
+                    error!("command queue closed: {e:?}");
                 }
                 timeout.as_mut().reset(Instant::now() + Duration::from_millis(20));
                 pending = Some(queued.pending);

@@ -25,7 +25,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 
 /// The NFC response callback
 pub fn nfc_callback(kind: u16, val: &[u8]) {
-    debug!("Callback#{} -> {:?}", kind, val);
+    debug!("Callback#{kind} -> {val:?}");
 }
 
 #[tokio::main]
@@ -38,16 +38,16 @@ async fn main() -> Result<()> {
     nci.nfc_enable(nfc_callback).await;
     nci.nfc_init().await?;
     let lmrts = nci.nfc_get_lmrt_size().await;
-    debug!("LMRT size:{}", lmrts);
+    debug!("LMRT size:{lmrts}");
     let status = nci.nfc_set_config(&set_tlvs).await?;
-    debug!("SET_CONFIG status:{}", status);
+    debug!("SET_CONFIG status:{status}");
     let status = nci.nfc_get_config(&get_tlvs).await?;
-    debug!("GET_CONFIG status:{}", status);
+    debug!("GET_CONFIG status:{status}");
     nci.nfc_disable().await;
     nci.nfc_enable(nfc_callback).await;
     nci.nfc_init().await?;
     let status = nci.nfc_get_config(&get_tlvs).await?;
-    debug!("GET_CONFIG status:{}", status);
+    debug!("GET_CONFIG status:{status}");
     nci.nfc_disable().await;
     Ok(())
 }

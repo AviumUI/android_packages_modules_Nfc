@@ -83,8 +83,7 @@ impl HalEventRegistry {
     pub async fn register(&mut self, event: HalEvent, sender: oneshot::Sender<HalEventStatus>) {
         assert!(
             self.handlers.lock().await.insert(event, sender).is_none(),
-            "A handler for {:?} is already registered",
-            event
+            "A handler for {event:?} is already registered"
         );
     }
 

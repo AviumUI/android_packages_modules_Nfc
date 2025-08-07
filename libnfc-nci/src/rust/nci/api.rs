@@ -114,7 +114,7 @@ impl NciApi {
                 drop(conn);
             }
             let status = rx.await.unwrap();
-            debug!("Shutdown complete {:?}.", status);
+            debug!("Shutdown complete {status:?}.");
 
             if let Some(cb) = self.callback.take() {
                 cb(1, &[]);
@@ -460,7 +460,7 @@ impl NciApi {
                     return Ok(nci::Status::Ok as u8);
                 }
                 Err(e) => {
-                    error!("Data packet is invalid:{:?}", e);
+                    error!("Data packet is invalid:{e:?}");
                     return Ok(nci::Status::InvalidParam as u8);
                 }
             }
