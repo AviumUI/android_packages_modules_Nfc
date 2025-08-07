@@ -890,10 +890,16 @@ jboolean nativeNfcTag_doDisconnect(JNIEnv*, jobject) {
     goto TheEnd;
   }
 
-  nfaStat = NFA_Deactivate(FALSE);
-  if (nfaStat != NFA_STATUS_OK)
-    LOG(ERROR) << StringPrintf("%s: deactivate failed; error=0x%X", __func__,
-                               nfaStat);
+  {
+    SyncEventGuard g(gDeactivatedEvent);
+    nfaStat = NFA_Deactivate(FALSE);
+    if (nfaStat != NFA_STATUS_OK) {
+      LOG(ERROR) << StringPrintf("%s: deactivate failed; error=0x%X", __func__,
+                                 nfaStat);
+    } else {
+      gDeactivatedEvent.wait(100);
+    }
+  }
 
 TheEnd:
   sIsDisconnecting = false;

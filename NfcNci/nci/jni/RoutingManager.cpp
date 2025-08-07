@@ -1580,7 +1580,6 @@ void RoutingManager::clearRoutingEntry(int clearFlags) {
   static const char fn[] = "RoutingManager::clearRoutingEntry";
 
   LOG(DEBUG) << StringPrintf("%s:   clearFlags = %x", fn, clearFlags);
-  tNFA_STATUS nfaStat = NFA_STATUS_FAILED;
   bool clear_tech = false, clear_proto = false, clear_sc = false;
 
   if (clearFlags & CLEAR_AID_ENTRIES) {

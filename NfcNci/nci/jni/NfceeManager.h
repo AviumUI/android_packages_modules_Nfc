@@ -22,7 +22,7 @@
 
 using namespace std;
 
-#define MAX_NUM_NFCEE 0x06
+#define MAX_NUM_NFCEE NFA_EE_MAX_EE_SUPPORTED
 
 struct mNfceeData {
   uint16_t mNfceeID[MAX_NUM_NFCEE];

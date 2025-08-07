@@ -143,12 +143,13 @@ jobject NfceeManager::getActiveNfceeList(JNIEnv* e) {
 **
 *******************************************************************************/
 bool NfceeManager::getNFCEeInfo() {
-  static const char fn[] = "getNFCEeInfo";
+  static const char fn[] = "NfceeManager::getNFCEeInfo";
   LOG(INFO) << StringPrintf("%s: enter", fn);
   tNFA_STATUS nfaStat = NFA_STATUS_FAILED;
   mNumEePresent = 0x00;
   memset(&mNfceeData_t, 0, sizeof(mNfceeData_t));
 
+  mActualNumEe = NFA_EE_MAX_EE_SUPPORTED;
   /* Reading latest NFCEE info  in case it is updated */
   if ((nfaStat = NFA_EeGetInfo(&mActualNumEe, mEeInfo)) != NFA_STATUS_OK) {
     LOG(ERROR) << StringPrintf("%s: fail get info; error=0x%X", fn, nfaStat);
