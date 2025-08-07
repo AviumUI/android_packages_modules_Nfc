@@ -38,6 +38,7 @@ import android.util.Xml;
 
 import com.android.compatibility.common.util.CommonTestUtils;
 import com.android.nfc.service.HceService;
+import com.android.nfc.service.OffHostService;
 import com.android.nfc.utils.HceUtils;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -58,10 +59,12 @@ public abstract class BaseEmulatorActivity extends Activity {
     protected static final String ACTION_TEST_PASSED = PACKAGE_NAME + ".ACTION_TEST_PASSED";
     protected static final String ACTION_OFFHOST_AID_SELECTED =
             PACKAGE_NAME + ".ACTION_OFFHOST_AID_SELECTED";
-    protected static final String EXTRA_OFFHOST_AID_SELECTED_AID =
-            PACKAGE_NAME + ".EXTRA_OFFHOST_AID_SELECTED_AID";
-    protected static final String EXTRA_OFFHOST_AID_SELECTED_SE =
-            PACKAGE_NAME + ".EXTRA_OFFHOST_AID_SELECTED_SE";
+    protected static final String ACTION_OFFHOST_TRANSACTION_DETECTED =
+            PACKAGE_NAME + ".ACTION_OFFHOST_TRANSACTION_DETECTED";
+    protected static final String EXTRA_OFFHOST_AID =
+            PACKAGE_NAME + ".EXTRA_OFFHOST_AID";
+    protected static final String EXTRA_OFFHOST_SE =
+            PACKAGE_NAME + ".EXTRA_OFFHOST_SE";
 
     protected static final String TAG = "BaseEmulatorActivity";
     protected NfcAdapter mAdapter;
@@ -82,6 +85,21 @@ public abstract class BaseEmulatorActivity extends Activity {
                         long duration = intent.getLongExtra(HceService.EXTRA_DURATION, 0);
                         if (component != null) {
                             onApduSequenceComplete(component, duration);
+                        }
+                    } else if (NfcAdapter.ACTION_TRANSACTION_DETECTED.equals(action)) {
+                        String aid = intent.getStringExtra(NfcAdapter.EXTRA_AID);
+                        String offHostSe = intent.getStringExtra(
+                            NfcAdapter.EXTRA_SECURE_ELEMENT_NAME);
+                        Log.d(TAG, "onTransactionDetected: " + aid + ", " + offHostSe);
+                        if (getAidsForService(OffHostService.COMPONENT).contains(aid)) {
+                            Intent testIntent =
+                                new Intent(
+                                    BaseEmulatorActivity.ACTION_OFFHOST_TRANSACTION_DETECTED);
+                            testIntent.putExtra(EXTRA_OFFHOST_AID, aid);
+                            testIntent.putExtra(EXTRA_OFFHOST_SE, offHostSe);
+                            sendBroadcast(intent);
+                        } else {
+                            Log.e(TAG, "Unknown AID detected in transaction detected broadcast");
                         }
                     }
                 }

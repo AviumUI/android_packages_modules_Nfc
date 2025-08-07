@@ -33,8 +33,8 @@ public class OffHostEmulatorActivity extends BaseEmulatorActivity {
             Log.d(TAG, "onOffHostAidSelected: " + aid + ", " + offHostSe);
             if (getAidsForService(OffHostService.COMPONENT).contains(aid)) {
                 Intent intent = new Intent(BaseEmulatorActivity.ACTION_OFFHOST_AID_SELECTED);
-                intent.putExtra(EXTRA_OFFHOST_AID_SELECTED_AID, aid);
-                intent.putExtra(EXTRA_OFFHOST_AID_SELECTED_SE, offHostSe);
+                intent.putExtra(EXTRA_OFFHOST_AID, aid);
+                intent.putExtra(EXTRA_OFFHOST_SE, offHostSe);
                 sendBroadcast(intent);
             } else {
                 Log.e(TAG, "Unknown AID detected in offHostAidSelected callback");
