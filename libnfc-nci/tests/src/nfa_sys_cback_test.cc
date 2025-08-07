@@ -19,7 +19,7 @@
 #include "nfa_sys.h"
 #include "nfa_sys_int.h"
 
-static void mock_callback(__attribute__((unused)) void) {}
+static void mock_callback(void) {}
 
 class NfaSysCbackTest : public ::testing::Test {
  protected:
