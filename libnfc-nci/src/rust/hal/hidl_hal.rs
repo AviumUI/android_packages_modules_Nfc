@@ -119,7 +119,7 @@ struct Callbacks {
 static CALLBACKS: Mutex<Option<Callbacks>> = Mutex::new(None);
 
 fn on_event(evt: ffi::NfcEvent, status: ffi::NfcStatus) {
-    debug!("got event: {:?} with status {:?}", evt, status);
+    debug!("got event: {evt:?} with status {status:?}");
     let mut callbacks = CALLBACKS.lock().unwrap();
     match evt {
         ffi::NfcEvent::OPEN_CPLT => {
@@ -132,22 +132,22 @@ fn on_event(evt: ffi::NfcEvent, status: ffi::NfcStatus) {
                 evt_tx.send(status).unwrap();
             }
         }
-        _ => error!("Unhandled HAL event {:?}", evt),
+        _ => error!("Unhandled HAL event {evt:?}"),
     }
 }
 
 fn on_data(data: &[u8]) {
-    debug!("got packet: {:02x?}", data);
+    debug!("got packet: {data:02x?}");
     let callbacks = CALLBACKS.lock().unwrap();
     if is_control_packet(data) {
         match NciPacket::parse(data) {
             Ok(p) => callbacks.as_ref().unwrap().in_cmd_tx.send(p).unwrap(),
-            Err(e) => error!("failure to parse response: {:?} data: {:02x?}", e, data),
+            Err(e) => error!("failure to parse response: {e:?} data: {data:02x?}"),
         }
     } else {
         match DataPacket::parse(data) {
             Ok(p) => callbacks.as_ref().unwrap().in_data_tx.send(p).unwrap(),
-            Err(e) => error!("failure to parse response: {:?} data: {:02x?}", e, data),
+            Err(e) => error!("failure to parse response: {e:?} data: {data:02x?}"),
         }
     }
 }
