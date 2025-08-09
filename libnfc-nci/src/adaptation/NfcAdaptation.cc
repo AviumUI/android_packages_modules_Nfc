@@ -29,9 +29,10 @@
 #include <android/hardware/nfc/1.1/INfc.h>
 #include <android/hardware/nfc/1.2/INfc.h>
 #include <cutils/properties.h>
-#include <future>
+#include <hardware_legacy/power.h>
 #include <hwbinder/ProcessState.h>
 
+#include <future>
 #include <thread>
 
 #include "NfcVendorExtn.h"
@@ -78,6 +79,7 @@ using Status = ::ndk::ScopedAStatus;
 #define DEFAULT_CRASH_LOGS_PATH "/data/misc/nfc/logs/hal_crash_logs"
 
 std::string NFC_AIDL_HAL_SERVICE_NAME = "android.hardware.nfc.INfc/default";
+static const char kNfcWakelockName[] = "nfc_write_wakelock";
 
 extern void GKI_shutdown();
 extern void verify_stack_non_volatile_store();
@@ -1073,10 +1075,14 @@ void NfcAdaptation::HalWrite(uint16_t data_len, uint8_t* p_data) {
   const char* func = "NfcAdaptation::HalWrite";
   LOG(VERBOSE) << StringPrintf("%s", func);
 
+  /* Acquire wake lock */
+  acquire_wake_lock(PARTIAL_WAKE_LOCK, kNfcWakelockName);
   if (sVndExtnsPresent) {
     bool isVndExtSpecCmd = sNfcVendorExtn->processCmd(data_len, p_data);
     // If true to be handled in extension, otherwise processed to hal
     if (isVndExtSpecCmd) {
+      /* release wake lock */
+      release_wake_lock(kNfcWakelockName);
       return;
     }
   }
@@ -1089,6 +1095,8 @@ void NfcAdaptation::HalWrite(uint16_t data_len, uint8_t* p_data) {
     data.setToExternal(p_data, data_len);
     mHal->write(data);
   }
+  /* release wake lock */
+  release_wake_lock(kNfcWakelockName);
 }
 
 /*******************************************************************************
