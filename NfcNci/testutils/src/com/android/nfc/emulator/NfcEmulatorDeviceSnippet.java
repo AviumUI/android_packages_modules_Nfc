@@ -519,12 +519,6 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
                 callbackId, eventName, BaseEmulatorActivity.ACTION_OFFHOST_AID_SELECTED);
     }
 
-    @AsyncRpc(description = "Waits for off host transaction detected event")
-    public void asyncWaitForOffHostTransactionDetected(String callbackId, String eventName) {
-        registerSnippetBroadcastReceiver(
-                callbackId, eventName, BaseEmulatorActivity.ACTION_OFFHOST_TRANSACTION_DETECTED);
-    }
-
     /** Sets the listen tech for the active emulator activity */
     @Rpc(description = "Set the listen tech for the emulator")
     public void setListenTech(Integer listenTech) {
