@@ -659,6 +659,26 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         self._set_up_reader_and_assert_transaction(expected_service=_OFFHOST_SERVICE)
         offhost_aid_selected_handler.waitAndGet('OffHostAidSelected', _NFC_TIMEOUT_SEC)
 
+    def test_action_transaction_detected_broadcast(self):
+        """Tests that the ACTION_TRANSACTION_DETECTED broadcast is sent.
+
+        Test Steps:
+        1. Start emulator activity.
+        2. Set callback handler for when the broadcast is received.
+        3. Start reader activity, which should trigger APDU exchange between
+        reader and emulator.
+        4. Verifies that the broadcast is received.
+
+        Verifies:
+        1. Verifies that the broadcast is received.
+        """
+        offhost_transaction_detected_handler = self.emulator.nfc_emulator.asyncWaitForOffHostTransactionDetected(
+            'OffHostTransactionDetected')
+        self._set_up_emulator(
+            False, start_emulator_fun=self.emulator.nfc_emulator.startOffHostEmulatorActivity)
+        self._set_up_reader_and_assert_transaction(expected_service=_OFFHOST_SERVICE)
+        offhost_transaction_detected_handler.waitAndGet('OffHostTransactionDetected', _NFC_TIMEOUT_SEC)
+
     @CddTest(requirements = ["7.4.4/C-2-2", "7.4.4/C-1-2"])
     def test_on_and_offhost_service(self):
         """Tests successful APDU exchange between when reader selects both an on-host and off-host
