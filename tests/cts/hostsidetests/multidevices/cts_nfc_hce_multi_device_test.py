@@ -1171,6 +1171,10 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
                 }
                 num_exceeding_threshold = num_exceeding_threshold + 1
                 _LOG.warning(f"Polling frame timestamp tolerance exceeded: {debug_info}")
+                first_timestamp_device = timestamp_device
+                first_timestamp = timestamp_host
+                first_timestamp_error = timestamp_error
+
         asserts.assert_less(num_exceeding_threshold,
                                   _POLLING_FRAME_TIMESTAMP_EXCEED_COUNT_TOLERANCE_)
 
