@@ -657,12 +657,16 @@ public class RegisteredServicesCache {
                                 convertValueToBoolean(dynamicSettings.shouldDefaultToObserveModeStr,
                                 false));
                     }
-                    if (dynamicSettings.requireDeviceScreenOnStr != null) {
+                    if (dynamicSettings.requireDeviceScreenOnStr != null
+                            && android.nfc.Flags.screenStateAttributeToggle()
+                    ) {
                         serviceInfo.setRequiresScreenOn(
                                 convertValueToBoolean(dynamicSettings.requireDeviceScreenOnStr,
                                         serviceInfo.requiresScreenOn()));
                     }
-                    if (dynamicSettings.requireDeviceUnlockStr != null) {
+                    if (dynamicSettings.requireDeviceUnlockStr != null
+                            && android.nfc.Flags.screenStateAttributeToggle()
+                    ) {
                         serviceInfo.setRequiresUnlock(
                                 convertValueToBoolean(dynamicSettings.requireDeviceScreenOnStr,
                                         serviceInfo.requiresUnlock()));
@@ -1344,7 +1348,12 @@ public class RegisteredServicesCache {
             if (serviceInfo.requiresScreenOn() == enable) {
                 return;
             }
-            serviceInfo.setRequiresScreenOn(enable);
+            if (android.nfc.Flags.screenStateAttributeToggle()) {
+                serviceInfo.setRequiresScreenOn(enable);
+            } else {
+                throw new IllegalStateException("setRequireDeviceScreenOnForService without "
+                        + "android.nfc.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE");
+            }
             DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
             settings.requireDeviceScreenOnStr = Boolean.toString(enable);
             newServices = new ArrayList<ApduServiceInfo>(services.services.values());
@@ -1374,7 +1383,12 @@ public class RegisteredServicesCache {
             if (serviceInfo.requiresUnlock() == enable) {
                 return;
             }
-            serviceInfo.setRequiresUnlock(enable);
+            if (android.nfc.Flags.screenStateAttributeToggle()) {
+                serviceInfo.setRequiresUnlock(enable);
+            } else {
+                throw new IllegalStateException("setRequireDeviceUnlockForService without "
+                        + "android.nfc.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE");
+            }
             DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
             settings.requireDeviceUnlockStr = Boolean.toString(enable);
             newServices = new ArrayList<ApduServiceInfo>(services.services.values());
