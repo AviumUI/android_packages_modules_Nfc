@@ -178,6 +178,10 @@ public final class WalletRoleTestUtils {
                     .getUiAutomation().adoptShellPermissionIdentity(OBSERVE_ROLE_HOLDERS);
             roleManager.removeOnRoleHoldersChangedListenerAsUser(onRoleHoldersChangedListener,
                     context.getUser());
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                    .getUiAutomation().executeShellCommand(
+                            "pm revoke " + roleHolder +
+                                    " android.permission.WRITE_SECURE_SETTINGS");
             runnable.run();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
