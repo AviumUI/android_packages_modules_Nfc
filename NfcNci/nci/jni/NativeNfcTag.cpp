@@ -102,7 +102,7 @@ static sem_t sWriteSem;
 static sem_t sFormatSem;
 static SyncEvent sTransceiveEvent;
 static SyncEvent sReconnectEvent;
-static sem_t sCheckNdefSem;
+static SyncEvent sCheckNdefEvent;
 static SyncEvent sPresenceCheckEvent;
 static sem_t sMakeReadonlySem;
 static IntervalTimer sSwitchBackTimer;  // timer used to tell us to switch back
@@ -163,8 +163,11 @@ void nativeNfcTag_abortWaits() {
     SyncEventGuard g(sReconnectEvent);
     sReconnectEvent.notifyOne();
   }
+  {
+    SyncEventGuard g(sCheckNdefEvent);
+    sCheckNdefEvent.notifyOne();
+  }
 
-  sem_post(&sCheckNdefSem);
   nativeNfcTag_doPresenceCheckResult(NFA_STATUS_FAILED);
 
   sem_post(&sMakeReadonlySem);
@@ -1209,7 +1212,8 @@ void nativeNfcTag_doCheckNdefResult(tNFA_STATUS status, uint32_t maxSize,
     sCheckNdefCurrentSize = 0;
     sCheckNdefCardReadOnly = false;
   }
-  sem_post(&sCheckNdefSem);
+  SyncEventGuard g(sCheckNdefEvent);
+  sCheckNdefEvent.notifyOne();
 }
 
 /*******************************************************************************
@@ -1244,14 +1248,6 @@ static jint nativeNfcTag_doCheckNdef(JNIEnv* e, jobject o, jintArray ndefInfo) {
     return NFA_STATUS_FAILED;
   }
 
-  /* Create the write semaphore */
-  if (sem_init(&sCheckNdefSem, 0, 0) == -1) {
-    LOG(ERROR) << StringPrintf(
-        "%s: Check NDEF semaphore creation failed (errno=0x%08x)", __func__,
-        errno);
-    return JNI_FALSE;
-  }
-
   if (NfcTag::getInstance().getActivationState() != NfcTag::Active) {
     LOG(ERROR) << StringPrintf("%s: tag already deactivated", __func__);
     goto TheEnd;
@@ -1269,11 +1265,14 @@ static jint nativeNfcTag_doCheckNdef(JNIEnv* e, jobject o, jintArray ndefInfo) {
   }
 
   /* Wait for check NDEF completion status */
-  if (sem_wait(&sCheckNdefSem)) {
-    LOG(ERROR) << StringPrintf(
-        "%s: Failed to wait for check NDEF semaphore (errno=0x%08x)", __func__,
-        errno);
-    goto TheEnd;
+  {
+    SyncEventGuard g(sCheckNdefEvent);
+    if (sCheckNdefEvent.wait(5000) == false)  // if timeout occurred
+    {
+      LOG(ERROR) << StringPrintf("%s: timeout waiting for CheckNdefEvent",
+                                 __func__);
+      sCheckNdefStatus = NFA_STATUS_TIMEOUT;
+    }
   }
 
   if (sCheckNdefStatus == NFA_STATUS_OK) {
@@ -1313,12 +1312,6 @@ static jint nativeNfcTag_doCheckNdef(JNIEnv* e, jobject o, jintArray ndefInfo) {
   }
 
 TheEnd:
-  /* Destroy semaphore */
-  if (sem_destroy(&sCheckNdefSem)) {
-    LOG(ERROR) << StringPrintf(
-        "%s: Failed to destroy check NDEF semaphore (errno=0x%08x)", __func__,
-        errno);
-  }
   sCheckNdefWaitingForComplete = JNI_FALSE;
   LOG(DEBUG) << StringPrintf("%s: exit; status=0x%X", __func__, status);
   return status;
