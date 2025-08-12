@@ -533,4 +533,33 @@ public class ApduServiceInfoTest {
         assertFalse(apduServiceInfo.shouldDefaultToObserveMode());
     }
 
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE)
+    public void test_setRequiresUnlock() {
+        ApduServiceInfo apduServiceInfo = new ApduServiceInfo(mResolveInfo, false, "",
+                new ArrayList<>(), mDynamicAidGroups, false, 0, 0, "", "", "");
+
+        assertFalse(apduServiceInfo.requiresUnlock());
+
+        apduServiceInfo.setRequiresUnlock(true);
+        assertTrue(apduServiceInfo.requiresUnlock());
+
+        apduServiceInfo.setRequiresUnlock(false);
+        assertFalse(apduServiceInfo.requiresUnlock());
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE)
+    public void test_setRequiresScreenOn() {
+        ApduServiceInfo apduServiceInfo = new ApduServiceInfo(mResolveInfo, false, "",
+                new ArrayList<>(), mDynamicAidGroups, false, 0, 0, "", "", "");
+
+        assertFalse(apduServiceInfo.requiresScreenOn());
+
+        apduServiceInfo.setRequiresScreenOn(true);
+        assertTrue(apduServiceInfo.requiresScreenOn());
+
+        apduServiceInfo.setRequiresScreenOn(false);
+        assertFalse(apduServiceInfo.requiresScreenOn());
+    }
 }
