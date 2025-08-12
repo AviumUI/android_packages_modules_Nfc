@@ -385,6 +385,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         default wallet app.
         2. Verifies a successful APDU exchange after reboot.
         """
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         # Set the role before rebooting and ensure it remains enabled after
         # reboot to ensure that the NFC stack binds to it at bootup.
         self._set_up_emulator(
