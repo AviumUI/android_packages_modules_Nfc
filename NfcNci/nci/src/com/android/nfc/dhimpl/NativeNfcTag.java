@@ -319,7 +319,7 @@ public class NativeNfcTag implements TagEndpoint {
     }
 
     @Override
-    public boolean disconnect() {
+    public synchronized boolean disconnect() {
         boolean result = false;
         result = doTerminatePresenceCheckThread(false);
         if (!result) {
@@ -345,7 +345,7 @@ public class NativeNfcTag implements TagEndpoint {
             // If connected to frame RF/MIFARE it will got back to
             // MIFARE/MIFARE
             for (int i = 0; i < mTechLibNfcTypes.length; i++) {
-                if (mTechLibNfcTypes[mConnectedTechIndex] == mTechLibNfcTypes[i]) {
+                if (mTechLibNfcTypes[i] == getConnectedLibNfcType()) {
                     mConnectedTechIndex = i;
                     mConnectedHandle = mTechHandles[i];
                     break;
