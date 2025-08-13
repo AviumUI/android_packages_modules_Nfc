@@ -1,0 +1,13 @@
+<host-apdu-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/paymentServiceNoIndexReset"
+    android:apduServiceBanner="@drawable/nfc_hce_banner">
+    <aid-group android:description="@string/paymentServiceNoIndexReset" android:category="payment">
+        <aid-filter android:name="325041592E5359532E4444463031"
+            android:description="@string/ppse"/>
+        <aid-filter android:name="A0000000041010"
+            android:description="@string/mastercard"/>
+    </aid-group>
+    <!--- This is a polling loop pattern filter with a "?" to avoid framework
+          from converting to exit frame -->
+    <polling-loop-pattern-filter android:name="41fbc7?b9" android:autoTransact="true"/>
+</host-apdu-service>
