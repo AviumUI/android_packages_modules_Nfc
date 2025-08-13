@@ -299,10 +299,7 @@ public class NfcInjector {
     public static boolean isPrivileged(int callingUid) {
         // Check for root uid to help invoking privileged APIs from rooted shell only.
         return callingUid == Process.SYSTEM_UID || callingUid == Process.NFC_UID
-                || callingUid == Process.ROOT_UID
-                || sInstance.mContext.checkCallingPermission(
-                android.Manifest.permission.WRITE_SECURE_SETTINGS)
-                == PackageManager.PERMISSION_GRANTED;
+                || callingUid == Process.ROOT_UID;
     }
 
     /**
