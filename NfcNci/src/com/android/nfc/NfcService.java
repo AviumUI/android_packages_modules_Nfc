@@ -2970,11 +2970,15 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     || NfcPermissions.checkAdminPermissions(mContext);
             // Allow non-foreground callers with system uid or systemui
             privilegedCaller |= packageName.equals(SYSTEM_UI);
+
+            String annotationStr = "null";
+            if (extras != null
+                    && extras.containsKey(NfcAdapter.EXTRA_READER_TECH_A_POLLING_LOOP_ANNOTATION)) {
+                annotationStr = HexFormat.of().formatHex(extras.getByteArray(
+                        NfcAdapter.EXTRA_READER_TECH_A_POLLING_LOOP_ANNOTATION));
+            }
             Log.d(TAG, "setReaderMode: uid=" + callingUid + ", packageName: "
-                    + packageName + ", flags: " + flags + ", annotation: "
-                    + (extras != null
-                        ? extras.getString(NfcAdapter.EXTRA_READER_TECH_A_POLLING_LOOP_ANNOTATION)
-                        : "null"));
+                    + packageName + ", flags: " + flags + ", annotation: " + annotationStr);
             if (!privilegedCaller
                     && !mForegroundUtils.registerUidToBackgroundCallback(
                             NfcService.this, callingUid)) {
