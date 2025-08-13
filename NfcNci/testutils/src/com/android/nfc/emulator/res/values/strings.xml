@@ -19,6 +19,7 @@
     <string name="transportService2">Transport Service #2</string>
     <string name="paymentService1">Payment Service #1</string>
     <string name="paymentService2">Payment Service #2</string>
+    <string name="paymentServiceNoIndexReset">Payment Service No Index Reset</string>
     <string name="offhostService">Offhost Service</string>
     <string name="accessService">Access Service</string>
     <string name="screenOffPaymentService">Screen Off Payment Service</string>

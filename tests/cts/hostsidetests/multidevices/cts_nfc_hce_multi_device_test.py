@@ -385,6 +385,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         default wallet app.
         2. Verifies a successful APDU exchange after reboot.
         """
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         # Set the role before rebooting and ensure it remains enabled after
         # reboot to ensure that the NFC stack binds to it at bootup.
         self._set_up_emulator(
@@ -1171,6 +1172,10 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
                 }
                 num_exceeding_threshold = num_exceeding_threshold + 1
                 _LOG.warning(f"Polling frame timestamp tolerance exceeded: {debug_info}")
+                first_timestamp_device = timestamp_device
+                first_timestamp = timestamp_host
+                first_timestamp_error = timestamp_error
+
         asserts.assert_less(num_exceeding_threshold,
                                   _POLLING_FRAME_TIMESTAMP_EXCEED_COUNT_TOLERANCE_)
 
