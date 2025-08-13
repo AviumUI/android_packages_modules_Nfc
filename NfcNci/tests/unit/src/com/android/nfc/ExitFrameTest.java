@@ -38,7 +38,7 @@ public class ExitFrameTest {
         assertArrayEquals(HexFormat.of().parseHex("aa11bb22"), frame.getData());
         assertArrayEquals(HexFormat.of().parseHex("FFFFFFFF"), frame.getDataMask());
         assertEquals(0b00, frame.getNfcTech());
-        assertEquals(0b00111011, frame.getPowerState());
+        assertEquals(0b00111001, frame.getPowerState());
         assertFalse(frame.isPrefixMatchingAllowed());
     }
 
