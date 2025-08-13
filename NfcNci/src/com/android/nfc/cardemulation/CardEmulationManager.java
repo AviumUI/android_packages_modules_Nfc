@@ -367,7 +367,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     public void resetToIdleState() {
-        mHostEmulationManager.returnToIdleStateLocked();
+        mHostEmulationManager.returnToIdleState();
     }
 
     public void onHostCardEmulationDeactivated(int technology) {
