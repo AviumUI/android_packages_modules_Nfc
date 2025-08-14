@@ -18,6 +18,7 @@ package com.android.nfc.utils;
 
 import static android.Manifest.permission.INTERACT_ACROSS_USERS_FULL;
 import static android.Manifest.permission.MANAGE_DEFAULT_APPLICATIONS;
+import static android.Manifest.permission.MANAGE_ROLE_HOLDERS;
 import static android.Manifest.permission.WRITE_SECURE_SETTINGS;
 
 import android.app.role.RoleManager;
@@ -368,8 +369,12 @@ public final class HceUtils {
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                     .getUiAutomation()
                     .adoptShellPermissionIdentity(
-                            MANAGE_DEFAULT_APPLICATIONS, INTERACT_ACROSS_USERS_FULL);
+                            MANAGE_DEFAULT_APPLICATIONS, MANAGE_ROLE_HOLDERS,
+                            INTERACT_ACROSS_USERS_FULL);
             assert roleManager != null;
+            // Disable fallback to ensure that the default application does not
+            // automatically become the wallet role holder.
+            roleManager.setRoleFallbackEnabled(RoleManager.ROLE_WALLET, false);
             roleManager.setDefaultApplication(
                     RoleManager.ROLE_WALLET,
                     packageName,

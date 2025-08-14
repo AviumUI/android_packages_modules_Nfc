@@ -249,7 +249,7 @@ public class HostEmulationManager {
                 Log.d(TAG,
                         "mReturnToIdleStateRunnable: Have been outside field, "
                                 + "returning to idle state");
-                returnToIdleStateLocked();
+                returnToIdleState();
             }
         }
     };
@@ -1070,7 +1070,7 @@ public class HostEmulationManager {
             }
             sendDeactivateToActiveServiceLocked(HostApduService.DEACTIVATION_LINK_LOSS);
             unbindServiceIfNeededLocked();
-            returnToIdleStateLocked();
+            returnToIdleState();
 
             clearAutoDisableObserveModeRunnableLocked();
 
@@ -1558,7 +1558,7 @@ public class HostEmulationManager {
         }
     }
 
-    public void returnToIdleStateLocked() {
+    private void returnToIdleStateLocked() {
         mPendingPollingLoopFrames = null;
         mPollingFramesToSend = null;
         mUnprocessedPollingFrames = null;
@@ -1962,5 +1962,14 @@ public class HostEmulationManager {
     @VisibleForTesting
     public Map<Integer, Map<Pattern, List<ApduServiceInfo>>> getPollingLoopPatternFilters() {
         return mPollingLoopPatternFilters;
+    }
+
+    /**
+     *  Return to idle state
+     */
+    public void returnToIdleState() {
+        synchronized (mLock) {
+            returnToIdleStateLocked();
+        }
     }
 }
