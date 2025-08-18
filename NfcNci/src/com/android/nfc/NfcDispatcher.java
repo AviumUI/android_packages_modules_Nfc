@@ -787,6 +787,7 @@ class NfcDispatcher {
                     if (DBG) Log.i(TAG, "tryOverrides: matched NDEF override");
                     return true;
                 } catch (CanceledException e) {
+                    Log.e(TAG, "tryOverrides: sendIntent failed", e);
                     return false;
                 }
             }
@@ -800,6 +801,7 @@ class NfcDispatcher {
                 if (DBG) Log.i(TAG, "tryOverrides: matched TECH override");
                 return true;
             } catch (CanceledException e) {
+                Log.e(TAG, "tryOverrides: sendIntent failed", e);
                 return false;
             }
         }
@@ -812,6 +814,7 @@ class NfcDispatcher {
                 if (DBG) Log.i(TAG, "tryOverrides: matched TAG override");
                 return true;
             } catch (CanceledException e) {
+                Log.e(TAG, "tryOverrides: sendIntent failed", e);
                 return false;
             }
         }
