@@ -584,6 +584,12 @@ public class HostEmulationManager {
         }
     }
 
+    void onNfcFHostEmulationActivated() {
+        synchronized (mLock) {
+            clearAutoDisableObserveModeRunnableLocked();
+        }
+    }
+
     void onNfcFHostEmulationDeactivated() {
         synchronized (mLock) {
             clearAutoDisableObserveModeRunnableLocked();
