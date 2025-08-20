@@ -2,4 +2,10 @@
 # package included in the framework jar.
 # See https://yaqs.corp.google.com/eng/q/1929945272444518400#a3 for more info.
 
-rule com.android.nfc.module.flags.** com.android.nfc.module.cts.flags.@1
+# Nfc & permission flag libs are coming CtsNfcTestCases static copy.
+rule android.nfc.*Flags* com.android.nfc.x.@0
+rule android.nfc.Flags com.android.nfc.x.@0
+rule com.android.nfc.module.flags.*Flags* com.android.nfc.x.@0
+rule com.android.nfc.module.flags.Flags com.android.nfc.x.@0
+rule android.permission.*Flags* com.android.nfc.x.@0
+rule android.permission.Flags com.android.nfc.x.@0

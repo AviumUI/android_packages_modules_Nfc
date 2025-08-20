@@ -45,6 +45,7 @@ android_test {
         "//packages/modules/Nfc:__subpackages__",
         "//vendor:__subpackages__",
     ],
+    jarjar_rules: ":nfc-cts-jarjar-rules",
 }
 
 python_library {
