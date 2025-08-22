@@ -1396,6 +1396,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
     def teardown_test(self):
         if hasattr(self, 'emulator') and hasattr(self.emulator, 'nfc_emulator'):
             self.emulator.nfc_emulator.closeActivity()
+            self.emulator.nfc_emulator.resetWalletRoleHolder()
             self.emulator.nfc_emulator.logInfo(
                 "*** TEST END: " + self.current_test_info.name + " ***")
         if hasattr(self, 'pn532'):
