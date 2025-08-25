@@ -2353,4 +2353,34 @@ public final class NfcServiceTest {
         verify(mDeviceHost, never()).disableDiscovery();
         verify(mDeviceHost, never()).commitRouting();
     }
+
+    @Test
+    public void testApplyRouting_whenNfcTurningOn_doesNothing() {
+        // Set NFC state to TURNING_ON
+        mNfcService.mState = NfcAdapter.STATE_TURNING_ON;
+
+        // applyRouting is package-private, can be called directly from test
+        mNfcService.applyRouting(true);
+
+        // Verify that discovery methods on DeviceHost are not called,
+        // as applyRouting should return early
+        verify(mDeviceHost, never()).enableDiscovery(any(), anyBoolean());
+        verify(mDeviceHost, never()).disableDiscovery();
+        verify(mDeviceHost, never()).commitRouting();
+    }
+
+    @Test
+    public void testApplyRouting_whenNfcTurningOff_doesNothing() {
+        // Set NFC state to TURNING_OFF
+        mNfcService.mState = NfcAdapter.STATE_TURNING_OFF;
+
+        // applyRouting is package-private, can be called directly from test
+        mNfcService.applyRouting(true);
+
+        // Verify that discovery methods on DeviceHost are not called,
+        // as applyRouting should return early
+        verify(mDeviceHost, never()).enableDiscovery(any(), anyBoolean());
+        verify(mDeviceHost, never()).disableDiscovery();
+        verify(mDeviceHost, never()).commitRouting();
+    }
 }
