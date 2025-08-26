@@ -43,15 +43,17 @@ rule android.os.PersistableBundleProto* com.android.nfc.x.@0
 rule com.android.modules.utils.** com.android.nfc.x.@0
 
 # Used for reading trunk stable flags
-rule android.app.*Flags* com.android.nfc.x.@0
+rule android.app.*FeatureFlags* com.android.nfc.x.@0
+rule android.app.FeatureFlags* com.android.nfc.x.@0
 rule android.app.Flags com.android.nfc.x.@0
-rule android.service.chooser.*Flags* com.android.nfc.x.@0
+rule android.service.chooser.*FeatureFlags* com.android.nfc.x.@0
+rule android.service.chooser.FeatureFlags* com.android.nfc.x.@0
 rule android.service.chooser.Flags com.android.nfc.x.@0
-rule android.permission.flags.** com.android.nfc.x.@0
+rule com.android.permission.flags.** com.android.nfc.x.@0
+rule com.android.server.display.feature.flags.** com.android.nfc.x.@0
+
 # Nfc & permission flag libs are coming framework-nfc.impl's static copy.
-rule android.nfc.*Flags* com.android.nfc.x.@0
+rule android.nfc.*FeatureFlags* com.android.nfc.x.@0
+rule android.nfc.FeatureFlags* com.android.nfc.x.@0
 rule android.nfc.Flags com.android.nfc.x.@0
-rule com.android.nfc.module.flags.*Flags* com.android.nfc.x.@0
-rule com.android.nfc.module.flags.Flags com.android.nfc.x.@0
-rule android.permission.*Flags* com.android.nfc.x.@0
-rule android.permission.Flags com.android.nfc.x.@0
+rule android.permission.flags.** com.android.nfc.x.@0
