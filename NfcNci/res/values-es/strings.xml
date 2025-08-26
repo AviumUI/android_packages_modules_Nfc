@@ -53,9 +53,9 @@
     <string name="tag_dispatch_failed" msgid="1105926115269578595">"No hay ninguna aplicación compatible con esta etiqueta NFC"</string>
     <string name="nfc_blocking_alert_title" msgid="3361011027125473371">"Es posible que el NFC esté bloqueado"</string>
     <string name="nfc_blocking_alert_message" msgid="6427327924471665520">"Toca para saber cómo solucionarlo."</string>
-    <string name="tag_app_alert_title" msgid="6761163540731807246">"Permitir que las aplicaciones lean etiquetas NFC"</string>
+    <string name="tag_app_alert_title" msgid="6761163540731807246">"Permitir que las apps lean etiquetas NFC"</string>
     <string name="tag_app_alert_message" msgid="5518729638341784348">"<xliff:g id="APPNAMES">%1$s</xliff:g> puede leer etiquetas NFC."</string>
-    <string name="tag_app_alert_message_multiple" msgid="6989858224684960030">"Las siguientes aplicaciones pueden leer etiquetas NFC: <xliff:g id="APPNAMES">%1$s</xliff:g>"</string>
+    <string name="tag_app_alert_message_multiple" msgid="6989858224684960030">"Las siguientes apps pueden leer etiquetas NFC: <xliff:g id="APPNAMES">%1$s</xliff:g>"</string>
     <string name="tag_app_alert_action_button" msgid="1442462487575846704">"Toca para consultar cómo inhabilitarlo."</string>
     <string name="nfc_logging_alert_title" msgid="7355334076019926549">"Los datos de NFC se están registrando"</string>
     <string name="nfc_logging_alert_message" msgid="3833608086332697579">"Toca para detener el registro."</string>
