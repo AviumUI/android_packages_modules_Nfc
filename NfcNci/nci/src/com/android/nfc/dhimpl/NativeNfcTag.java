@@ -319,7 +319,7 @@ public class NativeNfcTag implements TagEndpoint {
     }
 
     @Override
-    public synchronized boolean disconnect() {
+    public boolean disconnect() {
         boolean result = false;
         result = doTerminatePresenceCheckThread(false);
         if (!result) {
