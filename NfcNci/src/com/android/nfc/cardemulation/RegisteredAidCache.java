@@ -1516,6 +1516,20 @@ public class RegisteredAidCache {
          return new ComponentNameAndUser(mUserIdPreferredPaymentService, mPreferredPaymentService);
     }
 
+    @NonNull
+    public List<ComponentNameAndUser> getPreferredPaymentAssociatedServices() {
+        List<ComponentNameAndUser> associatedServices = new ArrayList<>();
+        if (mAssociatedRoleServices != null) {
+            for (ApduServiceInfo service : mAssociatedRoleServices) {
+                associatedServices.add(
+                        new ComponentNameAndUser(
+                                UserHandle.getUserHandleForUid(service.getUid()).getIdentifier(),
+                                service.getComponent()));
+            }
+        }
+        return associatedServices;
+    }
+
     public boolean isPreferredServicePackageNameForUser(String packageName, int userId) {
         if (mPreferredForegroundService != null) {
             if (mPreferredForegroundService.getPackageName().equals(packageName) &&
