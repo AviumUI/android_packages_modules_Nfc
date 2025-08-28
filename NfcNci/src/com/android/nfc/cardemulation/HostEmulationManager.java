@@ -406,7 +406,6 @@ public class HostEmulationManager {
         if (preferredServiceName == null || preferredServiceUserId < 0) {
             return null;
         }
-
         return new Pair<>(bindServiceIfNeededLocked(preferredServiceUserId, preferredServiceName),
             preferredServiceName);
     }
@@ -511,6 +510,14 @@ public class HostEmulationManager {
 
         void addServiceToList(ComponentName service) {
             mServicePackageNames.add(service.getPackageName());
+            // If this is the payment service, also add the associated services to the list of
+            // packages to monitor.
+            if (service.equals(mAidCache.getPreferredPaymentService().getComponentName())) {
+                for (ComponentNameAndUser preferredService
+                        : mAidCache.getPreferredPaymentAssociatedServices()) {
+                    mServicePackageNames.add(preferredService.getComponentName().getPackageName());
+                }
+            }
         }
 
         boolean arePackagesInForeground() {

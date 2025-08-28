@@ -63,7 +63,9 @@ public class OffHostEmulatorActivity extends BaseEmulatorActivity {
     @Override
     public void onPause() {
         super.onPause();
-        mCardEmulation.unregisterNfcEventCallback(mEventListener);
+        if (android.nfc.Flags.nfcEventListener()) {
+            mCardEmulation.unregisterNfcEventCallback(mEventListener);
+        }
         if (getIntent().getBooleanExtra(EXTRA_ENABLE_OBSERVE_MODE, false)) {
             mCardEmulation.unsetPreferredService(this);
             mAdapter.setObserveModeEnabled(false);
