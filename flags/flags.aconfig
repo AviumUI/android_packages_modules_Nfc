@@ -74,3 +74,11 @@ flag {
     description: "API to get and set power saving mode."
     bug: "311419563"
 }
+
+flag {
+    name: "deprecate_antenna_info"
+    is_exported: true
+    namespace: "nfc"
+    description: "Deprecate isDeviceFoldable"
+    bug: "395695630"
+}

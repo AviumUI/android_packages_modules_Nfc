@@ -158,7 +158,7 @@ package android.nfc {
     method @NonNull public java.util.List<android.nfc.AvailableNfcAntenna> getAvailableNfcAntennas();
     method public int getDeviceHeight();
     method public int getDeviceWidth();
-    method public boolean isDeviceFoldable();
+    method @Deprecated @FlaggedApi("com.android.nfc.module.flags.deprecate_antenna_info") public boolean isDeviceFoldable();
     method public void writeToParcel(@NonNull android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.nfc.NfcAntennaInfo> CREATOR;
   }
