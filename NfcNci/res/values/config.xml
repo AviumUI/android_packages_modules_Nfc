@@ -80,4 +80,6 @@
     <string-array name="overwrite_routing_table_allow_list_pkgs" translatable="false" />
     <!-- Forcibly set the preferred subscription service to UICC when there is no preference. -->
     <bool name="default_preferred_subscription_to_uicc">false</bool>
+    <!-- Skip reading routing options from shared preferences for felica route -->
+    <bool name="skip_read_routing_options_from_prefs_for_felica">false</bool>
 </resources>
