@@ -257,6 +257,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
                     f"{self.emulator} observe mode not supported",
                 )
+        asserts.skip_if(
+            not self.emulator.nfc_emulator.isExitFramesSupported(),
+            f"{self.emulator} exit frame not supported",
+        )
         asserts.assert_true(
             self.emulator.nfc_emulator.setObserveModeEnabled(True),
             f"{self.emulator} could not set observe mode",
@@ -322,6 +326,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
                     f"{self.emulator} observe mode not supported",
                 )
+        asserts.skip_if(
+            not self.emulator.nfc_emulator.isExitFramesSupported(),
+            f"{self.emulator} exit frame not supported",
+        )
         asserts.assert_true(
             self.emulator.nfc_emulator.setObserveModeEnabled(True),
             f"{self.emulator} could not set observe mode",
@@ -387,6 +395,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
                     f"{self.emulator} observe mode not supported",
                 )
+        asserts.skip_if(
+            not self.emulator.nfc_emulator.isExitFramesSupported(),
+            f"{self.emulator} exit frame not supported",
+        )
         asserts.assert_true(
             self.emulator.nfc_emulator.setObserveModeEnabled(True),
             f"{self.emulator} could not set observe mode",
@@ -452,6 +464,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
                     f"{self.emulator} observe mode not supported",
                 )
+        asserts.skip_if(
+            not self.emulator.nfc_emulator.isExitFramesSupported(),
+            f"{self.emulator} exit frame not supported",
+        )
         asserts.assert_true(
             self.emulator.nfc_emulator.setObserveModeEnabled(True),
             f"{self.emulator} could not set observe mode",
@@ -517,6 +533,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
                     f"{self.emulator} observe mode not supported",
                 )
+        asserts.skip_if(
+            not self.emulator.nfc_emulator.isExitFramesSupported(),
+            f"{self.emulator} exit frame not supported",
+        )
         asserts.assert_true(
             self.emulator.nfc_emulator.setObserveModeEnabled(True),
             f"{self.emulator} could not set observe mode",
@@ -582,6 +602,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
                     f"{self.emulator} observe mode not supported",
                 )
+        asserts.skip_if(
+            not self.emulator.nfc_emulator.isExitFramesSupported(),
+            f"{self.emulator} exit frame not supported",
+        )
         asserts.assert_true(
             self.emulator.nfc_emulator.setObserveModeEnabled(True),
             f"{self.emulator} could not set observe mode",

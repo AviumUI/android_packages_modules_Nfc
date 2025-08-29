@@ -878,6 +878,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
     @Override
     public void onObserveModeDisabledInFirmware(PollingFrame exitFrame) {
+        Log.d(TAG, "onObserveModeDisabledInFirmware: " + exitFrame);
         mCardEmulationManager.onObserveModeDisabledInFirmware(exitFrame);
         onObserveModeStateChanged(false);
         mNfcEventLog.logEvent(
@@ -894,6 +895,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
     @Override
     public void onObserveModeEnabledInFirmware() {
+        Log.d(TAG, "onObserveModeEnabledInFirmware");
         onObserveModeStateChanged(true);
         mNfcEventLog.logEvent(
                 NfcEventProto.EventType.newBuilder()
