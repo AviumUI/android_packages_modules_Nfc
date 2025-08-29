@@ -75,7 +75,7 @@ _FAILED_TAG_MSG =  "Reader did not detect tag, transaction not attempted."
 _FAILED_TRANSACTION_MSG = "Transaction failed, check device logs for more information."
 
 _SERVICE_PACKAGE = "com.android.nfc.service"
-_PAYMENT_SERVICE_1 = _SERVICE_PACKAGE + ".PaymentService1"
+_EXIT_FRAME_SERVICE = _SERVICE_PACKAGE + ".ExitFrameService"
 
 class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
     def _set_up_emulator(self, *args, start_emulator_fun=None, service_list=[],
@@ -248,10 +248,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         self._set_up_emulator(
             "41fbc7b9", [], True,
             start_emulator_fun=self.emulator.nfc_emulator.startExitFrameActivity,
-            service_list=[_PAYMENT_SERVICE_1],
-            expected_service=_PAYMENT_SERVICE_1,
+            service_list=[_EXIT_FRAME_SERVICE],
+            expected_service=_EXIT_FRAME_SERVICE,
             is_payment=True,
-            payment_default_service=_PAYMENT_SERVICE_1
+            payment_default_service=_EXIT_FRAME_SERVICE
         )
         asserts.skip_if(
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
@@ -263,7 +263,7 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         )
 
         command_apdus, response_apdus = get_apdus(self.emulator.nfc_emulator,
-                                                      _PAYMENT_SERVICE_1)
+                                                      _EXIT_FRAME_SERVICE)
         test_pass_handler = self.emulator.nfc_emulator.asyncWaitForTestPass(
             'ExitFrameListenerSuccess'
         )
@@ -313,10 +313,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         self._set_up_emulator(
             "12345678", ["12345678", "aaaa"], True,
             start_emulator_fun=self.emulator.nfc_emulator.startExitFrameActivity,
-            service_list=[_PAYMENT_SERVICE_1],
-            expected_service=_PAYMENT_SERVICE_1,
+            service_list=[_EXIT_FRAME_SERVICE],
+            expected_service=_EXIT_FRAME_SERVICE,
             is_payment=True,
-            payment_default_service=_PAYMENT_SERVICE_1
+            payment_default_service=_EXIT_FRAME_SERVICE
         )
         asserts.skip_if(
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
@@ -328,7 +328,7 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         )
 
         command_apdus, response_apdus = get_apdus(self.emulator.nfc_emulator,
-                                                      _PAYMENT_SERVICE_1)
+                                                      _EXIT_FRAME_SERVICE)
         test_pass_handler = self.emulator.nfc_emulator.asyncWaitForTestPass(
             'ExitFrameListenerSuccess'
         )
@@ -378,10 +378,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         self._set_up_emulator(
             "dd1234", ["12345678", "dd.*", "ee.*", "ff.."], True,
             start_emulator_fun=self.emulator.nfc_emulator.startExitFrameActivity,
-            service_list=[_PAYMENT_SERVICE_1],
-            expected_service=_PAYMENT_SERVICE_1,
+            service_list=[_EXIT_FRAME_SERVICE],
+            expected_service=_EXIT_FRAME_SERVICE,
             is_payment=True,
-            payment_default_service=_PAYMENT_SERVICE_1
+            payment_default_service=_EXIT_FRAME_SERVICE
         )
         asserts.skip_if(
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
@@ -393,7 +393,7 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         )
 
         command_apdus, response_apdus = get_apdus(self.emulator.nfc_emulator,
-                                                      _PAYMENT_SERVICE_1)
+                                                      _EXIT_FRAME_SERVICE)
         test_pass_handler = self.emulator.nfc_emulator.asyncWaitForTestPass(
             'ExitFrameListenerSuccess'
         )
@@ -443,10 +443,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         self._set_up_emulator(
             "ff11", ["12345678", "ff.."], True,
             start_emulator_fun=self.emulator.nfc_emulator.startExitFrameActivity,
-            service_list=[_PAYMENT_SERVICE_1],
-            expected_service=_PAYMENT_SERVICE_1,
+            service_list=[_EXIT_FRAME_SERVICE],
+            expected_service=_EXIT_FRAME_SERVICE,
             is_payment=True,
-            payment_default_service=_PAYMENT_SERVICE_1
+            payment_default_service=_EXIT_FRAME_SERVICE
         )
         asserts.skip_if(
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
@@ -458,7 +458,7 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         )
 
         command_apdus, response_apdus = get_apdus(self.emulator.nfc_emulator,
-                                                      _PAYMENT_SERVICE_1)
+                                                      _EXIT_FRAME_SERVICE)
         test_pass_handler = self.emulator.nfc_emulator.asyncWaitForTestPass(
             'ExitFrameListenerSuccess'
         )
@@ -508,10 +508,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         self._set_up_emulator(
             "ddfe1134", ["12345678", "dd..11.*", "ee.*", "ff.."], True,
             start_emulator_fun=self.emulator.nfc_emulator.startExitFrameActivity,
-            service_list=[_PAYMENT_SERVICE_1],
-            expected_service=_PAYMENT_SERVICE_1,
+            service_list=[_EXIT_FRAME_SERVICE],
+            expected_service=_EXIT_FRAME_SERVICE,
             is_payment=True,
-            payment_default_service=_PAYMENT_SERVICE_1
+            payment_default_service=_EXIT_FRAME_SERVICE
         )
         asserts.skip_if(
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
@@ -523,7 +523,7 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         )
 
         command_apdus, response_apdus = get_apdus(self.emulator.nfc_emulator,
-                                                      _PAYMENT_SERVICE_1)
+                                                      _EXIT_FRAME_SERVICE)
         test_pass_handler = self.emulator.nfc_emulator.asyncWaitForTestPass(
             'ExitFrameListenerSuccess'
         )
@@ -573,10 +573,10 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         self._set_up_emulator(
             "12345678", ["12345678", "aaaa"], False,
             start_emulator_fun=self.emulator.nfc_emulator.startExitFrameActivity,
-            service_list=[_PAYMENT_SERVICE_1],
-            expected_service=_PAYMENT_SERVICE_1,
+            service_list=[_EXIT_FRAME_SERVICE],
+            expected_service=_EXIT_FRAME_SERVICE,
             is_payment=True,
-            payment_default_service=_PAYMENT_SERVICE_1
+            payment_default_service=_EXIT_FRAME_SERVICE
         )
         asserts.skip_if(
                     not self.emulator.nfc_emulator.isObserveModeSupported(),
@@ -588,7 +588,7 @@ class NfcExitFrameMultiDeviceTestCases(base_test.BaseTestClass):
         )
 
         command_apdus, response_apdus = get_apdus(self.emulator.nfc_emulator,
-                                                      _PAYMENT_SERVICE_1)
+                                                      _EXIT_FRAME_SERVICE)
         test_pass_handler = self.emulator.nfc_emulator.asyncWaitForTestPass(
             'ExitFrameListenerSuccess'
         )
