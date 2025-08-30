@@ -72,6 +72,7 @@ public class DeviceConfigFacade {
     private int mCeWakeLockTimeoutMillis;
     private String[] mOverwriteRoutingTableAllowListPkgs;
     private boolean mDefaultPreferredSubscriptionToUicc;
+    private boolean mSkipReadRoutingOptionsFromPrefsForFelica;
 
     private static DeviceConfigFacade sInstance;
     public static DeviceConfigFacade getInstance(Context context, Handler handler) {
@@ -206,6 +207,10 @@ public class DeviceConfigFacade {
         mDefaultPreferredSubscriptionToUicc = DeviceConfig.getBoolean(DEVICE_CONFIG_NAMESPACE_NFC,
                 "default_preferred_subscription_to_uicc",
                 mContext.getResources().getBoolean(R.bool.default_preferred_subscription_to_uicc));
+        mSkipReadRoutingOptionsFromPrefsForFelica = DeviceConfig.getBoolean(
+                DEVICE_CONFIG_NAMESPACE_NFC, "skip_read_routing_options_from_prefs_for_felica",
+                mContext.getResources().getBoolean(
+                        R.bool.skip_read_routing_options_from_prefs_for_felica));
     }
 
     private boolean isSecureNfcCapableDefault() {
@@ -256,6 +261,12 @@ public class DeviceConfigFacade {
     public boolean getIndicateUserActivityForHce() { return mIndicateUserActivityForHce; }
     public boolean shouldDefaultPreferredSubscriptionToUicc() {
         return mDefaultPreferredSubscriptionToUicc;
+    }
+    /**
+     * Checks skip_read_routing_options_from_prefs_for_felica overlay value
+     */
+    public boolean shouldSkipReadRoutingOptionsFromPrefsForFelica() {
+        return mSkipReadRoutingOptionsFromPrefsForFelica;
     }
     public String getDefaultRoute() {
         return mDefaultRoute;
