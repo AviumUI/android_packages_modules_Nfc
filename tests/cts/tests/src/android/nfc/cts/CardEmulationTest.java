@@ -1140,6 +1140,7 @@ public class CardEmulationTest {
     })
     @Test
     public void testToggleRequireDeviceScreenOn() {
+        assumeTrue(android.nfc.Flags.screenStateAttributeToggle());
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         adapter.notifyHceDeactivated();
         Activity activity = createAndResumeActivity();
@@ -1167,6 +1168,7 @@ public class CardEmulationTest {
     })
     @Test
     public void testToggleRequireDeviceUnlock() {
+        assumeTrue(android.nfc.Flags.screenStateAttributeToggle());
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         adapter.notifyHceDeactivated();
         Activity activity = createAndResumeActivity();

@@ -44,8 +44,8 @@ java_defaults {
         "PlatformProperties",
         "nfc-event-log-proto",
         "com.android.nfc.flags-aconfig-java",
-        "com.android.nfc.module.flags-aconfig-java",
         "com.android.permission.flags-aconfig-java-export",
+        "display_flags_lib-export",
     ],
     flags_packages: [
         "com.android.nfc.flags-aconfig",
@@ -107,9 +107,10 @@ android_app {
         "shim_src/apex/**/*.java",
     ],
     libs: [
+        // These flag libs are statically included in framework-nfc.jar
         "android.nfc.flags-aconfig-java",
         "android.permission.flags-aconfig-java",
-        "display_flags_lib",
+        "com.android.nfc.module.flags-aconfig-java",
         "framework-annotations-lib",
         "framework-bluetooth.stubs.module_lib",
         "framework-configinfrastructure.stubs.module_lib",

@@ -38,6 +38,9 @@ android_test {
         "platform-test-annotations",
         "testables",
         "modules-utils-extended-mockito-rule",
+        "android.nfc.flags-aconfig-java",
+        "android.permission.flags-aconfig-java",
+        "com.android.nfc.module.flags-aconfig-java",
     ],
     libs: [
         "androidx.annotation_annotation",
@@ -67,4 +70,5 @@ android_test {
     ],
     compile_multilib: "both",
     min_sdk_version: "36",
+    jarjar_rules: "jarjar-rules.txt",
 }

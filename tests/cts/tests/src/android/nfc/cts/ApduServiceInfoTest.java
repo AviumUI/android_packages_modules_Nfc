@@ -534,8 +534,8 @@ public class ApduServiceInfoTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE)
     public void test_setRequiresUnlock() {
+        assumeTrue(android.nfc.Flags.screenStateAttributeToggle());
         ApduServiceInfo apduServiceInfo = new ApduServiceInfo(mResolveInfo, false, "",
                 new ArrayList<>(), mDynamicAidGroups, false, 0, 0, "", "", "");
 
@@ -549,8 +549,8 @@ public class ApduServiceInfoTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE)
     public void test_setRequiresScreenOn() {
+        assumeTrue(android.nfc.Flags.screenStateAttributeToggle());
         ApduServiceInfo apduServiceInfo = new ApduServiceInfo(mResolveInfo, false, "",
                 new ArrayList<>(), mDynamicAidGroups, false, 0, 0, "", "", "");
 
