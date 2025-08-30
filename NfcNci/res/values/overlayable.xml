@@ -75,6 +75,7 @@
             <item name="ce_wake_lock_timeout_millis" type="integer" />
             <item name="overwrite_routing_table_allow_list_pkgs" type="array" translatable="false" />
             <item name="default_preferred_subscription_to_uicc" type="bool" />
+            <item name="skip_read_routing_options_from_prefs_for_felica" type="bool" />
           <!-- Params from config.xml that can be overlaid -->
 
           <!-- Params from strings.xml that can be overlaid -->
