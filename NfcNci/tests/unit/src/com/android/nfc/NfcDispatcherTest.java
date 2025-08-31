@@ -25,13 +25,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.PendingIntent;
+import android.app.PendingIntent.CanceledException;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -787,5 +790,94 @@ public final class NfcDispatcherTest {
 
         assertTrue(mNfcDispatcher.tryTech(dispatch, tag));
         verify(mNfcAdapter).setTagIntentAppPreferenceForUser(0, packageName, true);
+    }
+
+    @Test
+    public void testTryOverrides_NdefDispatchFails() throws CanceledException {
+        // Verifies that tryOverrides returns false when PendingIntent.send fails for NDEF.
+        // Setup a pending intent that will fail by throwing CanceledException.
+        PendingIntent pendingIntent = mock(PendingIntent.class);
+        doThrow(new CanceledException()).when(pendingIntent)
+                .send(any(Context.class), anyInt(), any(Intent.class));
+
+        // Setup a tag with an NDEF message to trigger the NDEF dispatch path.
+        NdefRecord record = NdefRecord.createMime("text/plain", "test".getBytes());
+        NdefMessage message = new NdefMessage(record);
+        Tag tag = Tag.createMockTag(new byte[]{0x01}, new int[]{TagTechnology.NDEF}, new Bundle[1],
+                0L);
+        NfcDispatcher.DispatchInfo dispatch = new NfcDispatcher.DispatchInfo(mockContext, tag,
+                message);
+
+        // Setup filters to match the NDEF intent.
+        IntentFilter filter = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
+        try {
+            filter.addDataType("text/plain");
+        } catch (IntentFilter.MalformedMimeTypeException e) {
+            Assert.fail("Malformed Mime Type");
+        }
+        IntentFilter[] filters = new IntentFilter[]{filter};
+
+        // Call tryOverrides and expect it to fail because the PendingIntent send fails.
+        boolean result = mNfcDispatcher.tryOverrides(dispatch, tag, message, pendingIntent, filters,
+                null);
+
+        // Assert that the method returns false, indicating failure.
+        assertFalse(result);
+        // Verify that the send method was called, which then threw the mocked exception.
+        verify(pendingIntent).send(any(Context.class), eq(Activity.RESULT_OK), any(Intent.class));
+    }
+
+    @Test
+    public void testTryOverrides_TechDispatchFails() throws CanceledException {
+        // Verifies that tryOverrides returns false when PendingIntent.send fails for TECH.
+        // Setup a pending intent that will fail by throwing CanceledException.
+        PendingIntent pendingIntent = mock(PendingIntent.class);
+        doThrow(new CanceledException()).when(pendingIntent)
+                .send(any(Context.class), anyInt(), any(Intent.class));
+
+        // Setup a tag with NfcA tech to trigger the TECH dispatch path.
+        Tag tag = mock(Tag.class);
+        when(tag.getTechList()).thenReturn(new String[]{NfcA.class.getName()});
+        NfcDispatcher.DispatchInfo dispatch = new NfcDispatcher.DispatchInfo(mockContext, tag,
+                null);
+
+        // Setup tech lists to match the tag's tech.
+        String[][] techLists = new String[][]{{NfcA.class.getName()}};
+
+        // Call tryOverrides and expect it to fail because the PendingIntent send fails.
+        boolean result = mNfcDispatcher.tryOverrides(dispatch, tag, null, pendingIntent, null,
+                techLists);
+
+        // Assert that the method returns false, indicating failure.
+        assertFalse(result);
+        // Verify that the send method was called, which then threw the mocked exception.
+        verify(pendingIntent).send(any(Context.class), eq(Activity.RESULT_OK), any(Intent.class));
+    }
+
+    @Test
+    public void testTryOverrides_TagDispatchFails() throws CanceledException {
+        // Verifies that tryOverrides returns false when PendingIntent.send fails for TAG.
+        // Setup a pending intent that will fail by throwing CanceledException.
+        PendingIntent pendingIntent = mock(PendingIntent.class);
+        doThrow(new CanceledException()).when(pendingIntent)
+                .send(any(Context.class), anyInt(), any(Intent.class));
+
+        // Setup a generic tag to trigger the TAG dispatch path.
+        Tag tag = Tag.createMockTag(new byte[]{0x01}, new int[0], new Bundle[0], 0L);
+        NfcDispatcher.DispatchInfo dispatch = new NfcDispatcher.DispatchInfo(mockContext, tag,
+                null);
+
+        // Setup filters to match the TAG_DISCOVERED intent.
+        IntentFilter filter = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
+        IntentFilter[] filters = new IntentFilter[]{filter};
+
+        // Call tryOverrides and expect it to fail because the PendingIntent send fails.
+        boolean result = mNfcDispatcher.tryOverrides(dispatch, tag, null, pendingIntent, filters,
+                null);
+
+        // Assert that the method returns false, indicating failure.
+        assertFalse(result);
+        // Verify that the send method was called, which then threw the mocked exception.
+        verify(pendingIntent).send(any(Context.class), eq(Activity.RESULT_OK), any(Intent.class));
     }
 }
