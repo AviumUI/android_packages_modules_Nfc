@@ -430,6 +430,10 @@ public class RoutingOptionManager {
             Log.d(TAG, "readRoutingOptionsFromPrefs: create mPrefs in readRoutingOptions");
             mContext = context;
             mPrefs = context.getSharedPreferences(PREF_ROUTING_OPTIONS, Context.MODE_PRIVATE);
+
+            // TODO(b/441652779): rpius - Remove this line once the issue is fixed.
+            mPrefs.edit().clear().commit();
+
             mIsUiccCapable = context.getPackageManager().hasSystemFeature(
                     PackageManager.FEATURE_NFC_OFF_HOST_CARD_EMULATION_UICC);
             mIsEseCapable = context.getPackageManager().hasSystemFeature(
@@ -471,13 +475,8 @@ public class RoutingOptionManager {
                     KEY_DEFAULT_FELICA_ROUTE, deviceConfigFacade.getDefaultFelicaRoute());
         }
 
-        // OEM to decide whether to disable this persistent RoutingOptions for felica.
-        if (deviceConfigFacade.shouldSkipReadRoutingOptionsFromPrefsForFelica()) {
-            Log.d(TAG, "Skip read routing options from shared preferences for felica");
-        } else {
-            mDefaultFelicaRoute =
-                    getRouteForSecureElement(mPrefs.getString(KEY_DEFAULT_FELICA_ROUTE, null));
-        }
+        mDefaultFelicaRoute =
+                getRouteForSecureElement(mPrefs.getString(KEY_DEFAULT_FELICA_ROUTE, null));
 
         // read default system code route
         if (!mPrefs.contains(KEY_DEFAULT_SC_ROUTE)) {

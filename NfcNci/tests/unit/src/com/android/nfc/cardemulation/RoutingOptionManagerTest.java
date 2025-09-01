@@ -377,6 +377,7 @@ public class RoutingOptionManagerTest {
         when(context.getPackageManager()).thenReturn(packageManager);
         when(packageManager.hasSystemFeature(anyString())).thenReturn(true);
         when(mPrefs.edit()).thenReturn(editor);
+        when(editor.clear()).thenReturn(editor);
         when(editor.putString(anyString(), anyString())).thenReturn(editor);
         when(editor.putBoolean(anyString(), anyBoolean())).thenReturn(editor);
         when(deviceConfigFacade.getDefaultRoute()).thenReturn(defaultRoute);
