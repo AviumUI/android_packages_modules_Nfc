@@ -15,13 +15,18 @@
  */
 package com.android.nfc.emulator;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.nfc.cardemulation.CardEmulation;
 import android.nfc.cardemulation.PollingFrame;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.android.nfc.service.PaymentService1;
+import com.android.nfc.service.ExitFrameService;
+import com.android.nfc.service.PollingLoopService;
 
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -38,6 +43,7 @@ public class ExitFrameEmulatorActivity extends BaseEmulatorActivity {
     private String mReceivedExitFrame = null;
     private String mIntendedExitFrameData = null;
     private final List<String> mRegisteredPatterns = new ArrayList<>();
+    private final List<PollingFrame> mReceivedPollingFrames = new ArrayList<>();
     private boolean mWaitForTransaction = true;
     private ComponentName mServiceName = null;
 
@@ -58,17 +64,19 @@ public class ExitFrameEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        IntentFilter filter = new IntentFilter(PollingLoopService.POLLING_FRAME_ACTION);
+        registerReceiver(mPollingLoopReceiver, filter, RECEIVER_EXPORTED);
         mIntendedExitFrameData = getIntent().getStringExtra(EXIT_FRAME_KEY);
         mWaitForTransaction = getIntent().getBooleanExtra(WAIT_FOR_TRANSACTION_KEY, true);
 
-        setupServices(PaymentService1.COMPONENT);
+        setupServices(ExitFrameService.COMPONENT);
         makeDefaultWalletRoleHolder();
     }
 
     public void onResume() {
         super.onResume();
         mServiceName =
-                new ComponentName(this.getApplicationContext(), PaymentService1.class);
+                new ComponentName(this.getApplicationContext(), ExitFrameService.class);
         mCardEmulation.setPreferredService(this, mServiceName);
         waitForPreferredService();
 
@@ -109,7 +117,7 @@ public class ExitFrameEmulatorActivity extends BaseEmulatorActivity {
 
     @Override
     public ComponentName getPreferredServiceComponent() {
-        return PaymentService1.COMPONENT;
+        return ExitFrameService.COMPONENT;
     }
 
     private void verifyExitFrameAndPassTest() {
@@ -119,9 +127,37 @@ public class ExitFrameEmulatorActivity extends BaseEmulatorActivity {
 
         boolean success =
                 Pattern.compile(mIntendedExitFrameData).matcher(mReceivedExitFrame).matches();
+        if (!success) {
+            Log.e(TAG, "Exit frame does not match the expected pattern."
+                    + "Expected exit frame: " + mIntendedExitFrameData
+                    + ", Received exit frame: " + mReceivedExitFrame);
+        }
+        if (mWaitForTransaction && success) {
+            success &= HexFormat.of().formatHex(mReceivedPollingFrames.getLast().getData())
+                    .equals(mReceivedExitFrame);
+            if (!success) {
+                Log.e(TAG, "Exit frame not the last received polling frame."
+                        + "Exit frame: " + mReceivedExitFrame
+                        + ", Received Polling frames: " + mReceivedPollingFrames);
+            }
+        }
 
         if (success) {
             setTestPassed();
         }
     }
+
+    final BroadcastReceiver mPollingLoopReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (action.equals(ExitFrameService.POLLING_FRAME_ACTION)) {
+                        mReceivedPollingFrames.addAll(
+                                intent.getParcelableArrayListExtra(
+                                        ExitFrameService.POLLING_FRAME_EXTRA,
+                                        PollingFrame.class));
+                    }
+                }
+            };
 }

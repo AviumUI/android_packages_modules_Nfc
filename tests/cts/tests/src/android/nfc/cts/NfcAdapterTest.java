@@ -764,6 +764,7 @@ public class NfcAdapterTest {
             status.getDefaultRoute();
             status.getDefaultIsoDepRoute();
             status.getDefaultOffHostRoute();
+            status.getDefaultFelicaRoute();
             nfcOemExtension.setAutoChangeEnabled(true);
             assertThat(nfcOemExtension.isAutoChangeEnabled()).isTrue();
             T4tNdefNfcee ndefNfcee = nfcOemExtension.getT4tNdefNfcee();

@@ -953,27 +953,34 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 throw new UnsupportedOperationException(
                         "Device does not support power saving mode");
             }
+            Log.d(TAG, "setPowerSavingModeInternal: " + enable
+                    + ", isPowerSavingModeEnabled: " + isPowerSavingModeEnabled());
 
             if (enable && isPowerSavingModeEnabled()) return;
             if (!enable && !isPowerSavingModeEnabled()) return;
 
-            @NfcAdapter.AdapterState int oldState = mPowerSavingState;
-            mPowerSavingState = enable
-                    ? NfcAdapter.STATE_TURNING_ON
-                    : NfcAdapter.STATE_TURNING_OFF;
-            mDeviceHost.setPowerSavingMode(enable);
-
-            if (mState == NfcAdapter.STATE_OFF) {
-                EnableDisableTask chip = new EnableDisableTask();
+            EnableDisableTask chip = new EnableDisableTask();
+            if (mState == NfcAdapter.STATE_OFF && enable) {
                 if (!chip.enableInternal()) {
-                    mPowerSavingState = oldState;
                     throw new IllegalStateException(
                             "Failed to temporarily enable chip for power saving mode update");
                 }
-                chip.disableInternal();
             }
 
-            mPowerSavingState = enable ? NfcAdapter.STATE_ON : NfcAdapter.STATE_OFF;
+            mPowerSavingState = enable
+                    ? NfcAdapter.STATE_TURNING_ON
+                    : NfcAdapter.STATE_TURNING_OFF;
+            if (enable) {
+                if (mDeviceHost.setPowerSavingMode(enable)) {
+                    chip.disableInternal();
+                    mPowerSavingState = NfcAdapter.STATE_ON;
+                } else {
+                    mPowerSavingState = NfcAdapter.STATE_OFF;
+                }
+            } else {
+                chip.enableInternal();
+                mPowerSavingState = NfcAdapter.STATE_OFF;
+            }
         }
     }
 
@@ -1921,6 +1928,12 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
             mPendingPowerStateUpdate = false;
 
+            if (isPowerSavingModeEnabled()) {
+                mDeviceHost.setPowerSavingMode(false);
+            }
+            synchronized (mPowerSavingModeLock) {
+                mPowerSavingState = NfcAdapter.STATE_OFF;
+            }
             synchronized (NfcService.this) {
                 mObjectMap.clear();
                 updateState(NfcAdapter.STATE_ON);
@@ -4564,7 +4577,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
     boolean isNfcEnabled() {
         synchronized (this) {
-            return mState == NfcAdapter.STATE_ON && !isPowerSavingModeEnabled();
+            return mState == NfcAdapter.STATE_ON;
         }
     }
 
@@ -6239,8 +6252,23 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                     mPrefsEditor = mPrefs.edit();
                     mPrefsEditor.putBoolean(PREF_MIGRATE_TO_DE_COMPLETE, true);
                     mPrefsEditor.apply();
+                    // Read the shared prefs again to determine if NFC should
+                    // be enabled or disabled.
+                    reinitializeAfterDeMigration();
                 }
             }
+        }
+
+        private void reinitializeAfterDeMigration() {
+            if (shouldEnableNfc()) {
+                new EnableDisableTask().execute(TASK_ENABLE);
+            } else {
+                new EnableDisableTask().execute(TASK_DISABLE);
+            }
+            mIsSecureNfcEnabled = mPrefs.getBoolean(PREF_SECURE_NFC_ON,
+                    mDeviceConfigFacade.getDefaultSecureNfcState())
+                    && mIsSecureNfcCapable;
+            mDeviceHost.setNfcSecure(mIsSecureNfcEnabled);
         }
     };
 
