@@ -21,6 +21,7 @@ import android.nfc.cardemulation.CardEmulation;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.android.modules.utils.build.SdkLevel;
 import com.android.nfc.service.OffHostService;
 import com.android.nfc.service.PollingLoopService;
 
@@ -63,7 +64,7 @@ public class OffHostEmulatorActivity extends BaseEmulatorActivity {
     @Override
     public void onPause() {
         super.onPause();
-        if (android.nfc.Flags.nfcEventListener()) {
+        if (SdkLevel.isAtLeastB() && android.nfc.Flags.nfcEventListener()) {
             mCardEmulation.unregisterNfcEventCallback(mEventListener);
         }
         if (getIntent().getBooleanExtra(EXTRA_ENABLE_OBSERVE_MODE, false)) {
