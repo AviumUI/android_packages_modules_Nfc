@@ -79,7 +79,7 @@
     <integer name="ce_wake_lock_timeout_millis">1000</integer>
     <string-array name="overwrite_routing_table_allow_list_pkgs" translatable="false" />
     <!-- Forcibly set the preferred subscription service to UICC when there is no preference. -->
-    <bool name="default_preferred_subscription_to_uicc">false</bool>
-    <!-- Skip reading routing options from shared preferences for felica route -->
-    <bool name="skip_read_routing_options_from_prefs_for_felica">false</bool>
+    <bool name="default_preferred_subscription_to_uicc">true</bool>
+    <!-- Separate felica routing when default preferred subscription status changed -->
+    <bool name="separate_offhost_felica_routing">true</bool>
 </resources>

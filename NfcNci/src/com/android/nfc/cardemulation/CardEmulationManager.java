@@ -809,8 +809,15 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 route->mRoutingOptionManager.overrideDefaultRoute(route));
         changed |= updateRouteToPreferredSim(()->mRoutingOptionManager.getDefaultIsoDepRoute(),
                 route->mRoutingOptionManager.overrideDefaultIsoDepRoute(route));
-        changed |= updateRouteToPreferredSim(()->mRoutingOptionManager.getDefaultOffHostRoute(),
-                route->mRoutingOptionManager.overrideDefaultOffHostRoute(route));
+        if (mDeviceConfigFacade.shouldSeparateOffhostFelicaRouting()) {
+            int fRoute = mRoutingOptionManager.getDefaultFelicaRoute();
+            changed |= updateRouteToPreferredSim(
+                    ()->mRoutingOptionManager.getDefaultOffHostRoute(),
+                    route->mRoutingOptionManager.overrideDefaultTechRoute(route, fRoute));
+        } else {
+            changed |= updateRouteToPreferredSim(()->mRoutingOptionManager.getDefaultOffHostRoute(),
+                    route->mRoutingOptionManager.overrideDefaultOffHostRoute(route));
+        }
         if (changed) {
             mRoutingOptionManager.overwriteRoutingTable();
         }
