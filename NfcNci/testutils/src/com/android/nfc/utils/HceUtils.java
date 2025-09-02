@@ -28,6 +28,7 @@ import android.content.pm.PackageManager;
 import android.nfc.NfcAdapter;
 
 import com.android.nfc.service.AccessService;
+import com.android.nfc.service.ExitFrameService;
 import com.android.nfc.service.LargeNumAidsService;
 import com.android.nfc.service.OffHostService;
 import com.android.nfc.service.PaymentService1;
@@ -99,6 +100,18 @@ public final class HceUtils {
                 });
         RESPONSE_APDUS_BY_SERVICE.put(
                 PaymentService1.class.getName(),
+                new String[] {"FFFF9000", "FFEF9000", "FFDFFFAABB9000"});
+
+        // Exit Frame Service
+        COMMAND_APDUS_BY_SERVICE.put(
+                ExitFrameService.class.getName(),
+                new CommandApdu[] {
+                        buildSelectApdu(PPSE_AID, true),
+                        buildSelectApdu(MC_AID, true),
+                        buildCommandApdu("80CA01F000", true)
+                });
+        RESPONSE_APDUS_BY_SERVICE.put(
+                ExitFrameService.class.getName(),
                 new String[] {"FFFF9000", "FFEF9000", "FFDFFFAABB9000"});
 
         COMMAND_APDUS_BY_SERVICE.put(
