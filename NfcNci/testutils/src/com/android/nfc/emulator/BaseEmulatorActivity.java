@@ -37,6 +37,7 @@ import android.util.Log;
 import android.util.Xml;
 
 import com.android.compatibility.common.util.CommonTestUtils;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.nfc.service.HceService;
 import com.android.nfc.utils.HceUtils;
 
@@ -100,7 +101,7 @@ public abstract class BaseEmulatorActivity extends Activity {
     }
 
     public void registerEventListener(CardEmulation.NfcEventCallback eventListener) {
-        if (android.nfc.Flags.nfcEventListener()) {
+        if (SdkLevel.isAtLeastB() && android.nfc.Flags.nfcEventListener()) {
             Log.d(TAG, "registering event listener...");
             mCardEmulation.registerNfcEventCallback(getMainExecutor(), eventListener);
         }
