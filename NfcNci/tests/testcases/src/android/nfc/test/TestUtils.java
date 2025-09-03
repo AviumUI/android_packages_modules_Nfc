@@ -41,6 +41,7 @@ import com.android.compatibility.common.util.CommonTestUtils;
 import com.android.compatibility.common.util.SystemUtil;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.Assert;
 
 public class TestUtils {
@@ -124,14 +125,14 @@ public class TestUtils {
     int mFrameIndex = 0;
     ArrayList<PollingFrame> mFrames;
     String mServiceName;
-    ArrayList<PollingFrame> mReceivedFrames;
+    CopyOnWriteArrayList<PollingFrame> mReceivedFrames;
     String mReceivedServiceName;
     ArrayList<String> mReceivedServiceNames;
 
     PollLoopReceiver(ArrayList<PollingFrame> frames, String serviceName) {
       mFrames = frames;
       mServiceName = serviceName;
-      mReceivedFrames = new ArrayList<PollingFrame>();
+      mReceivedFrames = new CopyOnWriteArrayList<PollingFrame>();
       mReceivedServiceNames = new ArrayList<String>();
     }
 
