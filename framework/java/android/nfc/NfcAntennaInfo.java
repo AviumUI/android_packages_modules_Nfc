@@ -16,6 +16,7 @@
 
 package android.nfc;
 
+import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -67,7 +68,11 @@ public final class NfcAntennaInfo implements Parcelable {
      * the 0, 0 is considered to be top-left when the device is unfolded and
      * the screens are facing the user. For non-foldable devices 0, 0
      * is top-left when the user is facing the screen.
+     *
+     * @deprecated This method is deprecated and no longer maintained.
      */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_DEPRECATE_ANTENNA_INFO)
+    @Deprecated
     public boolean isDeviceFoldable() {
         return mDeviceFoldable;
     }
