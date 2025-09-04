@@ -803,7 +803,10 @@ public class HostEmulationManager {
      * This assumes the exit frame will be in the next batch of processed polling frames.
      */
     public void onObserveModeDisabledInFirmware(PollingFrame exitFrame) {
-        mFirmwareExitFrame = exitFrame;
+        synchronized(mLock) {
+            mFirmwareExitFrame = exitFrame;
+            clearAutoDisableObserveModeRunnableLocked();
+        }
     }
 
     /**
