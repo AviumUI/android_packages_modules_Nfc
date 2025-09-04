@@ -2779,7 +2779,8 @@ bool nfa_ee_is_active(tNFA_HANDLE nfcee_id) {
   /* compose output */
   for (xx = 0; xx < nfa_ee_cb.cur_ee; xx++, p_cb++) {
     if ((tNFA_HANDLE)p_cb->nfcee_id == nfcee_id) {
-      if (p_cb->ee_status == NFA_EE_STATUS_ACTIVE) {
+      if ((p_cb->ee_status & ~NFA_EE_STATUS_MEP_MASK) ==
+          NFC_NFCEE_STATUS_ACTIVE) {
         is_active = true;
       }
       break;

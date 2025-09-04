@@ -2596,6 +2596,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             }
             synchronized (NfcService.this) {
                 mPollingPaused = true;
+                StopPresenceChecking(false);
                 mDeviceHost.disableDiscovery();
                 /* timeoutInMs 0 will stop discovery without any timeout
                  * polling will not auto resume */
