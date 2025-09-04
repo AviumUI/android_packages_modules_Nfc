@@ -2596,6 +2596,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
             }
             synchronized (NfcService.this) {
                 mPollingPaused = true;
+                StopPresenceChecking(false);
                 mDeviceHost.disableDiscovery();
                 /* timeoutInMs 0 will stop discovery without any timeout
                  * polling will not auto resume */
@@ -6504,38 +6505,35 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 return;
             }
         }
-
-        synchronized (this) {
-            pw.println("mState=" + stateToString(mState));
-            pw.println("mAlwaysOnState=" + stateToString(mAlwaysOnState));
-            pw.println("mScreenState=" + ScreenStateHelper.screenStateToString(mScreenState));
-            pw.println("mIsSecureNfcEnabled=" + mIsSecureNfcEnabled);
-            pw.println("mIsReaderOptionEnabled=" + mIsReaderOptionEnabled);
-            pw.println("mIsAlwaysOnSupported=" + mIsAlwaysOnSupported);
-            if (mIsWlcCapable) {
-                pw.println("WlcEnabled=" + mIsWlcEnabled);
-            }
-            pw.println("SnoopLogMode=" + NFC_SNOOP_LOG_MODE);
-            pw.println("VendorDebugEnabled=" + NFC_VENDOR_DEBUG_ENABLED);
-            pw.println("mPowerSavingState=" + mPowerSavingState);
-            pw.println("mIsObserveModeSupported=" + mNfcAdapter.isObserveModeSupported());
-            pw.println("mIsObserveModeEnabled=" + mNfcAdapter.isObserveModeEnabled());
-            pw.println("listenTech=0x" + Integer.toHexString(getNfcListenTech()));
-            pw.println("pollTech=0x" + Integer.toHexString(getNfcPollTech()));
-            pw.println(mCurrentDiscoveryParameters);
-            if (mIsHceCapable) {
-                mCardEmulationManager.dump(fd, pw, args);
-            }
-            mNfcDispatcher.dump(fd, pw, args);
-            if (mState == NfcAdapter.STATE_ON) {
-                mRoutingTableParser.dump(mDeviceHost, pw);
-            }
-            dumpTagAppPreference(pw);
-            mNfcInjector.getNfcEventLog().dump(fd, pw, args);
-            copyNativeCrashLogsIfAny(pw);
-            pw.flush();
-            mDeviceHost.dump(pw,fd);
+        pw.println("mState=" + stateToString(mState));
+        pw.println("mAlwaysOnState=" + stateToString(mAlwaysOnState));
+        pw.println("mScreenState=" + ScreenStateHelper.screenStateToString(mScreenState));
+        pw.println("mIsSecureNfcEnabled=" + mIsSecureNfcEnabled);
+        pw.println("mIsReaderOptionEnabled=" + mIsReaderOptionEnabled);
+        pw.println("mIsAlwaysOnSupported=" + mIsAlwaysOnSupported);
+        if (mIsWlcCapable) {
+            pw.println("WlcEnabled=" + mIsWlcEnabled);
         }
+        pw.println("SnoopLogMode=" + NFC_SNOOP_LOG_MODE);
+        pw.println("VendorDebugEnabled=" + NFC_VENDOR_DEBUG_ENABLED);
+        pw.println("mPowerSavingState=" + mPowerSavingState);
+        pw.println("mIsObserveModeSupported=" + mNfcAdapter.isObserveModeSupported());
+        pw.println("mIsObserveModeEnabled=" + mNfcAdapter.isObserveModeEnabled());
+        pw.println("listenTech=0x" + Integer.toHexString(getNfcListenTech()));
+        pw.println("pollTech=0x" + Integer.toHexString(getNfcPollTech()));
+        pw.println(mCurrentDiscoveryParameters);
+        if (mIsHceCapable) {
+            mCardEmulationManager.dump(fd, pw, args);
+        }
+        mNfcDispatcher.dump(fd, pw, args);
+        if (mState == NfcAdapter.STATE_ON) {
+            mRoutingTableParser.dump(mDeviceHost, pw);
+        }
+        dumpTagAppPreference(pw);
+        mNfcInjector.getNfcEventLog().dump(fd, pw, args);
+        copyNativeCrashLogsIfAny(pw);
+        pw.flush();
+        mDeviceHost.dump(pw,fd);
     }
 
     /**

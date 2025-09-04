@@ -3173,12 +3173,14 @@ static tNFA_STATUS stopPolling_rfDiscoveryDisabled() {
   SyncEventGuard guard(sNfaEnableDisablePollingEvent);
   LOG(DEBUG) << StringPrintf("%s: disable polling", __func__);
   stat = NFA_DisablePolling();
-  if (stat == NFA_STATUS_OK) {
-    sPollingEnabled = false;
-    sNfaEnableDisablePollingEvent.wait();  // wait for NFA_POLL_DISABLED_EVT
-  } else {
-    LOG(ERROR) << StringPrintf("%s: fail disable polling; error=0x%X", __func__,
-                               stat);
+  if (!sIsRecovering) {
+    if (stat == NFA_STATUS_OK) {
+      sPollingEnabled = false;
+      sNfaEnableDisablePollingEvent.wait();  // wait for NFA_POLL_DISABLED_EVT
+    } else {
+      LOG(ERROR) << StringPrintf("%s: fail disable polling; error=0x%X",
+                                 __func__, stat);
+    }
   }
   nativeNfcTag_releaseRfInterfaceMutexLock();
 
