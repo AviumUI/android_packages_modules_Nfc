@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.nfc.NfcAdapter;
 import android.nfc.cardemulation.CardEmulation;
 import android.nfc.cardemulation.PollingFrame;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -308,6 +309,18 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
             return false;
         }
         return adapter.isObserveModeSupported();
+    }
+
+    @Rpc(description = "Returns if exit frame is supported.")
+    public boolean isExitFramesSupported() {
+        NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
+        if (adapter == null) {
+            return false;
+        }
+        if (Build.VERSION.SDK_INT_FULL < Build.VERSION_CODES_FULL.BAKLAVA_1) {
+            return false;
+        }
+        return adapter.isExitFramesSupported();
     }
 
     @Rpc(description = "Returns if observe mode is enabled.")
