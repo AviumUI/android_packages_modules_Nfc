@@ -618,7 +618,7 @@ public class HostEmulationManager {
 
     @TargetApi(35)
     public void onPollingLoopDetected(List<PollingFrame> pollingFrames) {
-        Log.d(TAG, "onPollingLoopDetected: size: " + pollingFrames.size());
+        if (DBG) Log.d(TAG, "onPollingLoopDetected: " + pollingFrames);
         synchronized (mLock) {
             rescheduleInactivityChecks();
             // We need to have this check here in addition to the one in onFieldChangeDetected,
