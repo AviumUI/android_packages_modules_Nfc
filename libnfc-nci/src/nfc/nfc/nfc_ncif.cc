@@ -1532,12 +1532,11 @@ void nfc_ncif_proc_reset_rsp(uint8_t* p, bool is_ntf) {
 
   status = *p_len > 0 ? *p++ : NCI_STATUS_FAILED;
   if (*p_len > 2 && is_ntf) {
-    LOG(WARNING) << StringPrintf("%s: reset notification!!=0x%x ", __func__,
-                                 status);
     /* clean up, if the state is OPEN
      * FW does not report reset ntf right now */
-    if (status == NCI2_X_RESET_TRIGGER_TYPE_CORE_RESET_CMD_RECEIVED ||
-        status == NCI2_X_RESET_TRIGGER_TYPE_POWERED_ON) {
+    if ((status == NCI2_X_RESET_TRIGGER_TYPE_CORE_RESET_CMD_RECEIVED ||
+         status == NCI2_X_RESET_TRIGGER_TYPE_POWERED_ON) &&
+        (nfc_cb.nfc_state < NFC_STATE_IDLE)) {
       LOG(VERBOSE) << StringPrintf("%s: status=0x%x nfc_state=0x%x", __func__,
                                    status, nfc_cb.nfc_state);
       nfc_stop_timer(&nfc_cb.nci_wait_rsp_timer);
@@ -1939,6 +1938,7 @@ void nfc_mode_set_ntf_timeout() {
   LOG(ERROR) << StringPrintf("%s", __func__);
   tNFC_RESPONSE nfc_response;
   nfc_response.mode_set.status = NCI_STATUS_FAILED;
+  nfc_cb.flags &= ~NFC_FL_WAIT_MODE_SET_NTF;
   nfc_response.mode_set.nfcee_id = *nfc_cb.last_nfcee_cmd;
   nfc_response.mode_set.mode = NCI_NFCEE_MD_DEACTIVATE;
 
