@@ -698,6 +698,10 @@ public class HostEmulationManager {
                                     mFirmwareExitFrame.getData(), pollingFrame.getData())) {
                                 mFirmwareExitFrame = null;
                                 mEnableObserveModeAfterTransaction = true;
+                                // This is needed to ensure that we re-enable observe mode
+                                // if the transaction does not start for some reason
+                                // after disabling observe mode.
+                                mEnableObserveModeOnFieldOff = true;
                                 Log.d(TAG,
                                         "Polling frame matches exit frame, leaving observe mode "
                                                 + "disabled");
@@ -793,6 +797,10 @@ public class HostEmulationManager {
     private void allowOneTransaction() {
         Log.d(TAG, "allowOneTransaction");
         mEnableObserveModeAfterTransaction = true;
+        // This is needed to ensure that we re-enable observe mode
+        // if the transaction does not start for some reason
+        // after disabling observe mode.
+        mEnableObserveModeOnFieldOff = true;
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         mHandler.post(() -> adapter.setObserveModeEnabled(false));
     }
@@ -864,6 +872,12 @@ public class HostEmulationManager {
                 Trace.beginAsyncSection(EVENT_HCE_ACTIVATED, 0);
             }
             rescheduleInactivityChecks();
+            // Since transaction has started, we should only re-enable observe mode
+            // at end of the transaction (not field off because we might get field off
+            // in the middle of transaction)
+            if (mEnableObserveModeAfterTransaction) {
+                mEnableObserveModeOnFieldOff = false;
+            }
             // Regardless of what happens, if we're having a tap again
             // activity up, close it
             Intent intent = new Intent(TapAgainDialog.ACTION_CLOSE);
@@ -1126,11 +1140,6 @@ public class HostEmulationManager {
                 // Don't bother telling, we're not bound to any service yet
             } else {
                 sendDeactivateToActiveServiceLocked(HostApduService.DEACTIVATION_DESELECTED);
-            }
-            if (mEnableObserveModeAfterTransaction) {
-                Log.i(TAG, "onOffHostAidSelected: OffHost AID selected, "
-                        + "waiting for Field off to reenable observe mode");
-                mEnableObserveModeOnFieldOff = true;
             }
             resetActiveService();
             unbindServiceIfNeededLocked();
