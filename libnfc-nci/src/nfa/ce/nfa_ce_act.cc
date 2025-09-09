@@ -1274,6 +1274,13 @@ bool nfa_ce_api_reg_listen(tNFA_CE_MSG* p_ce_msg) {
             "%s: UICC (0x%x) listening parameter changed to %x", __func__,
             p_ce_msg->reg_listen.ee_handle, p_ce_msg->reg_listen.tech_mask);
         listen_info_idx = i;
+        if (p_cb->listen_info[i].rf_disc_handle != NFA_HANDLE_INVALID) {
+          LOG(VERBOSE) << StringPrintf(
+              "%s: delete previous rf_discover_entry (0x%x) ", __func__,
+              p_cb->listen_info[i].rf_disc_handle);
+          nfa_dm_delete_rf_discover(p_cb->listen_info[i].rf_disc_handle);
+          p_cb->listen_info[i].rf_disc_handle = NFA_HANDLE_INVALID;
+        }
         break;
       }
     }
