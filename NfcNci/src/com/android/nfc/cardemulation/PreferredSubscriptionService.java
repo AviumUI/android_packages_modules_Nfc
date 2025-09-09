@@ -43,6 +43,7 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
     TelephonyUtils mTelephonyUtils;
     int mActiveSubscriptoinState = TelephonyUtils.SUBSCRIPTION_STATE_UNKNOWN;
     List<SubscriptionInfo> mActiveSubscriptions = null;
+    boolean mTelephonySubscriptionRouting = true;
 
     public interface Callback {
         void onPreferredSubscriptionChanged(int subscriptionId, boolean isActive);
@@ -76,9 +77,16 @@ public class PreferredSubscriptionService implements TelephonyUtils.Callback {
     }
 
     public void initialize() {
+        mTelephonySubscriptionRouting = mContext.getResources().getBoolean(
+                R.bool.telephony_subscription_routing_enabled);
         if (mIsUiccCapable || mIsEuiccCapable) {
             onDefaultSubscriptionChanged();
-            mTelephonyUtils.registerSubscriptionChangedCallback(this);
+            if (mTelephonySubscriptionRouting) {
+                Log.d(TAG, "Registering telephony subscription callback");
+                mTelephonyUtils.registerSubscriptionChangedCallback(this);
+            } else {
+                Log.d(TAG, "Skip registering telephony subscription callback");
+            }
         }
     }
 
