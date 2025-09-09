@@ -55,6 +55,7 @@ import com.android.nfc.wlc.NfcCharging;
 
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -398,5 +399,11 @@ public class NfcInjector {
         mKeyguardManager = mContext
                 .createContextAsUser(UserHandle.of(ActivityManager.getCurrentUser()), 0)
                 .getSystemService(KeyguardManager.class);
+    }
+
+    /** Creates a NfcTagAllowNotification object */
+    public NfcTagAllowNotification createNfcTagAllowNotification(
+            Context context, List<String> appNames) {
+        return new NfcTagAllowNotification(context, appNames);
     }
 }
