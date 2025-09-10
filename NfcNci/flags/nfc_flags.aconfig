@@ -54,12 +54,5 @@ flag {
     bug: "323440961"
 }
 
-flag {
-    name: "nfc_alert_tag_app_launch"
-    namespace: "nfc"
-    description: "Notify user when tag app launched for the first time"
-    bug: "312390070"
-}
-
 # Don't add any new flags for Android 16+ targeting features. Use the flags
 # in com.android.nfc.module.flags (packages/modules/Nfc/flags) instead.

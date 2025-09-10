@@ -72,7 +72,6 @@ import android.widget.TextView;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.nfc.RegisteredComponentCache.ComponentInfo;
-import com.android.nfc.flags.Flags;
 import com.android.nfc.handover.HandoverDataParser;
 import com.android.nfc.handover.PeripheralHandoverService;
 
@@ -253,9 +252,11 @@ class NfcDispatcher {
         final PackageManager packageManager;
         final Context context;
         final NfcAdapter mNfcAdapter;
+        final NfcInjector mInjector;
         final boolean mIsTagAppPrefSupported;
 
-        public DispatchInfo(Context context, Tag tag, NdefMessage message) {
+        DispatchInfo(Context context, NfcInjector nfcInjector,
+                Tag tag, NdefMessage message) {
             intent = new Intent();
             intent.putExtra(NfcAdapter.EXTRA_TAG, tag);
             intent.putExtra(NfcAdapter.EXTRA_ID, tag.getId());
@@ -274,6 +275,7 @@ class NfcDispatcher {
             rootIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
             this.context = context;
+            mInjector = nfcInjector;
             packageManager = context.getPackageManager();
             mIsTagAppPrefSupported =
                     context.getResources().getBoolean(R.bool.tag_intent_app_pref_supported);
@@ -376,9 +378,7 @@ class NfcDispatcher {
                     // Default sets allow to the preference list
                     if (DBG) Log.d(TAG, "checkPrefList: add:" + pkgName);
                     mNfcAdapter.setTagIntentAppPreferenceForUser(userId, pkgName, true);
-                    if (Flags.nfcAlertTagAppLaunch()) {
-                        notifyAppNames.add(appName);
-                    }
+                    notifyAppNames.add(appName);
                 }
             }
             if (muteAppCount > 0) {
@@ -395,7 +395,8 @@ class NfcDispatcher {
                 }
             }
             if (notifyAppNames.size() > 0) {
-                new NfcTagAllowNotification(context, notifyAppNames).startNotification();
+                mInjector.createNfcTagAllowNotification(context, notifyAppNames)
+                        .startNotification();
             }
             return filtered;
         }
@@ -616,7 +617,7 @@ class NfcDispatcher {
 
         if (DBG) Log.d(TAG, "dispatchTag: " + tag.toString() + " message: " + message);
 
-        DispatchInfo dispatch = new DispatchInfo(mContext, tag, message);
+        DispatchInfo dispatch = new DispatchInfo(mContext, mNfcInjector, tag, message);
 
         resumeAppSwitches();
 
@@ -1083,9 +1084,7 @@ class NfcDispatcher {
                                     if (DBG) Log.d(TAG, "tryTech: add:" + pkgName);
                                     mNfcAdapter.setTagIntentAppPreferenceForUser(userId,
                                             pkgName, true);
-                                    if (Flags.nfcAlertTagAppLaunch()) {
-                                        notifyAppNames.add(appName);
-                                    }
+                                    notifyAppNames.add(appName);
                                 } else {
                                     if (DBG) Log.d(TAG, "tryTech: allow:" + pkgName);
                                 }
@@ -1099,7 +1098,8 @@ class NfcDispatcher {
         }
 
         if (notifyAppNames.size() > 0) {
-            new NfcTagAllowNotification(mContext, notifyAppNames).startNotification();
+            mNfcInjector.createNfcTagAllowNotification(mContext, notifyAppNames)
+                    .startNotification();
         }
 
         if (matches.size() == 1) {
