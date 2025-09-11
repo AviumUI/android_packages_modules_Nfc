@@ -3039,6 +3039,12 @@ tNFA_HANDLE nfa_dm_add_rf_discover(tNFA_DM_DISC_TECH_PROTO_MASK disc_mask,
       nfa_dm_cb.disc_cb.entry[xx].p_disc_cback = p_disc_cback;
       nfa_dm_cb.disc_cb.entry[xx].disc_flags = NFA_DM_DISC_FLAGS_NOTIFY;
       return xx;
+    } else if (((host_id & 0x80) == 0x80) &&
+               (nfa_dm_cb.disc_cb.entry[xx].host_id == host_id)) {
+      nfa_dm_cb.disc_cb.entry[xx].requested_disc_mask = disc_mask;
+      nfa_dm_cb.disc_cb.entry[xx].p_disc_cback = p_disc_cback;
+      nfa_dm_cb.disc_cb.entry[xx].disc_flags = NFA_DM_DISC_FLAGS_NOTIFY;
+      return xx;
     }
   }
 
