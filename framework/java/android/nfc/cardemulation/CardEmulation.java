@@ -1140,9 +1140,13 @@ public final class CardEmulation {
      * otherwise a call to this method will fail and throw {@link SecurityException}.
      * @param activity The Activity that requests NFC controller routing table to be changed.
      * @param protocol ISO-DEP route destination, where the possible inputs are defined
-     *                 in {@link ProtocolAndTechnologyRoute}.
+     *                 in {@link ProtocolAndTechnologyRoute}. However
+     *                 {@link #PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT} and
+     *                 {@link #PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE} are invalid inputs.
      * @param technology Tech-A, Tech-B and Tech-F route destination, where the possible inputs
-     *                   are defined in {@link ProtocolAndTechnologyRoute}
+     *                   are defined in {@link ProtocolAndTechnologyRoute}. However
+     *                   {@link #PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT} and
+     *                   {@link #PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE} are invalid inputs.
      * @throws SecurityException if the caller is not the preferred NFC service
      * @throws IllegalArgumentException if the activity is not resumed or the caller is not in the
      * foreground.
@@ -1158,6 +1162,12 @@ public final class CardEmulation {
             @ProtocolAndTechnologyRoute int technology) {
         if (!activity.isResumed()) {
             throw new IllegalArgumentException("Activity must be resumed.");
+        }
+        if (protocol >= PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT) {
+            throw new IllegalArgumentException("Invalid protocol inputs.");
+        }
+        if (technology >= PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT) {
+            throw new IllegalArgumentException("Invalid technology inputs.");
         }
         String protocolRoute = routeIntToString(protocol);
         String technologyRoute = routeIntToString(technology);
