@@ -432,6 +432,8 @@ typedef struct {
 
 /* NFA HCI control block */
 extern tNFA_HCI_CB nfa_hci_cb;
+/* Mutex to protect nfa_hci_cb.hci_state change */
+extern pthread_mutex_t nfa_hci_mutex;
 
 /*****************************************************************************
 **  External functions

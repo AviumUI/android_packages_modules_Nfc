@@ -41,6 +41,8 @@ using android::base::StringPrintf;
 *****************************************************************************/
 
 tNFA_HCI_CB nfa_hci_cb;
+/* Mutex to protect nfa_hci_cb.hci_state change */
+pthread_mutex_t nfa_hci_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #ifndef NFA_HCI_NV_READ_TIMEOUT_VAL
 #define NFA_HCI_NV_READ_TIMEOUT_VAL 1000
@@ -518,11 +520,13 @@ void nfa_hci_startup_complete(tNFA_STATUS status) {
     nfa_sys_cback_notify_enable_complete(NFA_ID_HCI);
   }
 
+  pthread_mutex_lock(&nfa_hci_mutex);
   if (status == NFA_STATUS_OK)
     nfa_hci_cb.hci_state = NFA_HCI_STATE_IDLE;
 
   else
     nfa_hci_cb.hci_state = NFA_HCI_STATE_DISABLED;
+  pthread_mutex_unlock(&nfa_hci_mutex);
 }
 
 /*******************************************************************************
