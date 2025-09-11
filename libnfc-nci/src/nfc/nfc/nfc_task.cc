@@ -437,6 +437,5 @@ uint32_t nfc_task(__attribute__((unused)) uint32_t arg) {
 
   LOG(VERBOSE) << StringPrintf("%s: terminated", __func__);
 
-  GKI_exit_task(GKI_get_taskid());
   return 0;
 }
