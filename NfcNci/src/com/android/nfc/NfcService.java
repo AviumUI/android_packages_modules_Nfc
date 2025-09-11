@@ -4775,7 +4775,9 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 return;
             }
             refreshTagDispatcherInProvisionMode();
-            if (mPollingPaused && !NfcInjector.isPrivileged(Binder.getCallingUid())) {
+            boolean privilegedCaller = NfcInjector.isPrivileged(Binder.getCallingUid())
+                    || NfcPermissions.checkAdminPermissions(mContext);
+            if (mPollingPaused && !privilegedCaller) {
                 Log.d(TAG, "applyRouting: Not updating discovery parameters, polling paused");
                 return;
             }
