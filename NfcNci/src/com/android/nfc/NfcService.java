@@ -2201,18 +2201,21 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
         }
     }
 
-    private void clearListenTech(boolean keepListenTech) {
+    private void clearListenPollTech(boolean keepListenTech) {
         if (getNfcListenTech() != DEFAULT_LISTEN_TECH) {
             int listenTech = -1;
+            int pollTech = NfcAdapter.FLAG_READER_KEEP;
             if (keepListenTech) {
-                Log.d(TAG, "clearListenTech: keep listenTech");
+                Log.d(TAG, "clearListenPollTech: keep listenTech");
                 listenTech = NfcAdapter.FLAG_LISTEN_KEEP;
             } else {
-                Log.d(TAG, "clearListenTech: clear listenTech");
+                Log.d(TAG, "clearListenPollTech: clear listenTech");
+                pollTech = (NfcAdapter.FLAG_READER_KEEP | NfcAdapter.FLAG_USE_ALL_TECH
+                    | NfcAdapter.FLAG_SET_DEFAULT_TECH);
                 listenTech = (NfcAdapter.FLAG_LISTEN_KEEP | NfcAdapter.FLAG_USE_ALL_TECH
                     | NfcAdapter.FLAG_SET_DEFAULT_TECH);
             }
-            setDiscoveryTech(NfcAdapter.FLAG_READER_KEEP, listenTech);
+            setDiscoveryTech(pollTech, listenTech);
         }
     }
 
@@ -3045,7 +3048,7 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         // listenTech is different from the default value, the stored listenTech will be included.
                         // When using setReaderMode, change listenTech to default & restore to previous value.
                         if (isNfcEnabled()) {
-                            clearListenTech(disablePolling);
+                            clearListenPollTech(disablePolling);
                         }
                         updateReaderModeParams(callback, flags, extras, binder, callingUid);
                     } catch (RemoteException e) {
@@ -4772,7 +4775,9 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                 return;
             }
             refreshTagDispatcherInProvisionMode();
-            if (mPollingPaused && !NfcInjector.isPrivileged(Binder.getCallingUid())) {
+            boolean privilegedCaller = NfcInjector.isPrivileged(Binder.getCallingUid())
+                    || NfcPermissions.checkAdminPermissions(mContext);
+            if (mPollingPaused && !privilegedCaller) {
                 Log.d(TAG, "applyRouting: Not updating discovery parameters, polling paused");
                 return;
             }
