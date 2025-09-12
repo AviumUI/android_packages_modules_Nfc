@@ -1102,6 +1102,11 @@ bool nfa_dm_act_send_raw_frame(tNFA_DM_MSG* p_data) {
       /* if RW is checking presence then it will put into pending queue */
       status = nfa_rw_send_raw_frame((NFC_HDR*)p_data);
     } else {
+      if (!(nfa_dm_cb.flags & NFA_DM_FLAGS_EXCL_RF_ACTIVE) &&
+          !(nfa_dm_cb.disc_cb.disc_state == NFA_DM_RFST_LISTEN_ACTIVE) &&
+          (nfa_dm_cb.disc_cb.activated_protocol == NFC_PROTOCOL_MIFARE)) {
+        nfa_rw_check_mifare_data((NFC_HDR*)p_data);
+      }
       status = NFC_SendData(NFC_RF_CONN_ID, (NFC_HDR*)p_data);
       if (status != NFC_STATUS_OK) {
         NFC_SetReassemblyFlag(true);
