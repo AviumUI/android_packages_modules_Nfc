@@ -44,6 +44,14 @@ class ScreenStateHelper {
                     mDisplayManager.getDisplays(DisplayManager.DISPLAY_CATEGORY_BUILT_IN_DISPLAYS);
             if (displaysBuiltIn.length > 0) {
                 displayBuiltIn = displaysBuiltIn[0];
+
+                // if there is any screen it's on, choosing the display for it
+                for (Display dis : displaysBuiltIn) {
+                    if (dis.getState() == Display.STATE_ON) {
+                        displayBuiltIn = dis;
+                        break;
+                    }
+                }
             }
         } else {
             displayBuiltIn = mDisplayManager.getDisplay(DISPLAY_BUILT_IN_DISPLAY_OEM);
