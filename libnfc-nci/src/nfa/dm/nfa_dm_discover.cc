@@ -1445,6 +1445,9 @@ static void nfa_dm_disc_notify_deactivation(tNFA_DM_RF_DISC_SM_EVENT sm_event,
     LOG(VERBOSE) << StringPrintf("%s: for sleep wakeup", __func__);
     return;
   }
+  if (nfa_dm_cb.disc_cb.activated_protocol == NFC_PROTOCOL_MIFARE) {
+    nfa_rw_set_mifare_deactivated();
+  }
 
   if (sm_event == NFA_DM_RF_DEACTIVATE_RSP) {
     /*

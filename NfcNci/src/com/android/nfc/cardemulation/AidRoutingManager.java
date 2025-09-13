@@ -74,6 +74,7 @@ public class AidRoutingManager {
 
     int mDefaultFelicaRoute;
 
+    int mDefaultSysCodeRoute;
     // How the NFC controller can match AIDs in the routing table;
     // see AID_MATCHING constants
     final int mAidMatchingSupport;
@@ -115,6 +116,11 @@ public class AidRoutingManager {
         if (DBG) {
             Log.d(TAG, "mDefaultFelicaRoute=0x"
                     + Integer.toHexString(mDefaultFelicaRoute));
+        }
+        mDefaultSysCodeRoute = mRoutingOptionManager.getDefaultScRoute();
+        if (DBG) {
+            Log.d(TAG, "mDefaultSysCodeRoute=0x"
+                    + Integer.toHexString(mDefaultSysCodeRoute));
         }
         mOffHostRouteUicc = mRoutingOptionManager.getOffHostRouteUicc();
         if (DBG) {
@@ -351,11 +357,13 @@ public class AidRoutingManager {
             mDefaultIsoDepRoute = mRoutingOptionManager.getOverrideDefaultIsoDepRoute();
             mDefaultOffHostRoute = mRoutingOptionManager.getOverrideDefaultOffHostRoute();
             mDefaultFelicaRoute = mRoutingOptionManager.getOverrideDefaultFelicaRoute();
+            mDefaultSysCodeRoute = mRoutingOptionManager.getOverrideDefaultScRoute();
         } else {
             mDefaultRoute = mRoutingOptionManager.getDefaultRoute();
             mDefaultIsoDepRoute = mRoutingOptionManager.getDefaultIsoDepRoute();
             mDefaultOffHostRoute = mRoutingOptionManager.getDefaultOffHostRoute();
             mDefaultFelicaRoute = mRoutingOptionManager.getDefaultFelicaRoute();
+            mDefaultSysCodeRoute = mRoutingOptionManager.getDefaultScRoute();
         }
         if (DBG) {
             Log.d(TAG, "configureRouting: Nb of AIDs in aidMap=" + aidMap.size()
@@ -622,6 +630,7 @@ public class AidRoutingManager {
                 NfcService.getInstance().setIsoDepProtocolRoute(mDefaultIsoDepRoute);
                 NfcService.getInstance().setTechnologyABFRoute(mDefaultOffHostRoute,
                         mDefaultFelicaRoute);
+                NfcService.getInstance().setSystemCodeRoute(mDefaultSysCodeRoute);
             }
         } else {
             Log.d(TAG, "sendRoutingTable: Routing table is override, "

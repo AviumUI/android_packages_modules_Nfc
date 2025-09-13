@@ -842,7 +842,6 @@ uint32_t NfcAdaptation::Thread(__attribute__((unused)) uint32_t arg) {
 
   NfcAdaptation::GetInstance().signal();
 
-  GKI_exit_task(GKI_get_taskid());
   LOG(VERBOSE) << StringPrintf("%s: exit", func);
   return 0;
 }

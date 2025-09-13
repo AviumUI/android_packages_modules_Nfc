@@ -140,6 +140,7 @@ enum {
 
   RW_MFC_RAW_FRAME_EVT,  /* Response of raw frame sent               */
   RW_MFC_INTF_ERROR_EVT, /* RF Interface error event                 */
+  RW_MFC_PRES_CHECK_EVT, /* Response for MIFARE pres check alternative */
   RW_MFC_MAX_EVT,
   RW_CI_PRESENCE_CHECK_EVT = RW_CI_FIRST_EVT,
   RW_CI_INTF_ERROR_EVT,
@@ -1488,6 +1489,21 @@ extern tNFC_STATUS RW_CiPresenceCheck(void);
 **
 *****************************************************************************/
 extern tNFC_STATUS RW_CiSendAttrib(uint8_t* nfcid0);
+
+/*****************************************************************************
+**
+** Function         RW_MfcPresenceCheck
+**
+** Description
+**      Performs alternative MIFARE presence check
+**
+** Returns
+**      NFC_STATUS_OK, if raw data frame sent
+**      NFC_STATUS_NO_BUFFERS: unable to allocate a buffer for this operation
+**      NFC_STATUS_FAILED: other error
+**
+*****************************************************************************/
+extern tNFC_STATUS RW_MfcPresenceCheck(uint8_t* p_auth_cmd);
 
 /*******************************************************************************
 **
