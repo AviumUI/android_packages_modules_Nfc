@@ -1046,6 +1046,12 @@ void nfaDeviceManagementCallback(uint8_t dmEvent,
           SyncEventGuard guard(sNfaDisableEvent);
           sNfaDisableEvent.notifyOne();
         }
+        {
+          LOG(DEBUG) << StringPrintf("%s: aborting  gSendRawVsCmdEvent",
+                                     __func__);
+          SyncEventGuard guard(gSendRawVsCmdEvent);
+          gSendRawVsCmdEvent.notifyOne();
+        }
         sDiscoveryEnabled = false;
         sPollingEnabled = false;
 
