@@ -1267,7 +1267,7 @@ static jint nativeNfcTag_doCheckNdef(JNIEnv* e, jobject o, jintArray ndefInfo) {
   /* Wait for check NDEF completion status */
   {
     SyncEventGuard g(sCheckNdefEvent);
-    if (sCheckNdefEvent.wait(5000) == false)  // if timeout occurred
+    if (sCheckNdefEvent.wait(15000) == false)  // if timeout occurred
     {
       LOG(ERROR) << StringPrintf("%s: timeout waiting for CheckNdefEvent",
                                  __func__);
