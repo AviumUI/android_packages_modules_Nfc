@@ -172,6 +172,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import org.avium.nfc.ExtNfcDispatchManager;
+
 public class NfcService implements DeviceHostListener, ForegroundUtils.Callback {
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
     private static final boolean VDBG = false; // turn on for local testing.
@@ -208,6 +210,9 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
     public static final int T4T_NFCEE_MAPPING_VERSION_2_0 = 0x20;
     @VisibleForTesting
     public static final int WAIT_FOR_OEM_ALLOW_BOOT_TIMEOUT_MS = 5_000;
+
+    // Ext add
+    private ExtNfcDispatchManager mExtNfcDispatchManager;
 
     static final int MSG_NDEF_TAG = 0;
     // Previously used: MSG_LLCP_LINK_ACTIVATION = 1
@@ -1189,6 +1194,10 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
 
         mFeatureFlags = mNfcInjector.getFeatureFlags();
         mStatsdUtils = mNfcInjector.getStatsdUtils();
+
+        // Ext add
+        mExtNfcDispatchManager = new ExtNfcDispatchManager(mContext);
+        Log.d("ExtNfcAdd", "init");
 
         // Intents for all users
         registerGlobalBroadcastsReceiver();
@@ -5085,6 +5094,28 @@ public class NfcService implements DeviceHostListener, ForegroundUtils.Callback 
                         break;
                     }
                     NdefMessage ndefMsg = tag.findAndReadNdef();
+
+                    // Ext add
+                    if (ndefMsg != null && mExtNfcDispatchManager != null) {
+                        Bundle customDispatchBundle = new Bundle();
+                        Tag tempTagForMatch = new Tag(tag.getUid(), tag.getTechList(),
+                                tag.getTechExtras(), tag.getHandle(), 0, mNfcTagService);
+
+                        if (mExtNfcDispatchManager.match(tempTagForMatch, ndefMsg, customDispatchBundle)) {
+                            Intent intent = new Intent(NfcAdapter.ACTION_NDEF_DISCOVERED);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            intent.putExtra(NfcAdapter.EXTRA_TAG, tempTagForMatch);
+                            intent.putExtra(NfcAdapter.EXTRA_NDEF_MESSAGES, new NdefMessage[] { ndefMsg });
+                            intent.putExtra(NfcAdapter.EXTRA_ID, tag.getUid());
+                            Log.d("ExtNfcAdd", "NfcAdapter.EXTRA_ID: " + tag.getUid());
+
+                            if (mExtNfcDispatchManager.tryDirectDispatch(intent, customDispatchBundle)) {
+                                Log.i("ExtNfcAdd", "success to open the target app");
+                                playSound(SOUND_END); 
+                                break; 
+                            }
+                        }
+                    }
 
                     if (ndefMsg == null) {
                         // First try to see if this was a bad tag read
