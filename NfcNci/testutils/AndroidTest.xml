@@ -35,6 +35,5 @@
     <option name="mobly-test-timeout" value="180000" />
   </test>
 
-  <option name="build_apk" key="file" value="NfcEmulatorApduApp.apk" />
   <option name="mobly_config" key="file" value="config.yaml" />
 </configuration>

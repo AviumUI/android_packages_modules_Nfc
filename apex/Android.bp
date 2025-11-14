@@ -77,6 +77,10 @@ custom_apex {
         "//build/make/target:__subpackages__",
         "//vendor:__subpackages__",
     ],
+    licenses: [
+        "Android-Apache-2.0",
+        "opensourcerequest",
+    ],
 }
 
 sdk {

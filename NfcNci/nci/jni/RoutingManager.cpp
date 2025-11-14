@@ -64,7 +64,6 @@ const JNINativeMethod RoutingManager::sMethods[] = {
     {"doGetEuiccMepMode", "()I",
      (void*)RoutingManager::com_android_nfc_cardemulation_doGetEuiccMepMode}};
 
-static const int MAX_NUM_EE = 5;
 // SCBR from host works only when App is in foreground
 static const uint8_t SYS_CODE_PWR_STATE_HOST = 0x01;
 static const uint16_t DEFAULT_SYS_CODE = 0xFEFE;
@@ -154,6 +153,21 @@ RoutingManager::RoutingManager()
     LOG(VERBOSE) << StringPrintf(
         "%s: NAME_NFCEE_EVENT_RF_DISCOVERY_OPTION not found=%d", fn,
         mIsRFDiscoveryOptimized);
+  }
+
+  if (NfcConfig::hasKey(NAME_OPTIMIZE_ROUTING_TABLE_UPDATE)) {
+    mIsRTUpdateOptimized =
+        (NfcConfig::getUnsigned(NAME_OPTIMIZE_ROUTING_TABLE_UPDATE) == 0x01
+             ? true
+             : false);
+    LOG(VERBOSE) << StringPrintf(
+        "%s: NAME_OPTIMIZE_ROUTING_TABLE_UPDATE found=%d", fn,
+        mIsRTUpdateOptimized);
+  } else {
+    mIsRTUpdateOptimized = false;
+    LOG(VERBOSE) << StringPrintf(
+        "%s: NAME_OPTIMIZE_ROUTING_TABLE_UPDATE not found=%d", fn,
+        mIsRTUpdateOptimized);
   }
 
   memset(&mEeInfo, 0, sizeof(mEeInfo));
@@ -259,7 +273,7 @@ RoutingManager& RoutingManager::getInstance() {
  *******************************************************************************/
 bool RoutingManager::isTypeATypeBTechSupportedInEe(tNFA_HANDLE eeHandle) {
   static const char fn[] = "RoutingManager::isTypeATypeBTechSupportedInEe";
-  uint8_t actualNbEe = MAX_NUM_EE;
+  uint8_t actualNbEe = NFA_EE_MAX_EE_SUPPORTED;
   tNFA_EE_INFO eeInfo[actualNbEe];
 
   memset(&eeInfo, 0, actualNbEe * sizeof(tNFA_EE_INFO));
@@ -276,7 +290,7 @@ bool RoutingManager::isTypeATypeBTechSupportedInEe(tNFA_HANDLE eeHandle) {
   }
 
   if (mEuiccMepMode) {
-    memset(&eeInfo, 0, MAX_NUM_EE * sizeof(tNFA_EE_INFO));
+    memset(&eeInfo, 0, actualNbEe * sizeof(tNFA_EE_INFO));
     nfaStat = NFA_EeGetMepInfo(&actualNbEe, eeInfo);
     if (nfaStat != NFA_STATUS_OK) {
       return false;
@@ -433,8 +447,8 @@ void RoutingManager::onNfccShutdown() {
   if (mDefaultOffHostRoute == 0x00 && mDefaultFelicaRoute == 0x00) return;
 
   tNFA_STATUS nfaStat = NFA_STATUS_FAILED;
-  uint8_t actualNumEe = MAX_NUM_EE;
-  tNFA_EE_INFO eeInfo[MAX_NUM_EE];
+  uint8_t actualNumEe = NFA_EE_MAX_EE_SUPPORTED;
+  tNFA_EE_INFO eeInfo[actualNumEe];
   mDeinitializing = true;
 
   memset(&eeInfo, 0, sizeof(eeInfo));
@@ -575,16 +589,16 @@ void RoutingManager::notifyEeAidSelected(tNFC_AID& nfcaid,
                         (jbyte*)&aid[0]);
   CHECK(!e->ExceptionCheck());
 
-  std::string evtSrc;
-  if (!getNameOfEe(ee_handle, evtSrc)) {
+  std::string eeName;
+  if (!getNameOfEe(ee_handle, eeName)) {
     return;
   }
 
-  ScopedLocalRef<jobject> srcJavaString(e, e->NewStringUTF(evtSrc.c_str()));
-  CHECK(srcJavaString.get());
+  ScopedLocalRef<jobject> eeNameJavaString(e, e->NewStringUTF(eeName.c_str()));
+  CHECK(eeNameJavaString.get());
   e->CallVoidMethod(mNativeData->manager,
                     android::gCachedNfcManagerNotifyEeAidSelected,
-                    aidJavaArray.get(), srcJavaString.get());
+                    aidJavaArray.get(), eeNameJavaString.get());
 }
 
 /*******************************************************************************
@@ -603,16 +617,16 @@ void RoutingManager::notifyEeProtocolSelected(uint8_t protocol,
   ScopedAttach attach(mNativeData->vm, &e);
   CHECK(e);
 
-  std::string evtSrc;
-  if (!getNameOfEe(ee_handle, evtSrc)) {
+  std::string eeName;
+  if (!getNameOfEe(ee_handle, eeName)) {
     return;
   }
 
-  ScopedLocalRef<jobject> srcJavaString(e, e->NewStringUTF(evtSrc.c_str()));
-  CHECK(srcJavaString.get());
+  ScopedLocalRef<jobject> eeNameJavaString(e, e->NewStringUTF(eeName.c_str()));
+  CHECK(eeNameJavaString.get());
   e->CallVoidMethod(mNativeData->manager,
                     android::gCachedNfcManagerNotifyEeProtocolSelected,
-                    protocol, srcJavaString.get());
+                    protocol, eeNameJavaString.get());
 }
 
 /*******************************************************************************
@@ -630,16 +644,16 @@ void RoutingManager::notifyEeTechSelected(uint8_t tech, tNFA_HANDLE ee_handle) {
   ScopedAttach attach(mNativeData->vm, &e);
   CHECK(e);
 
-  std::string evtSrc;
-  if (!getNameOfEe(ee_handle, evtSrc)) {
+  std::string eeName;
+  if (!getNameOfEe(ee_handle, eeName)) {
     return;
   }
 
-  ScopedLocalRef<jobject> srcJavaString(e, e->NewStringUTF(evtSrc.c_str()));
-  CHECK(srcJavaString.get());
+  ScopedLocalRef<jobject> eeNameJavaString(e, e->NewStringUTF(eeName.c_str()));
+  CHECK(eeNameJavaString.get());
   e->CallVoidMethod(mNativeData->manager,
                     android::gCachedNfcManagerNotifyEeTechSelected, tech,
-                    srcJavaString.get());
+                    eeNameJavaString.get());
 }
 
 /*******************************************************************************
@@ -940,7 +954,7 @@ void RoutingManager::updateDefaultRoute() {
   static const char fn[] = "RoutingManager::updateDefaultRoute";
   int defaultAidRoute = mDefaultEe;
 
-  if (NFC_GetNCIVersion() != NCI_VERSION_2_0) return;
+  if (NFC_GetNCIVersion() < NCI_VERSION_2_0) return;
 
   LOG(DEBUG) << StringPrintf("%s:  Default SC route=0x%x", fn,
                              mDefaultSysCodeRoute);
@@ -1004,7 +1018,7 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateTechnologyABFRoute(int route,
   static const char fn[] = "RoutingManager::updateTechnologyABFRoute";
   LOG(DEBUG) << StringPrintf("%s:  New default A/B route=0x%x", fn, route);
   LOG(DEBUG) << StringPrintf("%s:  New default F route=0x%x", fn, felicaRoute);
-  mEeInfoChanged = true;
+  setEeTechRouteUpdateRequired();
   mDefaultFelicaRoute = felicaRoute;
   mDefaultOffHostRoute = route;
   return mSeTechMask;
@@ -1371,6 +1385,7 @@ int RoutingManager::registerT3tIdentifier(uint8_t* t3tId, uint8_t t3tIdLen) {
     if (nfaStat == NFA_STATUS_OK) {
       mRoutingEvent.wait();
     }
+    setEeTechRouteUpdateRequired();
     if ((nfaStat != NFA_STATUS_OK) || (mCbEventData.status != NFA_STATUS_OK)) {
       LOG(ERROR) << StringPrintf("%s: Fail to register system code on DH", fn);
       return NFA_HANDLE_INVALID;
@@ -1429,6 +1444,7 @@ void RoutingManager::deregisterT3tIdentifier(int handle) {
           LOG(ERROR) << StringPrintf("%s: Fail to deregister system Code on DH",
                                      fn);
         }
+        setEeTechRouteUpdateRequired();
       }
     }
   }
@@ -1554,6 +1570,7 @@ void RoutingManager::clearRoutingEntry(int clearFlags) {
     RoutingManager::getInstance().removeAidRouting((uint8_t*)NFA_REMOVE_ALL_AID,
                                                    NFA_REMOVE_ALL_AID_LEN);
     mDefaultAidRouteAdded = false;
+    setEeTechRouteUpdateRequired();
   }
 
   if (clearFlags & CLEAR_PROTOCOL_ENTRIES) {
@@ -1622,6 +1639,19 @@ void RoutingManager::setEeInfoChangedFlag() {
   sEeInfoChangedMutex.lock();
   mEeInfoChanged = true;
   sEeInfoChangedMutex.unlock();
+}
+
+/*******************************************************************************
+**
+** Function:        isRTUpdateOptimized
+**
+** Description:     Checking if routing table update optimized or not.
+**
+** Returns:         True/False
+**
+*******************************************************************************/
+bool RoutingManager::isRTUpdateOptimized() {
+  return mIsRTUpdateOptimized;
 }
 
 /*******************************************************************************

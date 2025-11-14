@@ -31,11 +31,6 @@ public class PrefixPaymentEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
         mState = STATE_SERVICE1_SETTING_UP;
         setupServices(PrefixPaymentService1.COMPONENT);
     }

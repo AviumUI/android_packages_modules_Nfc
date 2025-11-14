@@ -16,6 +16,7 @@
 
 package com.android.nfc;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.nfc.NdefMessage;
 import android.nfc.cardemulation.PollingFrame;
@@ -64,7 +65,7 @@ public interface DeviceHost {
 
         public void onEeListenActivated(boolean isActivated);
 
-        public void onSeSelected(int type);
+        public void onSeSelected(int type, @Nullable byte[] aid, @NonNull String eeName);
 
         public void onCommandTimeout();
 
@@ -85,7 +86,7 @@ public interface DeviceHost {
         boolean isPresent();
         void startPresenceChecking(int presenceCheckDelay,
                                    @Nullable TagDisconnectedCallback callback);
-        void stopPresenceChecking();
+        void stopPresenceChecking(boolean isShutdown);
         boolean isPresenceCheckStopped();
         void prepareForRemovalDetectionMode();
 
@@ -305,6 +306,8 @@ public interface DeviceHost {
     * Set NFCC power state by sending NFCEE_POWER_AND_LINK_CNTRL_CMD
     */
     void setNfceePowerAndLinkCtrl(boolean enable);
+
+    boolean isPowerSavingModeSupported();
 
     /**
      * Enable or Disable the Power Saving Mode based on flag

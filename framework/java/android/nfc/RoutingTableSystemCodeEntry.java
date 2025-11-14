@@ -33,8 +33,8 @@ public class RoutingTableSystemCodeEntry extends NfcRoutingTableEntry {
 
     /** @hide */
     public RoutingTableSystemCodeEntry(int nfceeId, byte[] value,
-            @CardEmulation.ProtocolAndTechnologyRoute int routeType) {
-        super(nfceeId, TYPE_SYSTEM_CODE, routeType);
+            @CardEmulation.ProtocolAndTechnologyRoute int routeType, int powerState) {
+        super(nfceeId, TYPE_SYSTEM_CODE, routeType, powerState);
         this.mValue = value;
     }
 
@@ -47,4 +47,5 @@ public class RoutingTableSystemCodeEntry extends NfcRoutingTableEntry {
     public byte[] getSystemCode() {
         return mValue;
     }
+
 }

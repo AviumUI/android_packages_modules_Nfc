@@ -16,21 +16,27 @@
 
 package com.android.nfc;
 
-
+import static com.android.nfc.NfcShellCommand.SHELL_PACKAGE_NAME;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.nfc.INfcCardEmulation;
+import android.nfc.INfcDta;
 import android.os.Binder;
 import android.os.RemoteException;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.nfc.cardemulation.CardEmulationManager;
@@ -43,11 +49,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import static org.mockito.ArgumentMatchers.isNull;
-import android.nfc.INfcDta;
-import android.nfc.INfcCardEmulation;
-
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -114,9 +115,8 @@ public class NfcShellCommandTest {
     public void testOnCommandEnableNfc() throws RemoteException {
         NfcService.NfcAdapterService nfcAdapterService = mock(NfcService.NfcAdapterService.class);
         mNfcService.mNfcAdapter = nfcAdapterService;
-        when(mContext.getPackageName()).thenReturn("com.android.test");
         int status = mNfcShellCommand.onCommand("enable-nfc");
-        verify(nfcAdapterService).enable("com.android.test");
+        verify(nfcAdapterService).enable(SHELL_PACKAGE_NAME);
         assertThat(status).isEqualTo(0);
     }
 
@@ -129,7 +129,8 @@ public class NfcShellCommandTest {
                 .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
                         mFileDescriptorErr, new String[]{"enable-polling"}, 0);
         int status = mNfcShellCommand.onCommand("set-reader-mode");
-        verify(nfcAdapterService).setReaderMode(any(), isNull(), anyInt(), isNull(), isNull());
+        verify(nfcAdapterService).setReaderMode(
+                any(), isNull(), anyInt(), isNull(), eq(SHELL_PACKAGE_NAME));
         assertThat(status).isEqualTo(0);
     }
 
@@ -142,7 +143,7 @@ public class NfcShellCommandTest {
                 .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
                         mFileDescriptorErr, new String[]{"enable"}, 0);
         int status = mNfcShellCommand.onCommand("set-observe-mode");
-        verify(nfcAdapterService).setObserveMode(anyBoolean(), isNull());
+        verify(nfcAdapterService).setObserveMode(anyBoolean(), eq(SHELL_PACKAGE_NAME));
         assertThat(status).isEqualTo(0);
     }
 
@@ -166,7 +167,6 @@ public class NfcShellCommandTest {
         mNfcShellCommand
                 .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
                         mFileDescriptorErr, new String[]{"1", "2"}, 0);
-        when(mContext.getPackageName()).thenReturn("com.android.test");
         int status = mNfcShellCommand.onCommand("set-discovery-tech");
         verify(nfcAdapterService).updateDiscoveryTechnology(any(), anyInt(), anyInt(), anyString());
         assertThat(status).isEqualTo(0);
@@ -179,9 +179,8 @@ public class NfcShellCommandTest {
         mNfcShellCommand
                 .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
                         mFileDescriptorErr, new String[]{"enable"}, 0);
-        when(mContext.getPackageName()).thenReturn("com.android.test");
         INfcDta dtaService = mock(INfcDta.class);
-        when(nfcAdapterService.getNfcDtaInterface("com.android.test")).thenReturn(dtaService);
+        when(nfcAdapterService.getNfcDtaInterface(SHELL_PACKAGE_NAME)).thenReturn(dtaService);
         int status = mNfcShellCommand.onCommand("configure-dta");
         verify(mPrintWriter).println("  configure-dta");
         verify(mPrintWriter).println("  enableDta()");
@@ -195,7 +194,7 @@ public class NfcShellCommandTest {
         mNfcService.mNfcAdapter = nfcAdapterService;
         mNfcShellCommand
                 .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
-                        mFileDescriptorErr, new String[]{"1", "com.android.test",
+                        mFileDescriptorErr, new String[]{"1", SHELL_PACKAGE_NAME,
                                 "NfcTest", "test"}, 0);
         CardEmulationManager cardEmulationManager = mock(CardEmulationManager.class);
         INfcCardEmulation iNfcCardEmulation = mock(INfcCardEmulation.class);
@@ -213,7 +212,7 @@ public class NfcShellCommandTest {
         mNfcService.mNfcAdapter = nfcAdapterService;
         mNfcShellCommand
                 .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
-                        mFileDescriptorErr, new String[]{"1", "com.android.test",
+                        mFileDescriptorErr, new String[]{"1", SHELL_PACKAGE_NAME,
                                 "NfcTest"}, 0);
         CardEmulationManager cardEmulationManager = mock(CardEmulationManager.class);
         INfcCardEmulation iNfcCardEmulation = mock(INfcCardEmulation.class);
@@ -231,7 +230,7 @@ public class NfcShellCommandTest {
         mNfcService.mNfcAdapter = nfcAdapterService;
         mNfcShellCommand
                 .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
-                        mFileDescriptorErr, new String[]{"1", "com.android.test",
+                        mFileDescriptorErr, new String[]{"1", SHELL_PACKAGE_NAME,
                                 "NfcTest", "325041592E5359532E4444463031", "payment"}, 0);
         CardEmulationManager cardEmulationManager = mock(CardEmulationManager.class);
         INfcCardEmulation iNfcCardEmulation = mock(INfcCardEmulation.class);
@@ -250,7 +249,7 @@ public class NfcShellCommandTest {
         mNfcService.mNfcAdapter = nfcAdapterService;
         mNfcShellCommand
                 .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
-                        mFileDescriptorErr, new String[]{"1", "com.android.test",
+                        mFileDescriptorErr, new String[]{"1", SHELL_PACKAGE_NAME,
                                 "NfcTest", "payment"}, 0);
         CardEmulationManager cardEmulationManager = mock(CardEmulationManager.class);
         INfcCardEmulation iNfcCardEmulation = mock(INfcCardEmulation.class);
@@ -259,6 +258,57 @@ public class NfcShellCommandTest {
         int status = mNfcShellCommand.onCommand("remove-aid-group");
         verify(cardEmulationManager).getNfcCardEmulationInterface();
         verify(iNfcCardEmulation).removeAidGroupForService(anyInt(), any(), any());
+        assertThat(status).isEqualTo(0);
+    }
+
+    @Test
+    public void testOnHelp() {
+        mNfcShellCommand.onHelp();
+        verify(mPrintWriter).println("    Toggle NFC off (optionally make it persistent)");
+    }
+
+    @Test
+    public void testOnCommandSetReaderModeWithDisable() throws RemoteException {
+        NfcService.NfcAdapterService nfcAdapterService = mock(NfcService.NfcAdapterService.class);
+        mNfcService.mNfcAdapter = nfcAdapterService;
+        when(ArrayUtils.indexOf(any(), anyString())).thenReturn(0);
+        mNfcShellCommand
+                .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
+                        mFileDescriptorErr, new String[]{"disable-polling"}, 0);
+        int status = mNfcShellCommand.onCommand("set-reader-mode");
+        verify(nfcAdapterService).setReaderMode(
+                any(), isNull(), eq(0x1000), isNull(), eq(SHELL_PACKAGE_NAME));
+        assertThat(status).isEqualTo(0);
+    }
+
+    @Test
+    public void testOnCommandConfigureDtaWithDisable() throws RemoteException {
+        NfcService.NfcAdapterService nfcAdapterService = mock(NfcService.NfcAdapterService.class);
+        mNfcService.mNfcAdapter = nfcAdapterService;
+        mNfcShellCommand
+                .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
+                        mFileDescriptorErr, new String[]{"disable"}, 0);
+        INfcDta dtaService = mock(INfcDta.class);
+        when(nfcAdapterService.getNfcDtaInterface(SHELL_PACKAGE_NAME)).thenReturn(dtaService);
+        int status = mNfcShellCommand.onCommand("configure-dta");
+        verify(mPrintWriter).println("  configure-dta");
+        verify(mPrintWriter).println("  disableDta()");
+        verify(dtaService).disableDta();
+        assertThat(status).isEqualTo(0);
+    }
+
+    @Test
+    public void testOnCommandConfigureDtaWithException() throws RemoteException {
+        NfcService.NfcAdapterService nfcAdapterService = mock(NfcService.NfcAdapterService.class);
+        mNfcService.mNfcAdapter = nfcAdapterService;
+        mNfcShellCommand
+                .init(mBinder, mFileDescriptorIn, mFileDescriptorOut,
+                        mFileDescriptorErr, new String[]{"enable"}, 0);
+        when(nfcAdapterService.getNfcDtaInterface(SHELL_PACKAGE_NAME)).thenThrow(
+                RemoteException.class);
+        int status = mNfcShellCommand.onCommand("configure-dta");
+        verify(mPrintWriter).println("  configure-dta");
+        verify(mPrintWriter).println("Exception while executing nfc shell command configureDta():");
         assertThat(status).isEqualTo(0);
     }
 }

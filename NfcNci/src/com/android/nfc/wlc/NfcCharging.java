@@ -980,7 +980,8 @@ public class NfcCharging {
                     Log.d(TAG, "HandleWLCState: STATE_24 (" + convert_state_2_str(STATE_24) + ")");
                 }
 
-                TagHandler.stopPresenceChecking();
+                TagHandler.stopPresenceChecking(false);
+
                 WLCState = STATE_2;
                 NfcChargingOnGoing = false;
                 if (mWatchdogWlc != null) {

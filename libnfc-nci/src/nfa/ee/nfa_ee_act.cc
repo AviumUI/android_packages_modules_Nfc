@@ -641,8 +641,10 @@ static void nfa_ee_conn_cback(uint8_t conn_id, tNFC_CONN_EVT event,
 *******************************************************************************/
 int nfa_ee_find_max_aid_cfg_len(void) {
   int max_lmrt_size = NFC_GetLmrtSize();
-  if (max_lmrt_size > NFA_EE_MAX_PROTO_TECH_EXT_ROUTE_LEN) {
-    return max_lmrt_size - NFA_EE_MAX_PROTO_TECH_EXT_ROUTE_LEN;
+  int reserved =
+      (NFA_EE_MAX_PROTO_TECH_EXT_ROUTE_LEN + NFA_EE_MAX_SYSTEM_CODE_CFG_LEN);
+  if (max_lmrt_size > reserved) {
+    return (max_lmrt_size - reserved);
   } else {
     return 0;
   }
@@ -2656,6 +2658,7 @@ void nfa_ee_nci_disc_req_ntf(tNFA_EE_MSG* p_data) {
   uint8_t report_ntf = 0;
   uint8_t xx;
   std::vector<uint8_t> uicc_ids;
+  uint8_t listen_cnt = 0;
 
   LOG(VERBOSE) << StringPrintf("%s: num_info=%d cur_ee=%d", __func__,
                                p_cbk->num_info, nfa_ee_cb.cur_ee);
@@ -2703,10 +2706,13 @@ void nfa_ee_nci_disc_req_ntf(tNFA_EE_MSG* p_data) {
         p_cb->ee_status = NFA_EE_STATUS_ACTIVE | NFA_EE_STATUS_MEP_MASK;
       }
       if (p_cbk->info[xx].tech_n_mode == NFC_DISCOVERY_TYPE_LISTEN_A) {
+        listen_cnt++;
         p_cb->la_protocol = p_cbk->info[xx].protocol;
       } else if (p_cbk->info[xx].tech_n_mode == NFC_DISCOVERY_TYPE_LISTEN_B) {
+        listen_cnt++;
         p_cb->lb_protocol = p_cbk->info[xx].protocol;
       } else if (p_cbk->info[xx].tech_n_mode == NFC_DISCOVERY_TYPE_LISTEN_F) {
+        listen_cnt++;
         p_cb->lf_protocol = p_cbk->info[xx].protocol;
       } else if (p_cbk->info[xx].tech_n_mode ==
                  NFC_DISCOVERY_TYPE_LISTEN_B_PRIME) {
@@ -2717,17 +2723,22 @@ void nfa_ee_nci_disc_req_ntf(tNFA_EE_MSG* p_data) {
         nfa_ee_report_event(p_cb->p_ee_cback, NFA_EE_DISCOVER_REQ_EVT,
                             &nfa_ee_cback_data);
       }
-      LOG(VERBOSE) << StringPrintf(
-          "%s:  nfcee_id=0x%x ee_status=0x%x ecb_flags=0x%x la_protocol=0x%x "
-          "lb_protocol=0x%x lf_protocol=0x%x",
-          __func__, p_cb->nfcee_id, p_cb->ee_status, p_cb->ecb_flags,
-          p_cb->la_protocol, p_cb->lb_protocol, p_cb->lf_protocol);
+      if (listen_cnt) {
+        LOG(VERBOSE) << StringPrintf(
+            "%s:  nfcee_id=0x%x ee_status=0x%x ecb_flags=0x%x la_protocol=0x%x "
+            "lb_protocol=0x%x lf_protocol=0x%x",
+            __func__, p_cb->nfcee_id, p_cb->ee_status, p_cb->ecb_flags,
+            p_cb->la_protocol, p_cb->lb_protocol, p_cb->lf_protocol);
+      }
     } else {
       if (p_cbk->info[xx].tech_n_mode == NFC_DISCOVERY_TYPE_LISTEN_A) {
+        listen_cnt++;
         p_cb->la_protocol = 0;
       } else if (p_cbk->info[xx].tech_n_mode == NFC_DISCOVERY_TYPE_LISTEN_B) {
+        listen_cnt++;
         p_cb->lb_protocol = 0;
       } else if (p_cbk->info[xx].tech_n_mode == NFC_DISCOVERY_TYPE_LISTEN_F) {
+        listen_cnt++;
         p_cb->lf_protocol = 0;
       } else if (p_cbk->info[xx].tech_n_mode ==
                  NFC_DISCOVERY_TYPE_LISTEN_B_PRIME) {
@@ -2743,7 +2754,7 @@ void nfa_ee_nci_disc_req_ntf(tNFA_EE_MSG* p_data) {
   }
 
   /* Report NFA_EE_DISCOVER_REQ_EVT for all active NFCEE */
-  if (report_ntf) nfa_ee_report_discover_req_evt();
+  if (report_ntf && listen_cnt) nfa_ee_report_discover_req_evt();
 }
 
 /*******************************************************************************

@@ -39,6 +39,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.nfc.Flags;
 import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcAntennaInfo;
 import android.nfc.NfcOemExtension;
@@ -72,7 +73,6 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.RequiresDevice;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -103,7 +103,7 @@ public class NfcAdapterTest {
 
     private boolean supportsHardware() {
         final PackageManager pm = mContext.getPackageManager();
-        return pm.hasSystemFeature(PackageManager.FEATURE_NFC);
+        return pm.hasSystemFeature(PackageManager.FEATURE_NFC_ANY);
     }
 
     @Before
@@ -125,6 +125,7 @@ public class NfcAdapterTest {
 
     @Test
     public void testAddAndRemoveNfcUnlockHandler() {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         CtsNfcUnlockHandler unlockHandler = new CtsNfcUnlockHandler();
 
@@ -162,6 +163,7 @@ public class NfcAdapterTest {
 
     @Test
     public void testEnableAndDisableForegroundDispatch() throws RemoteException {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         Activity activity = createAndResumeActivity();
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(),
@@ -178,6 +180,7 @@ public class NfcAdapterTest {
 
     @Test
     public void testEnableAndDisableReaderMode() {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         Activity activity = createAndResumeActivity();
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(),
@@ -198,6 +201,7 @@ public class NfcAdapterTest {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_READER_OPTION)
     public void testEnableAndDisableReaderOption() throws NoSuchFieldException, RemoteException {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         assumeTrue("Device must support reader option", adapter.isReaderOptionSupported());
 
@@ -333,6 +337,7 @@ public class NfcAdapterTest {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_MAINLINE)
     public void testSetReaderMode() {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         // Verify the API does not crash or throw any exceptions.
         adapter.setReaderModePollingEnabled(true);
@@ -441,23 +446,32 @@ public class NfcAdapterTest {
         CardEmulation cardEmulation = CardEmulation.getInstance(adapter);
         cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                 CtsMyHostApduService.class), true);
+        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
+                CustomHostApduService.class), false);
         WalletRoleTestUtils.runWithRole(mContext, WalletRoleTestUtils.CTS_PACKAGE_NAME, () -> {
             CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-            assertTrue(adapter.isObserveModeEnabled());
-            assertTrue(adapter.setObserveModeEnabled(false));
-            assertFalse(adapter.isObserveModeEnabled());
+            assertTrue("observe mode isn't enabled after setting preferred service to one that"
+                    + " defaults it on", adapter.isObserveModeEnabled());
+            assertTrue("set observe mode to false failed", adapter.setObserveModeEnabled(false));
+            assertFalse("observe mode is still enabled after setting it to false",
+                    adapter.isObserveModeEnabled());
             try {
                 Activity activity = createAndResumeActivity();
                 assertTrue(cardEmulation.setPreferredService(activity,
                         new ComponentName(mContext, CtsMyHostApduService.class)));
                 CardEmulationTest.ensurePreferredService(CtsMyHostApduService.class, mContext);
-                assertFalse(adapter.isObserveModeEnabled());
-                assertTrue(adapter.setObserveModeEnabled(true));
-                assertTrue(adapter.isObserveModeEnabled());
-                assertTrue(cardEmulation.setPreferredService(activity,
+                assertFalse("observe mode enabled after setting preferred service to one that"
+                        + " defaults it enabled, even though preferred service didn't change",
+                        adapter.isObserveModeEnabled());
+                assertTrue("set observe mode enabled failed", adapter.setObserveModeEnabled(true));
+                assertTrue("observe mode disabled after enabling it",
+                        adapter.isObserveModeEnabled());
+                assertTrue("setting preferred service failed",
+                        cardEmulation.setPreferredService(activity,
                         new ComponentName(mContext, CustomHostApduService.class)));
                 CardEmulationTest.ensurePreferredService(CustomHostApduService.class, mContext);
-                assertFalse(adapter.isObserveModeEnabled());
+                assertFalse("observe mode enabled after setting preferred service that disables it",
+                        adapter.isObserveModeEnabled());
             } finally {
                 cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
                         CustomHostApduService.class), false);
@@ -669,6 +683,19 @@ public class NfcAdapterTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
+    public void testTogglePowerSavingMode() {
+        assumeTrue(getDefaultAdapter().isPowerSavingModeSupported());
+
+        NfcAdapter adapter = getDefaultAdapter();
+        adapter.setPowerSavingMode(true);
+        assertTrue(adapter.isPowerSavingModeEnabled());
+
+        adapter.setPowerSavingMode(false);
+        assertFalse(adapter.isPowerSavingModeEnabled());
+    }
+
+    @Test
     @RequiresFlagsEnabled(Flags.FLAG_NFC_OEM_EXTENSION)
     public void testOemExtension() throws InterruptedException {
         CountDownLatch tagDetectedCountDownLatch = new CountDownLatch(3);
@@ -701,8 +728,10 @@ public class NfcAdapterTest {
             T4tNdefNfcee ndefNfcee = nfcOemExtension.getT4tNdefNfcee();
             assertThat(ndefNfcee).isNotNull();
             if (ndefNfcee.isSupported()) {
-                byte[] ndefData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
-
+                String data = "0123456789012345678901234567890123456789";
+                NdefRecord record = NdefRecord.createTextRecord("en", data);
+                NdefMessage message = new NdefMessage(new NdefRecord[]{record});
+                byte[] ndefData = message.toByteArray();
                 byte[] FILE_ID_NDEF_TEST = new byte[]{(byte)0xE1, 0x04};
                 assertThat(ndefNfcee.writeData(bytesToInt(FILE_ID_NDEF_TEST), ndefData))
                                .isEqualTo(T4tNdefNfcee.WRITE_DATA_SUCCESS);
@@ -1045,6 +1074,10 @@ public class NfcAdapterTest {
         }
 
         @Override
+        public void onRoutingChangeCompleted() {
+        }
+
+        @Override
         public void onHceEventReceived(int action) {
         }
 
@@ -1263,6 +1296,7 @@ public class NfcAdapterTest {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_NFC_CHECK_TAG_INTENT_PREFERENCE)
     public void testSetTagIntentAppPreference() throws NoSuchFieldException, RemoteException {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
         NfcAdapter adapter = getDefaultAdapter();
         assumeTrue("Device must support tag intent app preference",
             adapter.isTagIntentAppPreferenceSupported());

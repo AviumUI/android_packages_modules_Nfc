@@ -1,0 +1,5 @@
+# Rename the flag package included in the CTS tests to prevent runtime collisions with the same flag
+# package included in the framework jar.
+# See https://yaqs.corp.google.com/eng/q/1929945272444518400#a3 for more info.
+
+rule com.android.nfc.module.flags.** com.android.nfc.module.cts.flags.@1

@@ -39,7 +39,7 @@
     <string name="ask_nfc_tap" msgid="7921925213499063051">"برای تکمیل، روی دستگاه دیگری تک‌ضرب بزنید"</string>
     <string name="wifi_connect" msgid="2726973850576310336">"اتصال"</string>
     <string name="status_unable_to_connect" msgid="3282224066213036023">"اتصال به شبکه ممکن نیست"</string>
-    <string name="status_wifi_connected" msgid="8878112079913521399">"وصل شد"</string>
+    <string name="status_wifi_connected" msgid="8878112079913521399">"متصل شد"</string>
     <string name="title_connect_to_network" msgid="5617055452888255705">"اتصال به شبکه"</string>
     <string name="prompt_connect_to_network" msgid="6954936151128422990">"به شبکه <xliff:g id="NETWORK_SSID">%1$s</xliff:g> متصل می‌شوید؟"</string>
     <string name="beam_requires_nfc_enabled" msgid="1943159298389147033">"‏Android Beam برای فعال شدن به NFC نیاز دارد. می‌خواهید آن را فعال کنید؟"</string>

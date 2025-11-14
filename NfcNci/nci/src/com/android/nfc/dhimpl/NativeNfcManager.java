@@ -163,6 +163,11 @@ public class NativeNfcManager implements DeviceHost {
         doFactoryReset();
     }
 
+    @Override
+    public boolean isPowerSavingModeSupported() {
+        return mProprietaryCaps.isPowerSavingModeSupported();
+    }
+
     private native boolean doSetPowerSavingMode(boolean flag);
 
     @Override
@@ -338,6 +343,11 @@ public class NativeNfcManager implements DeviceHost {
     @Override
     public void clearT3tIdentifiersCache() {
         synchronized (mLock) {
+            Iterator<Integer> it = mT3tIdentifiers.keySet().iterator();
+            while (it.hasNext()) {
+                int handle = it.next().intValue();
+                doDeregisterT3tIdentifier(handle);
+            }
             mT3tIdentifiers.clear();
         }
     }
@@ -439,6 +449,7 @@ public class NativeNfcManager implements DeviceHost {
 
     @Override
     public void dump(PrintWriter pw, FileDescriptor fd) {
+        pw.println("Firmware version=" + NfcProperties.fw_version().orElse("<Unknown>"));
         pw.println("Native Proprietary Caps=" + mProprietaryCaps);
         doDump(fd);
     }
@@ -528,25 +539,25 @@ public class NativeNfcManager implements DeviceHost {
         mListener.onHwErrorReported();
     }
 
-    private void notifyEeAidSelected(byte[] aid, String eventSrc) {
+    private void notifyEeAidSelected(byte[] aid, String eeName) {
         Log.i(TAG, "notifyEeAidSelected: AID= " + HexFormat.of().formatHex(aid) + " selected by "
-                + eventSrc);
+                + eeName);
         if (com.android.nfc.flags.Flags.eeAidSelect()) {
-            mListener.onSeSelected(NfcService.SE_SELECTED_AID);
+            mListener.onSeSelected(NfcService.SE_SELECTED_AID, aid, eeName);
         }
     }
 
-    private void notifyEeProtocolSelected(int protocol, String eventSrc) {
-        Log.i(TAG, "notifyEeProtocolSelected: Protocol: " + protocol + " selected by " + eventSrc);
+    private void notifyEeProtocolSelected(int protocol, String eeName) {
+        Log.i(TAG, "notifyEeProtocolSelected: Protocol: " + protocol + " selected by " + eeName);
         if (com.android.nfc.flags.Flags.eeAidSelect()) {
-            mListener.onSeSelected(NfcService.SE_SELECTED_PROTOCOL);
+            mListener.onSeSelected(NfcService.SE_SELECTED_PROTOCOL, null, eeName);
         }
     }
 
-    private void notifyEeTechSelected(int tech, String eventSrc) {
-        Log.i(TAG, "notifyEeTechSelected: Tech: " + tech + " selected by " + eventSrc);
+    private void notifyEeTechSelected(int tech, String eeName) {
+        Log.i(TAG, "notifyEeTechSelected: Tech: " + tech + " selected by " + eeName);
         if (com.android.nfc.flags.Flags.eeAidSelect()) {
-            mListener.onSeSelected(NfcService.SE_SELECTED_TECH);
+            mListener.onSeSelected(NfcService.SE_SELECTED_TECH, null, eeName);
         }
     }
 

@@ -8,5 +8,15 @@
     {
       "name": "libnfc-nci-tests"
     }
+  ],
+  "wear-cts-presubmit": [
+    {
+      "name": "CtsNfcTestCases",
+      "options": [
+       {
+         "include-filter": "android.nfc.cts.CardEmulationTest"
+       }
+     ]
+    }
   ]
 }

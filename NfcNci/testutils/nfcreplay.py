@@ -47,7 +47,7 @@ _ERROR_STR = "     ERROR: {}"
 _COLUMN_WIDTH = 80
 
 # Directory for generated test cases and files for the emulator app.
-_EMULATOR_APP_PARSED_DIR = "src/com/android/nfc/emulatorapp/parsed_files/"
+_EMULATOR_APP_PARSED_DIR = "tests/testcases/hostsidetests/src/com/android/nfc/emulatorapduapp/parsed_files/"
 
 
 def send_nfc_a_data(reader: PN532) -> str | None:
@@ -178,8 +178,8 @@ def replay_transaction(log, module_path: str):
   reader.mute()
 
 
-def parse_snoop_log(args: argparse.Namespace):
-  """Parses the given snoop log file.
+def parse_bug_report(args: argparse.Namespace):
+  """Parses the given bug report.
 
   If the file will be used for replaying a transaction with the emulator app,
   the AIDs will be replaced with the ones used by the app. Additionally, if the
@@ -187,18 +187,18 @@ def parse_snoop_log(args: argparse.Namespace):
   transactions that fall within that timeframe.
 
   Args:
-    snoop_file: The local path to the snoop log file.
+    bug_report_file: The local path to the bug report file.
 
   Returns:
-    The parsed snoop log.
+    Device properties, parsed snoop log
   """
-  parsed = open_and_parse_file(args.file)
+  dump, parsed = open_and_parse_file(args.file)
 
   # replace the AIDs with the ones used by the emulator app
   if args.replay_with_app or args.parse_only:
     parsed = replace_aids(parsed)
 
-  return parse_timeframe(parsed, args.start, args.end)
+  return dump, parse_timeframe(parsed, args.start, args.end)
 
 
 def output_line_for_snoop_log(
@@ -236,7 +236,7 @@ def print_opening_sequence(
     start: str | None = None,
     end: str | None = None,
 ):
-  """Prints the opening sequence for a test case or snoop log.
+  """Prints the opening sequence for a test case or bug report.
 
   The name of the file to be replayed is displayed, along with the timeframe
   that will be replayed, if specified by the user.
@@ -247,7 +247,7 @@ def print_opening_sequence(
     end: The end of the timeframe to be replayed.
   """
   print()
-  print("Replaying transaction from snoop log: {}".format(file_name))
+  print("Replaying transaction from bug report: {}".format(file_name))
   if start is not None and end is not None:
     print("Timeframe: {} - {}".format(start, end))
   elif start is not None:
@@ -270,10 +270,11 @@ def create_file_for_emulator_app(
     output: A list of polling loop entries and APDU exchanges parsed from the
       snoop log.
     filename: The name of the file to be created. This is near-identical to the
-      name of the snoop log file.
+      name of the bug report file.
   """
   local_path = _EMULATOR_APP_PARSED_DIR + filename.replace("/", "_")
-  full_path = os.path.dirname(os.path.realpath(__file__)) + "/" + local_path
+  full_path = os.path.dirname(os.path.realpath(__file__)).replace("testutils", "") + local_path
+
   try:
     file = open(full_path, "wt")
   except Exception as e:
@@ -310,7 +311,7 @@ def main():
       "--file",
       action="store",
       required=True,
-      help="Path to the file of the snoop log",
+      help="Path to the file of the bug report",
   )
   parser.add_argument(
       "--start",
@@ -339,7 +340,7 @@ def main():
   )
   args = parser.parse_args()
 
-  parsed_snoop_log = parse_snoop_log(args)
+  nfc_dump, parsed_snoop_log = parse_bug_report(args)
   if args.parse_only:  # scenario 1: parse snoop log for the emulator app
     create_file_for_emulator_app(parsed_snoop_log, args.file)
   else:  # scenario 2: replay transaction from a snoop log
@@ -350,7 +351,9 @@ def main():
     )
     if args.generate_and_replay_test:  # Replay the test that was just generated
       test_case_name = get_name_for_test_case(args.file)
-      apdu_local_file = generate_test(parsed_snoop_log, test_case_name)
+      apdu_local_file = generate_test(
+          parsed_snoop_log, test_case_name, nfc_dump
+      )
       test_command = [
           "atest",
           "-v",
@@ -361,8 +364,6 @@ def main():
           "--testparam",
           "file_path=" + apdu_local_file,
       ]
-      if args.replay_with_app:
-        test_command += ["--testparam", "with_emulator_app=True"]
       subprocess.run(test_command)
     else:  # Default: replay the transaction
       replay_transaction(parsed_snoop_log, args.path)

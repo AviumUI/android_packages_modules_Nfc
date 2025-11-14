@@ -200,7 +200,7 @@ tNFA_STATUS gVSCmdStatus = NFA_STATUS_OK;
 uint16_t gCurrentConfigLen;
 uint8_t gConfig[256];
 std::vector<uint8_t> gCaps(0);
-static int prevScreenState = NFA_SCREEN_STATE_OFF_LOCKED;
+static int prevScreenState = NFA_SCREEN_STATE_UNKNOWN;
 static int NFA_SCREEN_POLLING_TAG_MASK = 0x10;
 bool gIsDtaEnabled = false;
 static bool gObserveModeEnabled = false;
@@ -326,6 +326,11 @@ static void nfaConnectionCallback(uint8_t connEvent,
       sNfaEnableDisablePollingEvent.notifyOne();
     } break;
 
+    case NFA_LISTEN_DISABLED_EVT:
+      LOG(DEBUG) << StringPrintf("%s: NFA_LISTEN_DISABLED_EVT:status= %u",
+                                 __func__, eventData->status);
+      break;
+
     case NFA_POLL_ENABLED_EVT:  // whether polling successfully started
     {
       LOG(DEBUG) << StringPrintf("%s: NFA_POLL_ENABLED_EVT: status = %u",
@@ -420,6 +425,7 @@ static void nfaConnectionCallback(uint8_t connEvent,
       if (eventData->status != NFA_STATUS_OK) {
         if (gIsSelectingRfInterface) {
           nativeNfcTag_doConnectStatus(false);
+          NfcTag::getInstance().selectCompleteStatus(false);
         }
 
         LOG(ERROR) << StringPrintf(
@@ -448,6 +454,7 @@ static void nfaConnectionCallback(uint8_t connEvent,
       uint8_t activatedMode =
           eventData->activated.activate_ntf.rf_tech_param.mode;
       gTagJustActivated = true;
+      NfcTag::getInstance().selectCompleteStatus(true);
       if (NFC_PROTOCOL_T5T == activatedProtocol &&
           NfcTag::getInstance().getNumDiscNtf()) {
         /* T5T doesn't support multiproto detection logic */
@@ -1171,6 +1178,7 @@ static jboolean nfcManager_unrouteAid(JNIEnv* e, jobject, jbyteArray aid) {
 *******************************************************************************/
 static jint nfcManager_commitRouting(JNIEnv* e, jobject) {
   if (sIsShuttingDown) return -1;
+  if (sIsRecovering) return -1;
   if (sRfEnabled) {
     /*Update routing table only in Idle state.*/
     startRfDiscovery(false);
@@ -1512,11 +1520,7 @@ static jint nfcManager_doRegisterT3tIdentifier(JNIEnv* e, jobject,
   size_t bufLen = bytes.size();
   int handle = RoutingManager::getInstance().registerT3tIdentifier(buf, bufLen);
 
-  LOG(DEBUG) << StringPrintf("%s: handle=%d", __func__, handle);
-  if (handle != NFA_HANDLE_INVALID)
-    RoutingManager::getInstance().commitRouting();
-  LOG(DEBUG) << StringPrintf("%s: exit", __func__);
-
+  LOG(DEBUG) << StringPrintf("%s: exit, handle=%d", __func__, handle);
   return handle;
 }
 
@@ -1538,8 +1542,6 @@ static void nfcManager_doDeregisterT3tIdentifier(JNIEnv*, jobject,
   LOG(DEBUG) << StringPrintf("%s: enter; handle=%d", __func__, handle);
 
   RoutingManager::getInstance().deregisterT3tIdentifier(handle);
-  RoutingManager::getInstance().commitRouting();
-
   LOG(DEBUG) << StringPrintf("%s: exit", __func__);
 }
 
@@ -1595,7 +1597,15 @@ static jboolean doPartialInit() {
     }
     NFA_SetNfccMode(ENABLE_MODE_DEFAULT);
   }
-
+  if (stat == NFA_STATUS_OK) {
+    // sIsNfaEnabled indicates whether stack started successfully
+    if (sIsNfaEnabled) {
+      NativeT4tNfcee::getInstance().initialize();
+    }
+  } else {
+    LOG(ERROR) << StringPrintf("%s: fail enable; error=0x%X", __func__, stat);
+    return JNI_FALSE;
+  }
   // sIsNfaEnabled indicates whether stack started successfully
   if (!sIsNfaEnabled) {
     NFA_Disable(false /* ungraceful */);
@@ -1704,7 +1714,7 @@ static jboolean nfcManager_doInitialize(JNIEnv* e, jobject o) {
           }
         }
 
-        prevScreenState = NFA_SCREEN_STATE_OFF_LOCKED;
+        prevScreenState = NFA_SCREEN_STATE_UNKNOWN;
 
         // Do custom NFCA startup configuration.
         doStartupConfig();
@@ -1801,12 +1811,10 @@ static tNFA_STATUS setTechAPollingLoopAnnotation(JNIEnv* env, jobject o,
       command.push_back(0x00);
     } else {
       command.push_back(0x01);                 // Number of frame entries.
-      command.push_back(0x21);                 // Position and type.
-      command.push_back(annotation_size + 3);  // Length
+      command.push_back(0x20);                 // Position and type.
+      command.push_back(annotation_size + 1);  // Length
       command.push_back(0x0a);                 // Waiting time
       command.insert(command.end(), annotation_data, annotation_data + annotation_size);
-      command.push_back(0x00);
-      command.push_back(0x00);
     }
     SyncEventGuard guard(gNfaVsCommand);
     tNFA_STATUS status =
@@ -1846,7 +1854,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
                                        jboolean enable_host_routing,
                                        jbyteArray tech_a_polling_loop_annotation,
                                        jboolean restart) {
-  if (sIsShuttingDown) return;
+  if (sIsShuttingDown || sIsRecovering || sIsDisabling || !sIsNfaEnabled)
+    return;
   tNFA_TECHNOLOGY_MASK tech_mask = DEFAULT_TECH_MASK;
   struct nfc_jni_native_data* nat = getNative(e, o);
 
@@ -1934,7 +1943,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
   }
 
   // Checking if RT should be updated
-  RoutingManager::getInstance().commitRouting();
+  if (!RoutingManager::getInstance().isRTUpdateOptimized())
+    RoutingManager::getInstance().commitRouting();
 
   // Actually start discovery.
   startRfDiscovery(true);
@@ -1955,7 +1965,8 @@ static void nfcManager_enableDiscovery(JNIEnv* e, jobject o,
 **
 *******************************************************************************/
 void nfcManager_disableDiscovery(JNIEnv* e, jobject o) {
-  if (sIsShuttingDown) return;
+  if (sIsShuttingDown || sIsRecovering || sIsDisabling || !sIsNfaEnabled)
+    return;
   tNFA_STATUS status = NFA_STATUS_OK;
   LOG(DEBUG) << StringPrintf("%s: enter;", __func__);
 
@@ -1987,6 +1998,7 @@ static jboolean doPartialDeinit() {
   LOG(DEBUG) << StringPrintf("%s: enter", __func__);
   tNFA_STATUS stat = NFA_STATUS_OK;
   sIsDisabling = true;
+  NativeT4tNfcee::getInstance().onNfccShutdown();
   if (sIsNfaEnabled) {
     SyncEventGuard guard(sNfaDisableEvent);
     stat = NFA_Disable(TRUE /* graceful */);
@@ -2280,6 +2292,12 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
       "%s: state = %d prevScreenState= %d, discovry_param = %d", __FUNCTION__,
       state, prevScreenState, discovry_param);
 
+  if (gPartialInitMode != ENABLE_MODE_DEFAULT) {
+    LOG(ERROR) << StringPrintf(
+        "%s: PartialInit mode Screen state change not required", __FUNCTION__);
+    return;
+  }
+
   if (prevScreenState == state) {
     LOG(DEBUG) << StringPrintf(
         "%s: New screen state is same as previous state. No action taken",
@@ -2288,7 +2306,7 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
   }
 
   if (sIsDisabling || !sIsNfaEnabled ||
-      (NFC_GetNCIVersion() != NCI_VERSION_2_0)) {
+      (NFC_GetNCIVersion() < NCI_VERSION_2_0)) {
     prevScreenState = state;
     return;
   }
@@ -2301,7 +2319,8 @@ static void nfcManager_doSetScreenState(JNIEnv* e, jobject o,
 
   if (prevScreenState == NFA_SCREEN_STATE_OFF_LOCKED ||
       prevScreenState == NFA_SCREEN_STATE_OFF_UNLOCKED ||
-      prevScreenState == NFA_SCREEN_STATE_ON_LOCKED) {
+      prevScreenState == NFA_SCREEN_STATE_ON_LOCKED ||
+      prevScreenState == NFA_SCREEN_STATE_UNKNOWN) {
     SyncEventGuard guard(sNfaSetPowerSubState);
     status = NFA_SetPowerSubStateForScreenState(state);
     if (status != NFA_STATUS_OK) {
@@ -2457,6 +2476,7 @@ static bool nfcManager_isMultiTag() {
 static void nfcManager_doStartStopPolling(JNIEnv* e, jobject o,
                                           jboolean start) {
   if (sIsShuttingDown) return;
+  if (sIsRecovering) return;
   startStopPolling(start);
 }
 

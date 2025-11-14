@@ -37,7 +37,7 @@ python_test_host {
     test_config: "AndroidTest.xml",
     device_common_data: [
         ":NfcEmulatorTestApp",
-        ":NfcEmulatorApduApp",
+        ":EmulatorApduApp",
     ],
     test_options: {
         unit_test: false,

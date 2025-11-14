@@ -201,4 +201,12 @@ public final class Utils {
         }
         return masked.toString();
     }
+
+    public static String aidBytesToString(byte[] aid) {
+        StringBuilder aidString = new StringBuilder();
+        for (byte b : aid) {
+            aidString.append(String.format("%02X", b));
+        }
+        return aidString.toString();
+    }
 }

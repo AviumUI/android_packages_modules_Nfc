@@ -374,4 +374,11 @@ public class NfcInjector {
         return mContext.getPackageManager().checkSignatures(uid, Process.SYSTEM_UID)
                 == PackageManager.SIGNATURE_MATCH;
     }
+
+    /** Creates a looper to handle broadcasts within the {@link NfcService}. */
+    public Looper getNfcBroadcastLooper() {
+        HandlerThread handlerThread = new HandlerThread("NfcBroadcastThread");
+        handlerThread.start();
+        return handlerThread.getLooper();
+    }
 }

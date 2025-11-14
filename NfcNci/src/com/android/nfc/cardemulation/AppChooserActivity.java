@@ -31,6 +31,7 @@ import android.nfc.cardemulation.ApduServiceInfo;
 import android.nfc.cardemulation.CardEmulation;
 import android.os.Bundle;
 import android.os.UserHandle;
+import android.sysprop.NfcProperties;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -54,7 +55,8 @@ import java.util.List;
 public class AppChooserActivity extends AppCompatActivity
         implements AdapterView.OnItemClickListener {
 
-    static final String TAG = "AppChooserActivity";
+    static final String TAG = "NfcAppChooserActivity";
+    static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
 
     public static final String EXTRA_APDU_SERVICES = "services";
     public static final String EXTRA_CATEGORY = "category";
@@ -88,7 +90,7 @@ public class AppChooserActivity extends AppCompatActivity
         registerReceiver(mReceiver, filter);
 
         if ((options == null || options.size() == 0) && failedComponent == null) {
-            Log.e(TAG, "onCreate: No components passed in.");
+            Log.e(TAG, "onCreate: No components passed in, finishing");
             finish();
             return;
         }
@@ -98,11 +100,18 @@ public class AppChooserActivity extends AppCompatActivity
 
         final NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
         if (adapter == null) {
-            Log.e(TAG, "onCreate: adapter is null");
+            Log.e(TAG, "onCreate: adapter is null, finishing");
             finish();
             return;
         }
         mCardEmuManager = CardEmulation.getInstance(adapter);
+
+        if (DBG) {
+            Log.d(TAG, "onCreate: " + options.size() + " services");
+            for (int i = 0; i < options.size(); i++) {
+                Log.d(TAG, "onCreate: service=" + options.get(i).getComponent());
+            }
+        }
 
         final ActivityManager am = getSystemService(ActivityManager.class);
         mIconSize = am.getLauncherLargeIconSize();
@@ -172,6 +181,7 @@ public class AppChooserActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (DBG) Log.d(TAG, "onCreate");
         Intent intent = getIntent();
         ArrayList<ApduServiceInfo> services = intent.getParcelableArrayListExtra(EXTRA_APDU_SERVICES);
         String category = intent.getStringExtra(EXTRA_CATEGORY);
@@ -181,6 +191,7 @@ public class AppChooserActivity extends AppCompatActivity
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        if (DBG) Log.d(TAG, "onItemClick");
         DisplayAppInfo info = (DisplayAppInfo) mListAdapter.getItem(position);
         mCardEmuManager.setDefaultForNextTap(
                 UserHandle.getUserHandleForUid(info.serviceInfo.getUid()).getIdentifier(),

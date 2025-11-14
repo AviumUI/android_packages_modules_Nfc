@@ -375,7 +375,6 @@ void nfc_set_state(tNFC_STATE nfc_state) {
 **
 *******************************************************************************/
 void nfc_gen_cleanup(void) {
-  nfc_cb.flags &= ~NFC_FL_DEACTIVATING;
   if (!gki_utils) {
     gki_utils = new GkiUtils();
   }
@@ -390,8 +389,6 @@ void nfc_gen_cleanup(void) {
 
   nfc_cb.flags &= ~(NFC_FL_CONTROL_REQUESTED | NFC_FL_CONTROL_GRANTED |
                     NFC_FL_HAL_REQUESTED);
-
-  nfc_stop_timer(&nfc_cb.deactivate_timer);
 
   /* Reset the connection control blocks */
   nfc_reset_all_conn_cbs();
@@ -1318,15 +1315,6 @@ tNFC_STATUS NFC_Deactivate(tNFC_DEACT_TYPE deactivate_type) {
     LOG(VERBOSE) << StringPrintf("%s: act_protocol=%x credits=%d/%d", __func__,
                                  p_cb->act_protocol, p_cb->init_credits,
                                  p_cb->num_buff);
-    if ((p_cb->act_protocol == NCI_PROTOCOL_NFC_DEP) &&
-        (p_cb->init_credits != p_cb->num_buff)) {
-      nfc_cb.flags |= NFC_FL_DEACTIVATING;
-      nfc_cb.deactivate_timer.param = (uintptr_t)deactivate_type;
-      nfc_start_timer(&nfc_cb.deactivate_timer,
-                      (uint16_t)(NFC_TTYPE_WAIT_2_DEACTIVATE),
-                      NFC_DEACTIVATE_TIMEOUT);
-      return status;
-    }
   }
 
   status = nci_snd_deactivate_cmd(deactivate_type);

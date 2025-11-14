@@ -43,6 +43,7 @@ import android.nfc.cardemulation.NfcFServiceInfo;
 import android.nfc.cardemulation.PollingFrame;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
@@ -75,11 +76,17 @@ import com.android.nfc.proto.NfcEventProto;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -108,8 +115,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         EnabledNfcFServices.Callback, WalletRoleObserver.Callback,
         PreferredSubscriptionService.Callback,
         HostEmulationManager.NfcAidRoutingListener {
-    static final String TAG = "CardEmulationManager";
+    static final String TAG = "NfcCardEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
 
     static final int NFC_HCE_APDU = 0x01;
     static final int NFC_HCE_NFCF = 0x04;
@@ -128,7 +136,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     /** Select APDU header */
     static final byte[] SELECT_AID_HDR = new byte[] {0x00, (byte) 0xa4, 0x04, 0x00};
     private static final int FIRMWARE_EXIT_FRAME_TIMEOUT_MS = 5000;
+    private static final int WAIT_FOR_ROUTING_CHANGE_TIMEOUT_MS = 1000;
 
+    final Handler mHandler;
     final RegisteredAidCache mAidCache;
     final RegisteredT3tIdentifiersCache mT3tIdentifiersCache;
     final RegisteredServicesCache mServiceCache;
@@ -161,6 +171,11 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     private final DeviceConfigFacade mDeviceConfigFacade;
     private final NfcInjector mNfcInjector;
 
+    private CompletableFuture<Integer> mRoutingChangeFuture = null;
+    private final ExecutorService mCommitRoutingExecutor = Executors.newSingleThreadExecutor();
+
+    private boolean mIsEuiccCapable;
+
     // TODO: Move this object instantiation and dependencies to NfcInjector.
     public CardEmulationManager(Context context, NfcInjector nfcInjector,
         DeviceConfigFacade deviceConfigFacade) {
@@ -173,6 +188,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mWalletRoleObserver = new WalletRoleObserver(context,
                 context.getSystemService(RoleManager.class), this, nfcInjector);
 
+        mIsEuiccCapable = mContext.getResources().getBoolean(R.bool.enable_euicc_support)
+                && NfcInjector.NfcProperties.isEuiccSupported();
         mRoutingOptionManager = RoutingOptionManager.getInstance();
         mOffHostRouteEse = mRoutingOptionManager.getOffHostRouteEse();
         mOffHostRouteUicc = mRoutingOptionManager.getOffHostRouteUicc();
@@ -181,6 +198,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mTelephonyUtils = TelephonyUtils.getInstance(mContext);
         mTelephonyUtils.setMepMode(mRoutingOptionManager.getMepMode());
 
+        mHandler = new Handler(Looper.getMainLooper());
         mAidCache = new RegisteredAidCache(context, mWalletRoleObserver);
         mT3tIdentifiersCache = new RegisteredT3tIdentifiersCache(context);
         mHostEmulationManager =
@@ -206,6 +224,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     CardEmulationManager(Context context,
             ForegroundUtils foregroundUtils,
             WalletRoleObserver walletRoleObserver,
+            Handler handler,
             RegisteredAidCache registeredAidCache,
             RegisteredT3tIdentifiersCache registeredT3tIdentifiersCache,
             HostEmulationManager hostEmulationManager,
@@ -227,6 +246,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mNfcFCardEmulationInterface = new NfcFCardEmulationInterface();
         mForegroundUtils = foregroundUtils;
         mWalletRoleObserver = walletRoleObserver;
+        mHandler = handler;
         mAidCache = registeredAidCache;
         mT3tIdentifiersCache = registeredT3tIdentifiersCache;
         mHostEmulationManager = hostEmulationManager;
@@ -360,8 +380,15 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
     }
 
-    public void onOffHostAidSelected() {
-        mHostEmulationManager.onOffHostAidSelected();
+    public void onOffHostAidTransaction() {
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
+    }
+
+    public void onOffHostAidSelected(@NonNull String aid, @NonNull String eeName) {
+        mHostEmulationManager.onOffHostAidSelectedOrTransaction();
+        if (com.android.nfc.module.flags.Flags.eventListenerOffhostAidSelected()) {
+            callNfcEventCallbacks(listener -> listener.onOffHostAidSelected(aid, eeName));
+        }
     }
 
     public void onBootCompleted() {
@@ -370,6 +397,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     public void onUserSwitched(int userId) {
+        if (DBG) Log.d(TAG, "onUserSwitched");
         mWalletRoleObserver.onUserSwitched(userId);
         // for HCE
         mServiceCache.onUserSwitched();
@@ -393,6 +421,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     public void onNfcEnabled() {
+        if (DBG) Log.d(TAG, "onNfcEnabled");
         // for HCE
         mAidCache.onNfcEnabled();
         // for HCE-F
@@ -400,6 +429,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     public void onNfcDisabled() {
+        if (DBG) Log.d(TAG, "onNfcDisabled");
         // for HCE
         mAidCache.onNfcDisabled();
         // for HCE-F
@@ -413,6 +443,18 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         if (DBG) Log.d(TAG, "onTriggerRoutingTableUpdate");
         mAidCache.onTriggerRoutingTableUpdate();
         mT3tIdentifiersCache.onTriggerRoutingTableUpdate();
+    }
+
+    public boolean onRoutingChangeStarted() {
+        if (mRoutingChangeFuture != null) return false;
+        mRoutingChangeFuture = new CompletableFuture<>();
+        return true;
+    }
+
+    public boolean onRoutingChangeCompleted(@NfcOemExtension.StatusCode int status) {
+        Log.d(TAG, "onRoutingChangeComplete: " + status);
+        if (mRoutingChangeFuture == null) return false;
+        return mRoutingChangeFuture.complete(status);
     }
 
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
@@ -479,12 +521,17 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         // Update the AID cache
         mAidCache.onServicesUpdated(userId, services);
         // Update the preferred services list
-        mPreferredServices.onServicesUpdated();
+        boolean preferredServicesUpdated = mPreferredServices.onServicesUpdated();
         mHostEmulationManager.updatePollingLoopFilters(userId, services);
         if (Flags.exitFrames()) {
-            updateFirmwareExitFramesForWalletRole(userId);
+            mHandler.post(() -> {
+                updateFirmwareExitFramesForWalletRole(userId);
+            });
         }
-        NfcService.getInstance().onPreferredPaymentChanged(NfcAdapter.PREFERRED_PAYMENT_UPDATED);
+        if (preferredServicesUpdated) {
+            NfcService.getInstance().onPreferredPaymentChanged(
+                    NfcAdapter.PREFERRED_PAYMENT_UPDATED);
+        }
     }
 
     @Override
@@ -627,6 +674,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     boolean setDefaultServiceForCategoryChecked(int userId, ComponentName service,
             String category) {
+        if (DBG) {
+            Log.d(TAG, "setDefaultServiceForCategoryChecked: service=" + service + ", category="
+                    + category);
+        }
         if (!CardEmulation.CATEGORY_PAYMENT.equals(category)) {
             Log.e(TAG, "setDefaultServiceForCategoryChecked: Not allowing defaults for category "
                     + category);
@@ -727,9 +778,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     @Override
     public void onPreferredSubscriptionChanged(int subscriptionId, boolean isActive) {
         int simType = isActive ?  getSimTypeById(subscriptionId) : TelephonyUtils.SIM_TYPE_UNKNOWN;
-        Log.i(TAG, "onPreferredSubscriptionChanged: subscription_" + subscriptionId + "is active("
-                + isActive + ")"
-                + ", type(" + simType + ")");
+        Log.i(TAG, "onPreferredSubscriptionChanged: subscription_" + subscriptionId
+                + "is active(" + isActive + "), type(" + simType + ")");
         mRoutingOptionManager.onPreferredSimChanged(simType);
         if (simType != TelephonyUtils.SIM_TYPE_UNKNOWN) {
             updateRouteBasedOnPreferredSim();
@@ -781,6 +831,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             if (!isServiceRegistered(userId, service)) {
                 return false;
             }
+            if (DBG) {
+                Log.d(TAG, "isDefaultServiceForCategory: service=" + service + ", category="
+                        + category);
+            }
             if (mWalletRoleObserver.isWalletRoleFeatureEnabled()) {
                 PackageAndUser holder =
                         mWalletRoleObserver.getDefaultWalletRoleHolder(userId);
@@ -822,6 +876,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 throws RemoteException {
             NfcPermissions.validateProfileId(mContext, userId);
             NfcPermissions.enforceAdminPermissions(mContext);
+            if (DBG) {
+                Log.d(TAG, "setDefaultForNextTap: service=" + service);
+            }
             if (service != null && !isServiceRegistered(userId, service)) {
                 return false;
             }
@@ -849,6 +906,66 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 updateForShouldDefaultToObserveMode(userId);
             }
             return true;
+        }
+
+        @Override
+        public void setRequireDeviceScreenOnForService(int userId, ComponentName service,
+                boolean enable) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + service + " is not registered");
+            }
+
+            Log.d(TAG, "setRequireDeviceScreenOnForService: (" + service + ") to " + enable);
+
+            mServiceCache.setRequireDeviceScreenOnForService(
+                    userId, Binder.getCallingUid(), service, enable);
+        }
+
+        @Override
+        public boolean isDeviceScreenOnRequiredForService(int userId, ComponentName service) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + service + " is not registered");
+            }
+
+            return mServiceCache.getService(userId, service).requiresScreenOn();
+        }
+
+        @Override
+        public void setRequireDeviceUnlockForService(int userId, ComponentName service,
+                boolean enable) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + service + " is not registered");
+            }
+
+            Log.d(TAG, "setRequireDeviceUnlockForService: (" + service + ") to " + enable);
+
+            mServiceCache.setRequireDeviceUnlockForService(
+                    userId, Binder.getCallingUid(), service, enable);
+        }
+
+        @Override
+        public boolean isDeviceUnlockRequiredForService(int userId, ComponentName service) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException(
+                        "Service with component name " + service + " is not registered");
+            }
+
+            return mServiceCache.getService(userId, service).requiresUnlock();
         }
 
         @Override
@@ -958,6 +1075,18 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
 
         @Override
+        public List<String> getPollingLoopFiltersForService(int userId, ComponentName service) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException("getPollingLoopPatternFiltersForService: "
+                        + "service (" + service + ") isn't registered for user " + userId);
+            }
+            return List.copyOf(mServiceCache.getPollingLoopFiltersForService(
+                    userId,Binder.getCallingUid(), service));
+        }
+
+        @Override
         public boolean registerPollingLoopPatternFilterForService(int userId, ComponentName service,
                 String pollingLoopPatternFilter, boolean autoTransact) throws RemoteException {
             NfcPermissions.validateUserId(userId);
@@ -1025,6 +1154,19 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                                     .build())
                             .build());
             return true;
+        }
+
+        @Override
+        public List<String> getPollingLoopPatternFiltersForService(
+            int userId, ComponentName service) {
+            NfcPermissions.validateUserId(userId);
+            NfcPermissions.enforceUserPermissions(mContext);
+            if (!isServiceRegistered(userId, service)) {
+                throw new IllegalArgumentException("getPollingLoopPatternFiltersForService: "
+                        + "service (" + service + ") isn't registered for user " + userId);
+            }
+            return List.copyOf(mServiceCache.getPollingLoopPatternFiltersForService(
+                    userId, Binder.getCallingUid(), service));
         }
 
         @Override
@@ -1162,9 +1304,12 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 return mWalletRoleObserver.getDefaultWalletRoleHolder(
                         callingUserId).getPackage() != null;
             }
-            String defaultComponent = Settings.Secure.getString(mContext.getContentResolver(),
-                    Constants.SETTINGS_SECURE_NFC_PAYMENT_DEFAULT_COMPONENT);
-            return defaultComponent != null ? true : false;
+            boolean isRegistered = Settings.Secure.getString(mContext.getContentResolver(),
+                    Constants.SETTINGS_SECURE_NFC_PAYMENT_DEFAULT_COMPONENT) != null;
+            if (DBG) {
+                Log.d(TAG, "isDefaultPaymentRegistered: " + isRegistered);
+            }
+            return isRegistered;
         }
 
         @Override
@@ -1204,10 +1349,11 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                         + ", technologyRoute " + technologyRoute);
             }
 
-//            mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
+            mRoutingOptionManager.overrideDefaultRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultIsoDepRoute(protocolRoute);
             mRoutingOptionManager.overrideDefaultOffHostRoute(technologyRoute);
-            int result = mAidCache.onRoutingOverridedOrRecovered();
+            int result = callRoutingOverridedOrRecovered();
+
             switch (result) {
                 case AidRoutingManager.CONFIGURE_ROUTING_SUCCESS:
                     break;
@@ -1231,7 +1377,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             mForegroundUid = Process.INVALID_UID;
 
             mRoutingOptionManager.recoverOverridedRoutingTable();
-            if (mAidCache.onRoutingOverridedOrRecovered()
+            if (callRoutingOverridedOrRecovered()
                         != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
                 throw new IllegalArgumentException(
                         "recoverRoutingTable: " + "onRoutingOverridedOrRecovered() failed");
@@ -1247,10 +1393,18 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
             NfcPermissions.enforceAdminPermissions(mContext);
 
-            int aidRoute = getRouteForSecureElement(aids);
-            int protocolRoute = getRouteForSecureElement(protocol);
-            int technologyRoute = getRouteForSecureElement(technology);
-            int scRoute = getRouteForSecureElement(sc);
+            int aidRoute = (aids != null && aids.equals("default"))
+                    ? mRoutingOptionManager.getDefaultRoute()
+                    : getRouteForSecureElement(aids);
+            int protocolRoute = (protocol != null && protocol.equals("default"))
+                    ? mRoutingOptionManager.getDefaultIsoDepRoute()
+                    : getRouteForSecureElement(protocol);
+            int technologyRoute = (technology != null && technology.equals("default"))
+                    ? mRoutingOptionManager.getDefaultOffHostRoute()
+                    : getRouteForSecureElement(technology);
+            int scRoute = (sc != null && sc.equals("default"))
+                    ? mRoutingOptionManager.getDefaultScRoute()
+                    : getRouteForSecureElement(sc);
 
             if (DBG)  {
                 Log.d(TAG, "overwriteRoutingTable(): aidRoute: " + Integer.toHexString(aidRoute)
@@ -1273,7 +1427,8 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             if (aids != null || protocol != null || technology != null || sc != null) {
                 mRoutingOptionManager.overwriteRoutingTable();
             }
-            if (mAidCache.onRoutingOverridedOrRecovered()
+
+            if (callRoutingOverridedOrRecovered()
                         != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
                 throw new IllegalArgumentException("onRoutingOverridedOrRecovered() failed");
             }
@@ -1285,9 +1440,24 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             List<Integer> routingList = new ArrayList<>();
 
             if (mRoutingOptionManager.isRoutingTableOverrided()) {
-                routingList.add(mRoutingOptionManager.getOverrideDefaultRoute());
-                routingList.add(mRoutingOptionManager.getOverrideDefaultIsoDepRoute());
-                routingList.add(mRoutingOptionManager.getOverrideDefaultOffHostRoute());
+                int overrideDefaultRoute = mRoutingOptionManager.getOverrideDefaultRoute();
+                if (overrideDefaultRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultRoute = mRoutingOptionManager.getDefaultRoute();
+                }
+                int overrideDefaultIsoDepRoute =
+                        mRoutingOptionManager.getOverrideDefaultIsoDepRoute();
+                if (overrideDefaultIsoDepRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultIsoDepRoute = mRoutingOptionManager.getDefaultIsoDepRoute();
+                }
+                int overrideDefaultOffHostRoute =
+                        mRoutingOptionManager.getOverrideDefaultOffHostRoute();
+                if (overrideDefaultOffHostRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultOffHostRoute =
+                        mRoutingOptionManager.getDefaultOffHostRoute();
+                }
+                routingList.add(overrideDefaultRoute);
+                routingList.add(overrideDefaultIsoDepRoute);
+                routingList.add(overrideDefaultOffHostRoute);
             }
             else {
                 routingList.add(mRoutingOptionManager.getDefaultRoute());
@@ -1453,6 +1623,11 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     }
                     mForegroundUid = Process.INVALID_UID;
                     mRoutingOptionManager.recoverOverridedRoutingTable();
+                    if (callRoutingOverridedOrRecovered()
+                            != AidRoutingManager.CONFIGURE_ROUTING_SUCCESS) {
+                        throw new IllegalArgumentException(
+                                "recoverRoutingTable: " + "onRoutingOverridedOrRecovered() failed");
+                    }
                 }
             }
         }
@@ -1637,8 +1812,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     }
 
     private int getSimTypeById(int subscriptionId) {
-        Optional<SubscriptionInfo> optionalInfo =
-                mTelephonyUtils.getActiveSubscriptionInfoById(subscriptionId);
+        Optional<SubscriptionInfo> optionalInfo = getActiveSubscriptionInfoById(subscriptionId);
         if (optionalInfo.isPresent()) {
             SubscriptionInfo info = optionalInfo.get();
             if (info.isEmbedded()) {
@@ -1651,6 +1825,19 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
 
         return TelephonyUtils.SIM_TYPE_UNKNOWN;
+    }
+
+    public byte[] getReaderByPreferredSim() {
+        Optional<SubscriptionInfo> optionalInfo =
+                getActiveSubscriptionInfoById(
+                    mPreferredSubscriptionService.getPreferredSubscriptionId());
+        if (optionalInfo.isPresent() && optionalInfo.get().isEmbedded()) {
+            SubscriptionInfo info = optionalInfo.get();
+            return (RoutingOptionManager.SE_PREFIX_SIM + (1 + info.getSimSlotIndex()))
+                    .getBytes(StandardCharsets.UTF_8);
+        } else {
+            return null;
+        }
     }
 
     public void updateForShouldDefaultToObserveMode(int userId) {
@@ -1740,7 +1927,9 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mPreferredServices.onWalletRoleHolderChanged(holder, userId);
         mAidCache.onWalletRoleHolderChanged(holder, userId);
         if (Flags.exitFrames()) {
-            updateFirmwareExitFramesForWalletRole(userId);
+            mHandler.post(() -> {
+                updateFirmwareExitFramesForWalletRole(userId);
+            });
         }
     }
 
@@ -1768,5 +1957,53 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     public boolean isHostCardEmulationActivated() {
         return mHostEmulationManager.isHostCardEmulationActivated();
+    }
+
+    Optional<SubscriptionInfo> getActiveSubscriptionInfoById(int subscriptionId) {
+        Log.d(TAG, "getActiveSubscriptionInfoById: " + subscriptionId);
+        if (mTelephonyUtils.isUiccSubscription(subscriptionId)) {
+            Log.d(TAG, "Get activated uicc subscription with SWP supported physical slot");
+            return mTelephonyUtils.getActiveSubscriptions().stream()
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_UICC)
+                    .filter(subscriptionInfo ->
+                                mTelephonyUtils.findPhysicalSlotIndex(subscriptionInfo)
+                                == TelephonyUtils.SWP_SUPPORTED_PHYSICAL_SIM_SLOT)
+                    .findFirst();
+        } else {
+            return mTelephonyUtils.getActiveSubscriptions().stream()
+                    .filter(TelephonyUtils.SUBSCRIPTION_ACTIVE_CONDITION_FOR_EUICC)
+                    .filter(subscriptionInfo ->
+                                subscriptionInfo.getSubscriptionId() == subscriptionId)
+                    .findFirst();
+        }
+    }
+
+    private int callRoutingOverridedOrRecovered() {
+        Callable<Integer> task = () -> {
+            @AidRoutingManager.ConfigureRoutingResult int status =
+                    mAidCache.onRoutingOverridedOrRecovered();
+
+            if (status == AidRoutingManager.CONFIGURE_ROUTING_SUCCESS
+                    && mRoutingChangeFuture != null) {
+                if (mRoutingChangeFuture.get() == NfcOemExtension.STATUS_OK) {
+                    return AidRoutingManager.CONFIGURE_ROUTING_SUCCESS;
+                } else {
+                    return AidRoutingManager.CONFIGURE_ROUTING_FAILURE_UNKNOWN;
+                }
+            }
+
+            return status;
+        };
+
+        try {
+            return mCommitRoutingExecutor
+                    .submit(task)
+                    .get(WAIT_FOR_ROUTING_CHANGE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            Log.e(TAG, "callRoutingOverridedOrRecovered failed: " , e);
+            return AidRoutingManager.CONFIGURE_ROUTING_FAILURE_UNKNOWN;
+        } finally {
+            mRoutingChangeFuture = null;
+        }
     }
 }

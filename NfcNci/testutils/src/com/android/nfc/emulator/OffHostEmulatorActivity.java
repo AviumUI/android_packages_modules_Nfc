@@ -16,13 +16,31 @@
 package com.android.nfc.emulator;
 
 import android.content.ComponentName;
+import android.content.Intent;
+import android.nfc.cardemulation.CardEmulation;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.android.nfc.service.OffHostService;
 import com.android.nfc.service.PollingLoopService;
 
 public class OffHostEmulatorActivity extends BaseEmulatorActivity {
     public static final String EXTRA_ENABLE_OBSERVE_MODE = "EXTRA_ENABLE_OBSERVE_MODE";
+
+    private CardEmulation.NfcEventCallback mEventListener = new CardEmulation.NfcEventCallback() {
+        @Override
+        public void onOffHostAidSelected(String aid, String offHostSe) {
+            Log.d(TAG, "onOffHostAidSelected: " + aid + ", " + offHostSe);
+            if (getAidsForService(OffHostService.COMPONENT).contains(aid)) {
+                Intent intent = new Intent(BaseEmulatorActivity.ACTION_OFFHOST_AID_SELECTED);
+                intent.putExtra(EXTRA_OFFHOST_AID_SELECTED_AID, aid);
+                intent.putExtra(EXTRA_OFFHOST_AID_SELECTED_SE, offHostSe);
+                sendBroadcast(intent);
+            } else {
+                Log.e(TAG, "Unknown AID detected in offHostAidSelected callback");
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +51,7 @@ public class OffHostEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
+        registerEventListener(mEventListener);
         if (getIntent().getBooleanExtra(EXTRA_ENABLE_OBSERVE_MODE, false)) {
             // Still need to set a preferred service to be able to set observe mode.
             mCardEmulation.setPreferredService(
@@ -45,6 +63,7 @@ public class OffHostEmulatorActivity extends BaseEmulatorActivity {
     @Override
     public void onPause() {
         super.onPause();
+        mCardEmulation.unregisterNfcEventCallback(mEventListener);
         if (getIntent().getBooleanExtra(EXTRA_ENABLE_OBSERVE_MODE, false)) {
             mCardEmulation.unsetPreferredService(this);
             mAdapter.setObserveModeEnabled(false);

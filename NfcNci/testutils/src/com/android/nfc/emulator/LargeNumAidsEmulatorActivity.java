@@ -28,19 +28,19 @@ public class LargeNumAidsEmulatorActivity extends BaseEmulatorActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupServices(LargeNumAidsService.COMPONENT);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        mCardEmulation.setPreferredService(this, LargeNumAidsService.COMPONENT);
+    }
     @Override
     public void onApduSequenceComplete(ComponentName component, long duration) {
         if (component.equals(LargeNumAidsService.COMPONENT)) {
             setTestPassed();
         }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        setupServices(LargeNumAidsService.COMPONENT);
     }
 
     @Override

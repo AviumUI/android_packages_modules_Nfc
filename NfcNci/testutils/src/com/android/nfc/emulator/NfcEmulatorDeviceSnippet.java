@@ -513,6 +513,12 @@ public class NfcEmulatorDeviceSnippet extends NfcSnippet {
                 AccessServiceTurnObserveModeOnProcessApdu.OBSERVE_MODE_FALSE);
     }
 
+    @AsyncRpc(description = "Waits for off host aid selected event")
+    public void asyncWaitForOffHostAidSelected(String callbackId, String eventName) {
+        registerSnippetBroadcastReceiver(
+                callbackId, eventName, BaseEmulatorActivity.ACTION_OFFHOST_AID_SELECTED);
+    }
+
     /** Sets the listen tech for the active emulator activity */
     @Rpc(description = "Set the listen tech for the emulator")
     public void setListenTech(Integer listenTech) {

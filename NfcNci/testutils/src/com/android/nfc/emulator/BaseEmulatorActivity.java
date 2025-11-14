@@ -55,6 +55,13 @@ public abstract class BaseEmulatorActivity extends Activity {
 
     // Intent action that's sent after the test condition is met.
     protected static final String ACTION_TEST_PASSED = PACKAGE_NAME + ".ACTION_TEST_PASSED";
+    protected static final String ACTION_OFFHOST_AID_SELECTED =
+            PACKAGE_NAME + ".ACTION_OFFHOST_AID_SELECTED";
+    protected static final String EXTRA_OFFHOST_AID_SELECTED_AID =
+            PACKAGE_NAME + ".EXTRA_OFFHOST_AID_SELECTED_AID";
+    protected static final String EXTRA_OFFHOST_AID_SELECTED_SE =
+            PACKAGE_NAME + ".EXTRA_OFFHOST_AID_SELECTED_SE";
+
     protected static final String TAG = "BaseEmulatorActivity";
     protected NfcAdapter mAdapter;
     protected CardEmulation mCardEmulation;
@@ -82,7 +89,7 @@ public abstract class BaseEmulatorActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
+
         mAdapter = NfcAdapter.getDefaultAdapter(this);
         mCardEmulation = CardEmulation.getInstance(mAdapter);
         mRoleManager = getSystemService(RoleManager.class);
@@ -96,11 +103,6 @@ public abstract class BaseEmulatorActivity extends Activity {
             Log.d(TAG, "registering event listener...");
             mCardEmulation.registerNfcEventCallback(getMainExecutor(), eventListener);
         }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
     }
 
     @Override
@@ -241,6 +243,10 @@ public abstract class BaseEmulatorActivity extends Activity {
         mCardEmulation.isDefaultServiceForCategory(bogusComponent, CardEmulation.CATEGORY_PAYMENT);
 
         onServicesSetup();
+    }
+
+    public List<String> getAidsForService(ComponentName componentName) {
+        return mCardEmulation.getAidsForService(componentName, CardEmulation.CATEGORY_PAYMENT);
     }
 
     /** Executed after services are set up */

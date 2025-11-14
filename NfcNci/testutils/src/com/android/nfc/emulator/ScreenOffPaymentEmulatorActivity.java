@@ -56,11 +56,6 @@ public class ScreenOffPaymentEmulatorActivity extends BaseEmulatorActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mScreenOnOffReceiver);

@@ -132,6 +132,7 @@ static bool sReselectTagIdle = false;
 
 static int sPresCheckStatus = 0;
 static bool sIsDisconnecting = false;
+void nativeNfcTag_doPresenceCheckResult(tNFA_STATUS status);
 
 static int reSelect(tNFA_INTF_TYPE rfInterface, bool fSwitchIfNeeded);
 extern bool gIsDtaEnabled;
@@ -164,10 +165,8 @@ void nativeNfcTag_abortWaits() {
   }
 
   sem_post(&sCheckNdefSem);
-  {
-    SyncEventGuard guard(sPresenceCheckEvent);
-    sPresenceCheckEvent.notifyOne();
-  }
+  nativeNfcTag_doPresenceCheckResult(NFA_STATUS_FAILED);
+
   sem_post(&sMakeReadonlySem);
   sCurrentRfInterface = NFA_INTERFACE_ISO_DEP;
   sCurrentActivatedProtocl = NFA_INTERFACE_ISO_DEP;
@@ -588,15 +587,16 @@ static jint nativeNfcTag_doConnect(JNIEnv*, jobject, jint targetIdx,
   }
 
   if (sCurrentConnectedTargetType == TARGET_TYPE_ISO14443_3A ||
-      sCurrentConnectedTargetType == TARGET_TYPE_ISO14443_3B) {
-    if (sCurrentConnectedTargetProtocol != NFC_PROTOCOL_MIFARE) {
+      sCurrentConnectedTargetType == TARGET_TYPE_ISO14443_3B ||
+      sCurrentConnectedTargetType == TARGET_TYPE_MIFARE_CLASSIC) {
+    if (sCurrentConnectedTargetProtocol == NFC_PROTOCOL_MIFARE) {
+      intfType = NFA_INTERFACE_MIFARE;
+    } else {
       LOG(DEBUG) << StringPrintf(
           "%s: switching to tech=%x need to switch rf intf to frame", __func__,
           sCurrentConnectedTargetType);
       intfType = NFA_INTERFACE_FRAME;
     }
-  } else if (sCurrentConnectedTargetType == TARGET_TYPE_MIFARE_CLASSIC) {
-    intfType = NFA_INTERFACE_MIFARE;
   } else {
     intfType = NFA_INTERFACE_ISO_DEP;
   }
