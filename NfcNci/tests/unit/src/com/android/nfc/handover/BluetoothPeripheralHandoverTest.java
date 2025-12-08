@@ -127,6 +127,7 @@ public class BluetoothPeripheralHandoverTest {
                 .mockStatic(Settings.Global.class)
                 .mockStatic(Toast.class)
                 .mockStatic(NfcInjector.class)
+                .mockStatic(DeviceConfigFacade.class)
                 .strictness(Strictness.LENIENT).startMocking();
         MockitoAnnotations.initMocks(this);
         when(mockContext.getSystemService(AudioManager.class)).thenReturn(mockAudioManager);
@@ -134,7 +135,7 @@ public class BluetoothPeripheralHandoverTest {
         when(mockContext.getResources()).thenReturn(mockResources);
         NfcInjector nfcInjector = mock(NfcInjector.class);
         when(NfcInjector.getInstance()).thenReturn(nfcInjector);
-        when(nfcInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
+        when(DeviceConfigFacade.getInstance(any(), any())).thenReturn(mDeviceConfigFacade);
         when(Toast.makeText(any(), anyString(), anyInt())).thenReturn(mockToast);
         bluetoothPeripheralHandover = createBluetoothPerHandOvrInstance(
                 BluetoothDevice.TRANSPORT_LE);

@@ -18,6 +18,7 @@ package com.android.nfc.utils;
 
 import static android.Manifest.permission.INTERACT_ACROSS_USERS_FULL;
 import static android.Manifest.permission.MANAGE_DEFAULT_APPLICATIONS;
+import static android.Manifest.permission.MANAGE_ROLE_HOLDERS;
 import static android.Manifest.permission.WRITE_SECURE_SETTINGS;
 
 import android.app.role.RoleManager;
@@ -27,6 +28,7 @@ import android.content.pm.PackageManager;
 import android.nfc.NfcAdapter;
 
 import com.android.nfc.service.AccessService;
+import com.android.nfc.service.ExitFrameService;
 import com.android.nfc.service.LargeNumAidsService;
 import com.android.nfc.service.OffHostService;
 import com.android.nfc.service.PaymentService1;
@@ -98,6 +100,18 @@ public final class HceUtils {
                 });
         RESPONSE_APDUS_BY_SERVICE.put(
                 PaymentService1.class.getName(),
+                new String[] {"FFFF9000", "FFEF9000", "FFDFFFAABB9000"});
+
+        // Exit Frame Service
+        COMMAND_APDUS_BY_SERVICE.put(
+                ExitFrameService.class.getName(),
+                new CommandApdu[] {
+                        buildSelectApdu(PPSE_AID, true),
+                        buildSelectApdu(MC_AID, true),
+                        buildCommandApdu("80CA01F000", true)
+                });
+        RESPONSE_APDUS_BY_SERVICE.put(
+                ExitFrameService.class.getName(),
                 new String[] {"FFFF9000", "FFEF9000", "FFDFFFAABB9000"});
 
         COMMAND_APDUS_BY_SERVICE.put(
@@ -368,8 +382,12 @@ public final class HceUtils {
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                     .getUiAutomation()
                     .adoptShellPermissionIdentity(
-                            MANAGE_DEFAULT_APPLICATIONS, INTERACT_ACROSS_USERS_FULL);
+                            MANAGE_DEFAULT_APPLICATIONS, MANAGE_ROLE_HOLDERS,
+                            INTERACT_ACROSS_USERS_FULL);
             assert roleManager != null;
+            // Disable fallback to ensure that the default application does not
+            // automatically become the wallet role holder.
+            roleManager.setRoleFallbackEnabled(RoleManager.ROLE_WALLET, false);
             roleManager.setDefaultApplication(
                     RoleManager.ROLE_WALLET,
                     packageName,

@@ -44,7 +44,6 @@ import android.widget.Toast;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.nfc.DeviceConfigFacade;
-import com.android.nfc.NfcInjector;
 import com.android.nfc.R;
 
 import java.lang.reflect.Method;
@@ -180,7 +179,8 @@ public class BluetoothPeripheralHandover implements BluetoothProfile.ServiceList
 
         mAudioManager = mContext.getSystemService(AudioManager.class);
 
-        mDeviceConfigFacade = NfcInjector.getInstance().getDeviceConfigFacade();
+        // Don't use injector here since this can run on different process for multi user scenarios.
+        mDeviceConfigFacade = DeviceConfigFacade.getInstance(mContext, new Handler());
 
         mState = STATE_INIT;
     }
@@ -213,7 +213,7 @@ public class BluetoothPeripheralHandover implements BluetoothProfile.ServiceList
         filter.addAction(BluetoothDevice.ACTION_UUID);
         filter.setPriority(999);
 
-        mContext.registerReceiver(mReceiver, filter);
+        mContext.registerReceiver(mReceiver, filter, Context.RECEIVER_EXPORTED);
 
         mHandler.sendMessageDelayed(mHandler.obtainMessage(MSG_TIMEOUT), TIMEOUT_MS);
 

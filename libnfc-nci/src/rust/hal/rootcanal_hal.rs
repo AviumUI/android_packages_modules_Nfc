@@ -71,7 +71,7 @@ where
                         break;
                     }
                 }
-                Err(e) => error!("dropping invalid cmd event packet: {}: {:02x}", e, frozen),
+                Err(e) => error!("dropping invalid cmd event packet: {e}: {frozen:02x}"),
             }
         } else {
             match DataPacket::parse(&frozen) {
@@ -80,7 +80,7 @@ where
                         break;
                     }
                 }
-                Err(e) => error!("dropping invalid data event packet: {}: {:02x}", e, frozen),
+                Err(e) => error!("dropping invalid data event packet: {e}: {frozen:02x}"),
             }
         }
     }
@@ -124,6 +124,6 @@ where
     data.put_u16(b.len().try_into().unwrap());
     data.extend(b);
     writer.write_all(&data[..]).await?;
-    debug!("Sent {:?}", data);
+    debug!("Sent {data:?}");
     Ok(())
 }

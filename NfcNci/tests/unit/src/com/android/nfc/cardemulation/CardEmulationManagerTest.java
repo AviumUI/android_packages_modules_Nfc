@@ -305,6 +305,7 @@ public class CardEmulationManagerTest {
         verify(mRegisteredNfcFServicesCache).onHostEmulationActivated();
         verify(mEnabledNfcFServices).onHostEmulationActivated();
         verify(mHostEmulationManager).setAidRoutingListener(any());
+        verify(mHostEmulationManager).onNfcFHostEmulationActivated();
         verifyNoMoreInteractions(mHostEmulationManager);
         verifyNoMoreInteractions(mPreferredServices);
     }
@@ -383,6 +384,7 @@ public class CardEmulationManagerTest {
         verify(mHostNfcFEmulationManager).onHostEmulationDeactivated();
         verify(mRegisteredNfcFServicesCache).onHostEmulationDeactivated();
         verify(mEnabledNfcFServices).onHostEmulationDeactivated();
+        verify(mHostEmulationManager).onNfcFHostEmulationDeactivated();
         verify(mHostEmulationManager).setAidRoutingListener(any());
         verifyNoMoreInteractions(mHostEmulationManager);
         verifyNoMoreInteractions(mPreferredServices);

@@ -185,7 +185,9 @@ tNFA_STATUS NFA_EeGetMepInfo(uint8_t* p_num_nfcee, tNFA_EE_INFO* p_info) {
 
   /* compose output */
   for (xx = 0; (xx < ret) && (num_ret < max_ret); xx++, p_cb++) {
-    if (!(p_cb->ee_status & NFA_EE_STATUS_MEP_MASK)) {
+    if ((p_cb->ee_status & NFA_EE_STATUS_INT_MASK) ||
+        (p_cb->ee_status == NFA_EE_STATUS_REMOVED) ||
+        !(p_cb->ee_status & NFA_EE_STATUS_MEP_MASK)) {
       continue;
     }
     LOG(DEBUG) << StringPrintf(
@@ -194,18 +196,14 @@ tNFA_STATUS NFA_EeGetMepInfo(uint8_t* p_num_nfcee, tNFA_EE_INFO* p_info) {
     p_info->ee_handle = NFA_HANDLE_GROUP_EE | (tNFA_HANDLE)p_cb->nfcee_id;
     p_info->ee_status = p_cb->ee_status & ~NFA_EE_STATUS_MEP_MASK;
 
-    if ((p_cb->ee_status & NFA_EE_STATUS_INT_MASK) ||
-        (p_cb->ee_status == NFA_EE_STATUS_REMOVED)) {
-      p_info->num_interface = p_cb->num_interface;
-      p_info->num_tlvs = p_cb->num_tlvs;
-      p_info->la_protocol = p_cb->la_protocol;
-      p_info->lb_protocol = p_cb->lb_protocol;
-      p_info->lf_protocol = p_cb->lf_protocol;
-      memcpy(p_info->ee_interface, p_cb->ee_interface, p_cb->num_interface);
-      memcpy(p_info->ee_tlv, p_cb->ee_tlv,
-             p_cb->num_tlvs * sizeof(tNFA_EE_TLV));
-      p_info->ee_power_supply_status = p_cb->ee_power_supply_status;
-    }
+    p_info->num_interface = p_cb->num_interface;
+    p_info->num_tlvs = p_cb->num_tlvs;
+    p_info->la_protocol = p_cb->la_protocol;
+    p_info->lb_protocol = p_cb->lb_protocol;
+    p_info->lf_protocol = p_cb->lf_protocol;
+    memcpy(p_info->ee_interface, p_cb->ee_interface, p_cb->num_interface);
+    memcpy(p_info->ee_tlv, p_cb->ee_tlv, p_cb->num_tlvs * sizeof(tNFA_EE_TLV));
+    p_info->ee_power_supply_status = p_cb->ee_power_supply_status;
     p_info++;
     num_ret++;
   }

@@ -35,6 +35,7 @@
 using android::base::StringPrintf;
 
 extern bool gActivated;
+extern bool sIsRecovering;
 extern SyncEvent gDeactivatedEvent;
 
 const JNINativeMethod RoutingManager::sMethods[] = {
@@ -241,6 +242,7 @@ bool RoutingManager::initialize(nfc_jni_native_data* native) {
     LOG(ERROR) << fn << ": Failed to register wildcard AID for DH";
 
   // Trigger RT update
+  mNfceeListenConfig.nb_config = 0;
   setEeInfoChangedFlag();
   mDefaultAidRouteAdded = false;
 
@@ -327,6 +329,7 @@ bool RoutingManager::addAidRouting(const uint8_t* aid, uint8_t aidLen,
   if (route != NFC_DH_ID &&
       !isTypeATypeBTechSupportedInEe(route | NFA_HANDLE_GROUP_EE)) {
     route = NFC_DH_ID;
+    power = 0x11;
   }
 
   if (!mSecureNfcEnabled) {
@@ -425,8 +428,10 @@ tNFA_STATUS RoutingManager::commitRouting() {
     {
       SyncEventGuard guard(mEeUpdateEvent);
       nfaStat = NFA_EeUpdateNow();
-      if (nfaStat == NFA_STATUS_OK) {
-        mEeUpdateEvent.wait();  // wait for NFA_EE_UPDATED_EVT
+      if (!sIsRecovering) {
+        if (nfaStat == NFA_STATUS_OK) {
+          mEeUpdateEvent.wait();  // wait for NFA_EE_UPDATED_EVT
+        }
       }
     }
   }
@@ -934,6 +939,7 @@ void RoutingManager::updateDefaultProtocolRoute() {
           mDefaultEe, protoMask, 0, 0, mSecureNfcEnabled ? 0 : protoMask,
           mSecureNfcEnabled ? 0 : protoMask, mSecureNfcEnabled ? 0 : protoMask);
     }
+    if (sIsRecovering) return;
     if (nfaStat == NFA_STATUS_OK)
       mRoutingEvent.wait();
     else
@@ -959,11 +965,25 @@ void RoutingManager::updateDefaultRoute() {
   LOG(DEBUG) << StringPrintf("%s:  Default SC route=0x%x", fn,
                              mDefaultSysCodeRoute);
 
+  // remove SC routing
+  {
+    SyncEventGuard guard(mRoutingEvent);
+    tNFA_STATUS stat = NFA_EeRemoveSystemCodeRouting(mDefaultSysCode);
+    if (sIsRecovering) return;
+    if (stat == NFA_STATUS_OK) {
+      mRoutingEvent.wait();
+    } else {
+      LOG(ERROR) << fn << ": Fail to remove system code";
+    }
+  }
+
   // Register System Code for routing
   SyncEventGuard guard(mRoutingEvent);
   tNFA_STATUS nfaStat = NFA_EeAddSystemCodeRouting(
       mDefaultSysCode, mDefaultSysCodeRoute,
-      mSecureNfcEnabled ? 0x01 : mDefaultSysCodePowerstate);
+      mSecureNfcEnabled ? (mDefaultSysCodePowerstate & 0x01)
+                        : mDefaultSysCodePowerstate);
+  if (sIsRecovering) return;
   if (nfaStat == NFA_STATUS_NOT_SUPPORTED) {
     mIsScbrSupported = false;
     LOG(ERROR) << fn << ": SCBR not supported";
@@ -1022,6 +1042,42 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateTechnologyABFRoute(int route,
   mDefaultFelicaRoute = felicaRoute;
   mDefaultOffHostRoute = route;
   return mSeTechMask;
+}
+
+/*******************************************************************************
+**
+** Function:        checkUiccListenConfigNeeded
+**
+** Description:     Check and update UICC listen configuration
+**
+** Returns:         None
+**
+*******************************************************************************/
+bool RoutingManager::checkUiccListenConfigNeeded(
+    tNFA_HANDLE eeHandle, tNFA_TECHNOLOGY_MASK seTechMask) {
+  static const char fn[] = "RoutingManager::checkUiccListenConfigNeeded";
+  LOG(DEBUG) << StringPrintf("%s: ee_handle=0x%04x, seTechMask=0x%02x", fn,
+                             eeHandle, seTechMask);
+
+  bool found = false, config = false;
+  for (int j = 0; j < mNfceeListenConfig.nb_config; j++) {
+    if (mNfceeListenConfig.config[j].nfcee_id == eeHandle) {
+      found = true;
+      if (mNfceeListenConfig.config[j].tech_mask != seTechMask) {
+        mNfceeListenConfig.config[j].tech_mask = seTechMask;
+        config = true;
+        break;
+      }
+    }
+  }
+  if (!found) {
+    mNfceeListenConfig.config[mNfceeListenConfig.nb_config].nfcee_id = eeHandle;
+    mNfceeListenConfig.config[mNfceeListenConfig.nb_config].tech_mask =
+        seTechMask;
+    mNfceeListenConfig.nb_config++;
+    config = true;
+  }
+  return config;
 }
 
 /*******************************************************************************
@@ -1091,9 +1147,11 @@ tNFA_TECHNOLOGY_MASK RoutingManager::updateEeTechRouteSetting() {
           "%s: Configuring tech mask 0x%02x on EE 0x%04x", fn, seTechMask,
           eeHandle);
 
-      nfaStat = NFA_CeConfigureUiccListenTech(eeHandle, seTechMask);
-      if (nfaStat != NFA_STATUS_OK)
-        LOG(ERROR) << fn << ": Failed to configure UICC listen technologies.";
+      if (checkUiccListenConfigNeeded(eeHandle, seTechMask)) {
+        nfaStat = NFA_CeConfigureUiccListenTech(eeHandle, seTechMask);
+        if (nfaStat != NFA_STATUS_OK)
+          LOG(ERROR) << fn << ": Failed to configure UICC listen technologies.";
+      }
 
       nfaStat = NFA_EeSetDefaultTechRouting(
           eeHandle, seTechMask, mSecureNfcEnabled ? 0 : seTechMask, 0,
@@ -1562,7 +1620,6 @@ void RoutingManager::clearRoutingEntry(int clearFlags) {
   static const char fn[] = "RoutingManager::clearRoutingEntry";
 
   LOG(DEBUG) << StringPrintf("%s:   clearFlags = %x", fn, clearFlags);
-  tNFA_STATUS nfaStat = NFA_STATUS_FAILED;
   bool clear_tech = false, clear_proto = false, clear_sc = false;
 
   if (clearFlags & CLEAR_AID_ENTRIES) {
@@ -1696,7 +1753,7 @@ int RoutingManager::com_android_nfc_cardemulation_doGetDefaultRouteDestination(
 *******************************************************************************/
 int RoutingManager::
     com_android_nfc_cardemulation_doGetDefaultOffHostRouteDestination(JNIEnv*) {
-  return getInstance().mDefaultOffHostRoute;
+  return NfcConfig::getUnsigned(NAME_DEFAULT_OFFHOST_ROUTE, 0x00);
 }
 
 /*******************************************************************************
@@ -1710,7 +1767,7 @@ int RoutingManager::
 *******************************************************************************/
 int RoutingManager::
     com_android_nfc_cardemulation_doGetDefaultFelicaRouteDestination(JNIEnv*) {
-  return getInstance().mDefaultFelicaRoute;
+  return NfcConfig::getUnsigned(NAME_DEFAULT_NFCF_ROUTE, 0x00);
 }
 
 /*******************************************************************************
@@ -1800,7 +1857,7 @@ int RoutingManager::com_android_nfc_cardemulation_doGetAidMatchingMode(
 *******************************************************************************/
 int RoutingManager::
     com_android_nfc_cardemulation_doGetDefaultIsoDepRouteDestination(JNIEnv*) {
-  return getInstance().mDefaultIsoDepRoute;
+  return NfcConfig::getUnsigned(NAME_DEFAULT_ISODEP_ROUTE, 0x0);
 }
 
 /*******************************************************************************
@@ -1814,5 +1871,5 @@ int RoutingManager::
 *******************************************************************************/
 int RoutingManager::com_android_nfc_cardemulation_doGetDefaultScRouteDestination(
     JNIEnv*) {
-  return getInstance().mDefaultSysCodeRoute;
+  return NfcConfig::getUnsigned(NAME_DEFAULT_SYS_CODE_ROUTE, 0xC0);
 }

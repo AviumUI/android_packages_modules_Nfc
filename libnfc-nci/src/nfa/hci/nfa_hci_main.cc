@@ -32,6 +32,7 @@
 #include "nfa_hci_defs.h"
 #include "nfa_hci_int.h"
 #include "nfa_nv_co.h"
+#include "nfc_int.h"
 
 using android::base::StringPrintf;
 
@@ -40,6 +41,8 @@ using android::base::StringPrintf;
 *****************************************************************************/
 
 tNFA_HCI_CB nfa_hci_cb;
+/* Mutex to protect nfa_hci_cb.hci_state change */
+pthread_mutex_t nfa_hci_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #ifndef NFA_HCI_NV_READ_TIMEOUT_VAL
 #define NFA_HCI_NV_READ_TIMEOUT_VAL 1000
@@ -517,11 +520,13 @@ void nfa_hci_startup_complete(tNFA_STATUS status) {
     nfa_sys_cback_notify_enable_complete(NFA_ID_HCI);
   }
 
+  pthread_mutex_lock(&nfa_hci_mutex);
   if (status == NFA_STATUS_OK)
     nfa_hci_cb.hci_state = NFA_HCI_STATE_IDLE;
 
   else
     nfa_hci_cb.hci_state = NFA_HCI_STATE_DISABLED;
+  pthread_mutex_unlock(&nfa_hci_mutex);
 }
 
 /*******************************************************************************
@@ -557,8 +562,10 @@ void nfa_hci_enable_one_nfcee(void) {
       if (nfa_ee_cb.isDiscoveryStopped == true) {
         nfa_dm_act_start_rf_discovery(nullptr);
         nfa_ee_cb.isDiscoveryStopped = false;
-        tNFA_EE_CBACK_DATA nfa_ee_cback_data;
-        nfa_ee_report_event(nullptr, NFA_EE_ENABLED_EVT, &nfa_ee_cback_data);
+        if (!nfc_cb.is_nfcee_discovery_required) {
+          tNFA_EE_CBACK_DATA nfa_ee_cback_data;
+          nfa_ee_report_event(nullptr, NFA_EE_ENABLED_EVT, &nfa_ee_cback_data);
+        }
       }
     }
   }

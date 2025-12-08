@@ -468,6 +468,9 @@ public final class NfcAdapter {
      * <p>
      * Setting this flag changes the default listen or poll tech.
      * Only available to privileged apps.
+     * Note: Use with caution! The app is responsible for ensuring that the discovery
+     * technology mask is returned to default.
+     * Note: FLAG_USE_ALL_TECH used with _KEEP flags will reset the technolody to android default.
      * @hide
      */
     @SystemApi
@@ -1256,6 +1259,22 @@ public final class NfcAdapter {
     }
 
     /**
+     * Returns whether the device supports exit frames or not. Exit frames allow device firmware to
+     * handle the transition out of observe mode for certain auto-transacting
+     * <a href="{@docRoot}/develop/connectivity/nfc/hce#polling-loop-filters">
+     *   polling loop filters
+     * </a>.
+     * Polling loop filters set by the default wallet role holder ({@link
+     * android.app.role.RoleManager#ROLE_WALLET}) will be prioritized for use with exit frames.
+     *
+     * @return True if the device supports exit frames, false otherwise.
+     */
+    @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public boolean isExitFramesSupported() {
+        return callServiceReturn(sService::isExitFramesSupported, false);
+    }
+
+    /**
      * Returns whether the device supports power-saving mode or not.
      *
      * @return True if the device supports power-saving mode, false otherwise
@@ -1290,7 +1309,7 @@ public final class NfcAdapter {
      * @throws IllegalStateException If a transient failure related to current device state
      * prevented power-saving mode from being set.
      */
-    @RequiresPermission(Manifest.permission.WRITE_SECURE_SETTINGS)
+    @RequiresPermission(Manifest.permission.NFC_SET_CONTROLLER_ALWAYS_ON)
     @FlaggedApi(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
     public void setPowerSavingMode(boolean enabled) {
         callService(() -> sService.setPowerSavingMode(enabled));
@@ -1863,6 +1882,7 @@ public final class NfcAdapter {
      *         NfcAdapter.FLAG_READER_DISABLE, NfcAdapter.FLAG_LISTEN_KEEP);
      * }</pre></p>
      * @param activity The Activity that requests NFC controller to enable specific technologies.
+     *                 This can be null for privileged apps.
      * @param pollTechnology Flags indicating poll technologies.
      * @param listenTechnology Flags indicating listen technologies.
      * @throws UnsupportedOperationException if FEATURE_NFC,
@@ -1883,17 +1903,12 @@ public final class NfcAdapter {
                 throw new UnsupportedOperationException();
             }
         }
-    /*
-     * Privileged FLAG to set technology mask for all data processed by NFC controller
-     * Note: Use with caution! The app is responsible for ensuring that the discovery
-     * technology mask is returned to default.
-     * Note: FLAG_USE_ALL_TECH used with _KEEP flags will reset the technolody to android default
-     */
-        if (Flags.nfcSetDefaultDiscTech()
-                && ((pollTechnology & FLAG_SET_DEFAULT_TECH) == FLAG_SET_DEFAULT_TECH
-                || (listenTechnology & FLAG_SET_DEFAULT_TECH) == FLAG_SET_DEFAULT_TECH)) {
+        // Allow priv apps to pass null in activity.
+        if (activity == null
+                || (pollTechnology & FLAG_SET_DEFAULT_TECH) == FLAG_SET_DEFAULT_TECH
+                || (listenTechnology & FLAG_SET_DEFAULT_TECH) == FLAG_SET_DEFAULT_TECH) {
             Binder token = new Binder();
-            callService( () ->
+            callService(() ->
                     sService.updateDiscoveryTechnology(
                             token, pollTechnology, listenTechnology, mContext.getPackageName()));
         } else {
@@ -1910,7 +1925,16 @@ public final class NfcAdapter {
 
     @FlaggedApi(Flags.FLAG_ENABLE_NFC_SET_DISCOVERY_TECH)
     public void resetDiscoveryTechnology(@NonNull Activity activity) {
-        mNfcActivityManager.resetDiscoveryTech(activity);
+        // Allow priv apps to pass null in activity.
+        if (activity == null) {
+            Binder token = new Binder();
+            callService(() ->
+                    sService.updateDiscoveryTechnology(
+                            token, NfcAdapter.FLAG_USE_ALL_TECH, NfcAdapter.FLAG_USE_ALL_TECH,
+                            mContext.getPackageName()));
+        } else {
+            mNfcActivityManager.resetDiscoveryTech(activity);
+        }
     }
 
     /**

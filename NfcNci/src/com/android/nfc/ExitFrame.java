@@ -82,7 +82,12 @@ public class ExitFrame {
         mDataMask = HexFormat.of().parseHex(String.valueOf(maskChars));
 
         mNfcTech = 0b00;
-        mPowerState = 0b00111011;
+        // Screen OFF/LOCKED Sub-State 3: SUPPORTED
+        // Screen ON/LOCKED Sub-State 2: SUPPORTED
+        // Screen OFF/UNLOCKED Sub-State 1: SUPPORTED
+        // Switched OFF State: NOT SUPPORTED
+        // Screen ON/UNLOCKED State: SUPPORTED
+        mPowerState = 0b00111001;
     }
 
     public byte[] getData() {

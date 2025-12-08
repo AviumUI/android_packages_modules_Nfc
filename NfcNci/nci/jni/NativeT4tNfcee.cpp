@@ -655,6 +655,7 @@ void NativeT4tNfcee::resetBusy() { mBusy = false; }
 *******************************************************************************/
 vector<uint8_t> NativeT4tNfcee::getT4TNfceeAid() {
   static const char fn[] = "NativeT4tNfcee:getT4TNfceeAid";
+  LOG(DEBUG) << StringPrintf("%s", fn);
   std::vector<uint8_t> t4tNfceeAidBuf;
   if (NfcConfig::hasKey(NAME_T4T_NDEF_NFCEE_AID)) {
     t4tNfceeAidBuf = NfcConfig::getBytes(NAME_T4T_NDEF_NFCEE_AID);

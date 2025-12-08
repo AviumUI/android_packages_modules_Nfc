@@ -96,7 +96,7 @@ public class RegisteredServicesCache {
     static final String OTHER_STATUS_PATH = "other_status.xml";
     static final String PACKAGE_DATA = "package";
     static final boolean DEBUG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
 
     final Context mContext;
     final AtomicReference<BroadcastReceiver> mReceiver;
@@ -480,6 +480,10 @@ public class RegisteredServicesCache {
         return services;
     }
 
+    private boolean isWear() {
+        return mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH);
+    }
+
     ArrayList<ApduServiceInfo> getInstalledServices(int userId) {
         PackageManager pm;
         try {
@@ -491,14 +495,22 @@ public class RegisteredServicesCache {
         }
 
         ArrayList<ApduServiceInfo> validServices = new ArrayList<ApduServiceInfo>();
-
+        ResolveInfoFlags resolveInfoFlags = null;
+        // Change the flags for wear devices to avoid a performance hit because of
+        // this query.
+        if (!isWear()) {
+            resolveInfoFlags = ResolveInfoFlags.of(PackageManager.GET_META_DATA
+                    | PackageManager.MATCH_DIRECT_BOOT_AWARE
+                    | PackageManager.MATCH_DIRECT_BOOT_UNAWARE);
+        } else {
+            resolveInfoFlags = ResolveInfoFlags.of(PackageManager.GET_META_DATA);
+        }
         List<ResolveInfo> resolvedServices = new ArrayList<>(pm.queryIntentServicesAsUser(
-                mHostApduServiceIntent,
-                ResolveInfoFlags.of(PackageManager.GET_META_DATA), UserHandle.of(userId)));
-
+                mHostApduServiceIntent, resolveInfoFlags,
+                UserHandle.of(userId)));
         List<ResolveInfo> resolvedOffHostServices = pm.queryIntentServicesAsUser(
-                mOffHostApduServiceIntent,
-                ResolveInfoFlags.of(PackageManager.GET_META_DATA), UserHandle.of(userId));
+                mOffHostApduServiceIntent, resolveInfoFlags,
+                UserHandle.of(userId));
         resolvedServices.addAll(resolvedOffHostServices);
 
         for (ResolveInfo resolvedService : resolvedServices) {
@@ -543,10 +555,13 @@ public class RegisteredServicesCache {
             }
         }
 
+        UserManager um = mContext.createContextAsUser(
+                UserHandle.of(ActivityManager.getCurrentUser()), /*flags=*/0)
+                .getSystemService(UserManager.class);
+        boolean isManagedProfile = um.isManagedProfile(userId);
         // Add NDEF-NFCEE AID - Only if NDEF-NFCEE feature supported
         // And only for user 0 to avoid adding several times (if multiple profiles)
-        if (userId == UserHandle.SYSTEM.getIdentifier()
-                && NfcService.getInstance().isNdefNfceefeatureEnabled()) {
+        if (!isManagedProfile && NfcService.getInstance().isNdefNfceefeatureEnabled()) {
             ResolveInfo ndefNfceeAppInfo = new ResolveInfo();
             ndefNfceeAppInfo.resolvePackageName = "NdefNfceeAidRoute";
             ndefNfceeAppInfo.serviceInfo = new ServiceInfo();
@@ -642,12 +657,16 @@ public class RegisteredServicesCache {
                                 convertValueToBoolean(dynamicSettings.shouldDefaultToObserveModeStr,
                                 false));
                     }
-                    if (dynamicSettings.requireDeviceScreenOnStr != null) {
+                    if (dynamicSettings.requireDeviceScreenOnStr != null
+                            && android.nfc.Flags.screenStateAttributeToggle()
+                    ) {
                         serviceInfo.setRequiresScreenOn(
                                 convertValueToBoolean(dynamicSettings.requireDeviceScreenOnStr,
                                         serviceInfo.requiresScreenOn()));
                     }
-                    if (dynamicSettings.requireDeviceUnlockStr != null) {
+                    if (dynamicSettings.requireDeviceUnlockStr != null
+                            && android.nfc.Flags.screenStateAttributeToggle()
+                    ) {
                         serviceInfo.setRequiresUnlock(
                                 convertValueToBoolean(dynamicSettings.requireDeviceScreenOnStr,
                                         serviceInfo.requiresUnlock()));
@@ -1309,6 +1328,11 @@ public class RegisteredServicesCache {
 
     public void setRequireDeviceScreenOnForService(int userId, int uid,
             ComponentName componentName, boolean enable) {
+        if (DEBUG) {
+            Log.d(TAG, "setRequireDeviceScreenOnForService: componentName="
+                    + componentName.flattenToString() + " enable=" + enable);
+        }
+        ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
             ApduServiceInfo serviceInfo = services.services.get(componentName);
@@ -1324,15 +1348,26 @@ public class RegisteredServicesCache {
             if (serviceInfo.requiresScreenOn() == enable) {
                 return;
             }
-            serviceInfo.setRequiresScreenOn(enable);
+            if (android.nfc.Flags.screenStateAttributeToggle()) {
+                serviceInfo.setRequiresScreenOn(enable);
+            } else {
+                throw new IllegalStateException("setRequireDeviceScreenOnForService without "
+                        + "android.nfc.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE");
+            }
             DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
             settings.requireDeviceScreenOnStr = Boolean.toString(enable);
-            mCallback.onServicesUpdated(userId, List.of(serviceInfo), true);
+            newServices = new ArrayList<ApduServiceInfo>(services.services.values());
         }
+        mCallback.onServicesUpdated(userId, newServices, true);
     }
 
     public void setRequireDeviceUnlockForService(int userId, int uid,
             ComponentName componentName, boolean enable) {
+        if (DEBUG) {
+            Log.d(TAG, "setRequireDeviceUnlockForService: componentName="
+                    + componentName.flattenToString() + " enable=" + enable);
+        }
+        ArrayList<ApduServiceInfo> newServices = null;
         synchronized (mLock) {
             UserServices services = findOrCreateUserLocked(userId);
             ApduServiceInfo serviceInfo = services.services.get(componentName);
@@ -1348,11 +1383,17 @@ public class RegisteredServicesCache {
             if (serviceInfo.requiresUnlock() == enable) {
                 return;
             }
-            serviceInfo.setRequiresUnlock(enable);
+            if (android.nfc.Flags.screenStateAttributeToggle()) {
+                serviceInfo.setRequiresUnlock(enable);
+            } else {
+                throw new IllegalStateException("setRequireDeviceUnlockForService without "
+                        + "android.nfc.Flags.FLAG_SCREEN_STATE_ATTRIBUTE_TOGGLE");
+            }
             DynamicSettings settings = getOrCreateSettings(services, componentName, uid);
             settings.requireDeviceUnlockStr = Boolean.toString(enable);
-            mCallback.onServicesUpdated(userId, List.of(serviceInfo), true);
+            newServices = new ArrayList<ApduServiceInfo>(services.services.values());
         }
+        mCallback.onServicesUpdated(userId, newServices, true);
     }
 
     public boolean registerPollingLoopFilterForService(int userId, int uid,

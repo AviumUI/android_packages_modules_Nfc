@@ -50,6 +50,7 @@
             <item name="nfc_default_route" type="string"/>
             <item name="nfc_default_isodep_route" type="string"/>
             <item name="nfc_default_offhost_route" type="string"/>
+            <item name="nfc_default_felica_route" type="string"/>
             <item name="nfc_default_sc_route" type="string"/>
             <item name="enable_developer_option_notification" type="bool" />
             <!-- Allow list that contains the package name which are allowed to use NFC -->
@@ -72,6 +73,10 @@
             <item name="inactive_presence_check_allowed_time" type="integer" />
             <item name="ce_disable_other_services_on_managed_profiles" type="bool" />
             <item name="ce_wake_lock_timeout_millis" type="integer" />
+            <item name="overwrite_routing_table_allow_list_pkgs" type="array" translatable="false" />
+            <item name="default_preferred_subscription_to_uicc" type="bool" />
+            <item name="separate_offhost_felica_routing" type="bool" />
+            <item name="telephony_subscription_routing_enabled" type="bool" />
           <!-- Params from config.xml that can be overlaid -->
 
           <!-- Params from strings.xml that can be overlaid -->

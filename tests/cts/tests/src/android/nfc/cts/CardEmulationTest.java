@@ -122,12 +122,6 @@ public class CardEmulationTest {
         mAdapter = NfcAdapter.getDefaultAdapter(mContext);
         assertNotNull("NFC Adapter is null", mAdapter);
         assertTrue("NFC Adapter could not be enabled", NfcUtils.enableNfc(mAdapter, mContext));
-
-        CardEmulation cardEmulation = CardEmulation.getInstance(mAdapter);
-        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                CustomHostApduService.class), false);
-        cardEmulation.setShouldDefaultToObserveModeForService(new ComponentName(mContext,
-                CtsMyHostApduService.class), false);
     }
 
     @After
@@ -1146,6 +1140,7 @@ public class CardEmulationTest {
     })
     @Test
     public void testToggleRequireDeviceScreenOn() {
+        assumeTrue(android.nfc.Flags.screenStateAttributeToggle());
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         adapter.notifyHceDeactivated();
         Activity activity = createAndResumeActivity();
@@ -1173,6 +1168,7 @@ public class CardEmulationTest {
     })
     @Test
     public void testToggleRequireDeviceUnlock() {
+        assumeTrue(android.nfc.Flags.screenStateAttributeToggle());
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
         adapter.notifyHceDeactivated();
         Activity activity = createAndResumeActivity();
@@ -1997,6 +1993,7 @@ public class CardEmulationTest {
     @Test
     @RequiresFlagsEnabled(android.permission.flags.Flags.FLAG_WALLET_ROLE_ENABLED)
     public void testDisallowNonDefaultSetObserveMode() throws NoSuchFieldException {
+        assumeVsrApiGreaterThanUdc();
         runWithRole(mContext,  WalletRoleTestUtils.WALLET_HOLDER_PACKAGE_NAME, () -> {
             NfcAdapter adapter = NfcAdapter.getDefaultAdapter(mContext);
             assertTrue(NfcUtils.enableNfc(adapter, mContext));

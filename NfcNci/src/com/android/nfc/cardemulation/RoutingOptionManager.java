@@ -26,6 +26,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.nfc.DeviceConfigFacade;
 import com.android.nfc.NfcService;
+import com.android.nfc.R;
 import com.android.nfc.cardemulation.util.TelephonyUtils;
 import com.android.nfc.dhimpl.NativeNfcManager;
 
@@ -50,6 +51,7 @@ public class RoutingOptionManager {
     public static final String KEY_DEFAULT_ROUTE = "default_route";
     public static final String KEY_DEFAULT_ISO_DEP_ROUTE = "default_iso_dep_route";
     public static final String KEY_DEFAULT_OFFHOST_ROUTE = "default_offhost_route";
+    public static final String KEY_DEFAULT_FELICA_ROUTE = "default_felica_route";
     public static final String KEY_DEFAULT_SC_ROUTE = "default_sc_route";
     public static final String KEY_AUTO_CHANGE_CAPABLE = "allow_auto_routing_changed";
     Context mContext;
@@ -240,9 +242,24 @@ public class RoutingOptionManager {
                     KEY_DEFAULT_OFFHOST_ROUTE, getSecureElementForRoute(mDefaultOffHostRoute));
         }
 
+        if (mOverrideDefaultFelicaRoute != ROUTE_UNKNOWN) {
+            if (mOverrideDefaultFelicaRoute == ROUTE_DEFAULT) {
+                Log.i(TAG, "overwriteRoutingTable: overwrite mDefaultFelicaRoute with "
+                        + "default config value");
+                mDefaultFelicaRoute = doGetDefaultFelicaRouteDestination();
+            } else {
+                Log.d(TAG, "overwriteRoutingTable: mDefaultFelicaRoute : "
+                        + Integer.toHexString(mOverrideDefaultFelicaRoute));
+                mDefaultFelicaRoute = mOverrideDefaultFelicaRoute;
+            }
+            writeRoutingOption(
+                    KEY_DEFAULT_FELICA_ROUTE, getSecureElementForRoute(mDefaultFelicaRoute));
+        }
+
         if (mOverrideDefaultScRoute != ROUTE_UNKNOWN) {
             if (mOverrideDefaultScRoute == ROUTE_DEFAULT) {
-                Log.i(TAG, "overwriteRoutingTable: mDefaultScRoute with default config value");
+                Log.i(TAG, "overwriteRoutingTable: overwrite mDefaultScRoute with "
+                        + "default config value");
                 mDefaultScRoute = doGetDefaultScRouteDestination();
             } else {
                 Log.d(TAG, "overwriteRoutingTable: mDefaultScRoute : "
@@ -263,17 +280,42 @@ public class RoutingOptionManager {
 
     public void overrideDefaultIsoDepRoute(int isoDepRoute) {
         mOverrideDefaultIsoDepRoute = isoDepRoute;
+        if (isoDepRoute == ROUTE_DEFAULT) {
+            isoDepRoute = doGetDefaultIsoDepRouteDestination();
+        }
         NfcService.getInstance().setIsoDepProtocolRoute(isoDepRoute);
     }
 
     public void overrideDefaultOffHostRoute(int offHostRoute) {
         mOverrideDefaultOffHostRoute = offHostRoute;
         mOverrideDefaultFelicaRoute = offHostRoute;
+        if (offHostRoute == ROUTE_DEFAULT) {
+            offHostRoute = doGetDefaultOffHostRouteDestination();
+        }
         NfcService.getInstance().setTechnologyABFRoute(offHostRoute, offHostRoute);
+    }
+
+    /**
+     * Overwrite the default technolygy route destinations in the routing table
+     *
+     */
+    public void overrideDefaultTechRoute(int abRoute, int fRoute) {
+        mOverrideDefaultOffHostRoute = abRoute;
+        mOverrideDefaultFelicaRoute = fRoute;
+        if (abRoute == ROUTE_DEFAULT) {
+            abRoute = doGetDefaultOffHostRouteDestination();
+        }
+        if (fRoute == ROUTE_DEFAULT) {
+            fRoute = doGetDefaultFelicaRouteDestination();
+        }
+        NfcService.getInstance().setTechnologyABFRoute(abRoute, fRoute);
     }
 
     public void overrideDefaultScRoute(int scRoute) {
         mOverrideDefaultScRoute = scRoute;
+        if (scRoute == ROUTE_DEFAULT) {
+            scRoute = doGetDefaultScRouteDestination();
+        }
         NfcService.getInstance().setSystemCodeRoute(scRoute);
     }
 
@@ -377,6 +419,7 @@ public class RoutingOptionManager {
         return !TextUtils.isEmpty(deviceConfigFacade.getDefaultRoute())
                 || !TextUtils.isEmpty(deviceConfigFacade.getDefaultIsoDepRoute())
                 || !TextUtils.isEmpty(deviceConfigFacade.getDefaultOffHostRoute())
+                || !TextUtils.isEmpty(deviceConfigFacade.getDefaultFelicaRoute())
                 || !TextUtils.isEmpty(deviceConfigFacade.getDefaultScRoute())
                 || !prefs.getAll().isEmpty();
     }
@@ -388,6 +431,10 @@ public class RoutingOptionManager {
             Log.d(TAG, "readRoutingOptionsFromPrefs: create mPrefs in readRoutingOptions");
             mContext = context;
             mPrefs = context.getSharedPreferences(PREF_ROUTING_OPTIONS, Context.MODE_PRIVATE);
+
+            // TODO(b/441652779): rpius - Remove this line once the issue is fixed.
+            mPrefs.edit().clear().commit();
+
             mIsUiccCapable = context.getPackageManager().hasSystemFeature(
                     PackageManager.FEATURE_NFC_OFF_HOST_CARD_EMULATION_UICC);
             mIsEseCapable = context.getPackageManager().hasSystemFeature(
@@ -423,6 +470,15 @@ public class RoutingOptionManager {
         mDefaultOffHostRoute =
             getRouteForSecureElement(mPrefs.getString(KEY_DEFAULT_OFFHOST_ROUTE, null));
 
+        // read default felica route
+        if (!mPrefs.contains(KEY_DEFAULT_FELICA_ROUTE)) {
+            writeRoutingOption(
+                    KEY_DEFAULT_FELICA_ROUTE, deviceConfigFacade.getDefaultFelicaRoute());
+        }
+
+        mDefaultFelicaRoute =
+                getRouteForSecureElement(mPrefs.getString(KEY_DEFAULT_FELICA_ROUTE, null));
+
         // read default system code route
         if (!mPrefs.contains(KEY_DEFAULT_SC_ROUTE)) {
             writeRoutingOption(
@@ -457,8 +513,35 @@ public class RoutingOptionManager {
     }
 
     public int getRouteForSecureElement(String se) {
-        return Optional.ofNullable(mRouteForSecureElement.get(renameSecureElementIfSimType(se)))
-                .orElseGet(() -> 0x00);
+        boolean telephonySubscriptionEnabled = mContext.getResources().getBoolean(
+                R.bool.telephony_subscription_routing_enabled);
+        if (telephonySubscriptionEnabled) {
+            return Optional.ofNullable(mRouteForSecureElement.get(renameSecureElementIfSimType(se)))
+                    .orElseGet(() -> 0x00);
+        } else {
+            if (se == null || se.length() <= 3) {
+                return 0;
+            }
+            try {
+                if (se.startsWith("eSE") && mOffHostRouteEse != null) {
+                    int index = Integer.parseInt(se.substring(3));
+                    if (mOffHostRouteEse.length >= index && index > 0) {
+                        return mOffHostRouteEse[index - 1] & 0xFF;
+                    }
+                } else if (se.startsWith("SIM") && mOffHostRouteUicc != null) {
+                    int index = Integer.parseInt(se.substring(3));
+                    if (mOffHostRouteUicc.length >= index && index > 0) {
+                        return mOffHostRouteUicc[index - 1] & 0xFF;
+                    }
+                }
+                if (mOffHostRouteEse == null && mOffHostRouteUicc == null) {
+                    return mDefaultOffHostRoute;
+                }
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "NumberFormatException while parsing secure element index", e);
+            }
+            return 0;
+        }
     }
 
     public String getSecureElementForRoute(int route) {
@@ -478,9 +561,14 @@ public class RoutingOptionManager {
     private int getAlternativeRouteIfSimIsInvalid(int route) {
         // TODO - Implement
         if (getSecureElementForRoute(route).startsWith(SE_PREFIX_SIM)) {
-            if (mPreferredSimSettings.type == TelephonyUtils.SIM_TYPE_UNKNOWN) {
-                Log.e(TAG, "getAlternativeRouteIfSimIsInvalid: sim is invalid");
-                return getRouteForSecureElement(mIsEseCapable ? (SE_PREFIX_ESE + 1) : DEVICE_HOST);
+            boolean telephonySubscriptionEnabled = mContext.getResources().getBoolean(
+                    R.bool.telephony_subscription_routing_enabled);
+            if (telephonySubscriptionEnabled) {
+                if (mPreferredSimSettings.type == TelephonyUtils.SIM_TYPE_UNKNOWN) {
+                    Log.e(TAG, "getAlternativeRouteIfSimIsInvalid: sim is invalid");
+                    return getRouteForSecureElement(mIsEseCapable
+                            ? (SE_PREFIX_ESE + 1) : DEVICE_HOST);
+                }
             }
         }
         return route;

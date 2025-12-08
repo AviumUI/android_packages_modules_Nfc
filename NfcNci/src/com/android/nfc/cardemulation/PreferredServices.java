@@ -485,6 +485,15 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
         }
     }
 
+    /**
+     *  Prepare to clear next tap default when it exists
+     */
+    public void onOffHostAidSelected() {
+        synchronized (mLock) {
+            mClearNextTapDefault = (mNextTapDefault != null);
+        }
+    }
+
     public void onHostEmulationDeactivated() {
         // If we had any next tap defaults set, clear them out
         boolean changed = false;

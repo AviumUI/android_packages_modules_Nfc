@@ -36,6 +36,7 @@ import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.nfc.ComponentNameAndUser;
 import android.nfc.Flags;
 import android.nfc.INfcOemExtensionCallback;
@@ -50,6 +51,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.nfc.NfcService;
+import com.android.nfc.R;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -119,6 +121,8 @@ public class RegisteredAidCacheTest {
     RegisteredAidCache mRegisteredAidCache;
     @Mock
     private Context mContext;
+    @Mock
+    private Resources mResources;
     @Mock
     private WalletRoleObserver mWalletRoleObserver;
     @Mock
@@ -198,6 +202,8 @@ public class RegisteredAidCacheTest {
         when(mContext.createContextAsUser(any(), anyInt())).thenReturn(mContext);
         when(mContext.getSystemService(eq(UserManager.class))).thenReturn(mUserManager);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
+        when(mContext.getResources()).thenReturn(mResources);
+        when(mResources.getBoolean(R.bool.telephony_subscription_routing_enabled)).thenReturn(true);
     }
 
     @After

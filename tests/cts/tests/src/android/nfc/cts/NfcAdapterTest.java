@@ -335,6 +335,33 @@ public class NfcAdapterTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_NFC_SET_DEFAULT_DISC_TECH)
+    public void testSetDiscoveryTechnologyWithoutActivity() {
+        NfcAdapter adapter = getDefaultAdapter();
+        // CTS has privileged permission to set discovery technology with null activity.
+        // This test is to ensure that the API does not crash or throw any exceptions.
+        adapter.setDiscoveryTechnology(null,
+                NfcAdapter.FLAG_READER_KEEP,
+                NfcAdapter.FLAG_LISTEN_NFC_PASSIVE_B
+                | NfcAdapter.FLAG_SET_DEFAULT_TECH);
+        adapter.setDiscoveryTechnology(null, NfcAdapter.FLAG_READER_KEEP,
+                NfcAdapter.FLAG_LISTEN_KEEP | NfcAdapter.FLAG_SET_DEFAULT_TECH | 0xff);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_SET_DISCOVERY_TECH)
+    public void testResetDiscoveryTechnologyWithoutActivity() {
+        NfcAdapter adapter = getDefaultAdapter();
+        // CTS has privileged permission to set discovery technology with null activity.
+        // This test is to ensure that the API does not crash or throw any exceptions.
+        adapter.setDiscoveryTechnology(null,
+                NfcAdapter.FLAG_READER_KEEP,
+                NfcAdapter.FLAG_LISTEN_NFC_PASSIVE_B
+                        | NfcAdapter.FLAG_SET_DEFAULT_TECH);
+        adapter.resetDiscoveryTechnology(null);
+    }
+
+    @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_NFC_MAINLINE)
     public void testSetReaderMode() {
         assumeTrue(mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC));
@@ -683,16 +710,30 @@ public class NfcAdapterTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public void testIsExitFramesSupported() {
+        NfcAdapter adapter = getDefaultAdapter();
+        adapter.isExitFramesSupported();
+    }
+
+    @Test
     @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_NFC_POWER_SAVING_MODE)
     public void testTogglePowerSavingMode() {
         assumeTrue(getDefaultAdapter().isPowerSavingModeSupported());
 
         NfcAdapter adapter = getDefaultAdapter();
-        adapter.setPowerSavingMode(true);
-        assertTrue(adapter.isPowerSavingModeEnabled());
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation().adoptShellPermissionIdentity(NFC_SET_CONTROLLER_ALWAYS_ON);
+        try {
+            adapter.setPowerSavingMode(true);
+            assertTrue(adapter.isPowerSavingModeEnabled());
 
-        adapter.setPowerSavingMode(false);
-        assertFalse(adapter.isPowerSavingModeEnabled());
+            adapter.setPowerSavingMode(false);
+            assertFalse(adapter.isPowerSavingModeEnabled());
+        } finally {
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                    .getUiAutomation().dropShellPermissionIdentity();
+        }
     }
 
     @Test
@@ -723,6 +764,7 @@ public class NfcAdapterTest {
             status.getDefaultRoute();
             status.getDefaultIsoDepRoute();
             status.getDefaultOffHostRoute();
+            status.getDefaultFelicaRoute();
             nfcOemExtension.setAutoChangeEnabled(true);
             assertThat(nfcOemExtension.isAutoChangeEnabled()).isTrue();
             T4tNdefNfcee ndefNfcee = nfcOemExtension.getT4tNdefNfcee();
@@ -780,12 +822,65 @@ public class NfcAdapterTest {
                                 PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE);
                 entries.getFirst().getNfceeId();
             }
+
+            if (com.android.nfc.module.flags.Flags.oemExtension25q4()) {
+                nfcOemExtension.overwriteRoutingTable(PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE,
+                        PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE, PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET,
+                        PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET, PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET);
+
+                entries = nfcOemExtension.getRoutingTable();
+                assertThat(entries).isNotNull();
+                for (NfcRoutingTableEntry entry : entries) {
+                    switch (entry.getType()) {
+                        case TYPE_AID:
+                            ((RoutingTableAidEntry) entry).getAid();
+                            break;
+                        case TYPE_PROTOCOL:
+                            ((RoutingTableProtocolEntry) entry).getProtocol();
+                            break;
+                        case TYPE_TECHNOLOGY:
+                            ((RoutingTableTechnologyEntry) entry).getTechnology();
+                            break;
+                        case TYPE_SYSTEM_CODE:
+                            ((RoutingTableSystemCodeEntry) entry).getSystemCode();
+                            break;
+                        default:
+                    }
+                    assertThat(entries.getFirst().getRouteType())
+                            .isAnyOf(
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_DH,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_ESE,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_UICC,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_UNSET,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_DEFAULT,
+                                    PROTOCOL_AND_TECHNOLOGY_ROUTE_NDEF_NFCEE);
+                    entries.getFirst().getNfceeId();
+                }
+            }
             nfcOemExtension.forceRoutingTableCommit();
             assertEquals(MAX_POLLING_PAUSE_TIMEOUT,
                     nfcOemExtension.getMaxPausePollingTimeoutMills());
         } finally {
             nfcOemExtension.unregisterCallback(cb);
         }
+    }
+
+    @Test
+    @RequiresDevice
+    @RequiresFlagsEnabled(com.android.nfc.module.flags.Flags.FLAG_OEM_EXTENSION_25Q4)
+    public void testOemExtensionEmulateNfcTechnologyATag()
+            throws InterruptedException, RemoteException {
+        NfcAdapter nfcAdapter = getDefaultAdapter();
+        assertNotNull(nfcAdapter);
+        NfcOemExtension nfcOemExtension = nfcAdapter.getNfcOemExtension();
+        assertNotNull(nfcOemExtension);
+
+        byte[] uid = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+        nfcOemExtension.emulateNfcTechnologyATag(true, (byte) 0x6, (byte) 0xC,
+                (byte) 0x20, uid, (byte) 0x40, null);
+
+        nfcOemExtension.emulateNfcTechnologyATag(false, (byte) 0x4, (byte) 0x0,
+                (byte) 0x20, uid, (byte) 0x40, null);
     }
 
     @Test

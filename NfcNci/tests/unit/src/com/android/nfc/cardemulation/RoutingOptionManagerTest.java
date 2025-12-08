@@ -17,6 +17,7 @@ package com.android.nfc.cardemulation;
 
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_AUTO_CHANGE_CAPABLE;
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_ISO_DEP_ROUTE;
+import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_FELICA_ROUTE;
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_OFFHOST_ROUTE;
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_ROUTE;
 import static com.android.nfc.cardemulation.RoutingOptionManager.KEY_DEFAULT_SC_ROUTE;
@@ -36,12 +37,14 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.nfc.DeviceConfigFacade;
 import com.android.nfc.NfcService;
+import com.android.nfc.R;
 import com.android.nfc.cardemulation.util.TelephonyUtils;
 import com.android.nfc.dhimpl.NativeNfcManager;
 
@@ -62,6 +65,10 @@ import java.lang.reflect.Field;
 public class RoutingOptionManagerTest {
     @Mock
     private NfcService mNfcService;
+    @Mock
+    private Context mContext;
+    @Mock
+    private Resources mResources;
     @Mock
     private NativeNfcManager mNativeNfcManager;
     @Captor
@@ -142,6 +149,10 @@ public class RoutingOptionManagerTest {
         when(mNativeNfcManager.getNdefNfceeRouteId()).thenReturn(NDEF_NFCEE_ROUTE);
         when(NfcService.getInstance()).thenReturn(mNfcService);
         when(NativeNfcManager.getInstance()).thenReturn(mNativeNfcManager);
+
+        when(mContext.getResources()).thenReturn(mResources);
+        when(mResources.getBoolean(R.bool.telephony_subscription_routing_enabled)).thenReturn(true);
+
         mRoutingOptionManager = new RoutingOptionManager() {
             @Override
             int doGetDefaultRouteDestination() {
@@ -376,23 +387,28 @@ public class RoutingOptionManagerTest {
         when(context.getPackageManager()).thenReturn(packageManager);
         when(packageManager.hasSystemFeature(anyString())).thenReturn(true);
         when(mPrefs.edit()).thenReturn(editor);
+        when(editor.clear()).thenReturn(editor);
         when(editor.putString(anyString(), anyString())).thenReturn(editor);
         when(editor.putBoolean(anyString(), anyBoolean())).thenReturn(editor);
         when(deviceConfigFacade.getDefaultRoute()).thenReturn(defaultRoute);
         when(deviceConfigFacade.getDefaultIsoDepRoute()).thenReturn(defaultRoute);
         when(deviceConfigFacade.getDefaultOffHostRoute()).thenReturn(defaultRoute);
+        when(deviceConfigFacade.getDefaultFelicaRoute()).thenReturn(defaultRoute);
         when(deviceConfigFacade.getDefaultScRoute()).thenReturn(defaultRoute);
         when(mPrefs.contains(KEY_DEFAULT_ROUTE)).thenReturn(false);
         when(mPrefs.contains(KEY_DEFAULT_ISO_DEP_ROUTE)).thenReturn(false);
         when(mPrefs.contains(KEY_DEFAULT_OFFHOST_ROUTE)).thenReturn(false);
+        when(mPrefs.contains(KEY_DEFAULT_FELICA_ROUTE)).thenReturn(false);
         when(mPrefs.contains(KEY_DEFAULT_SC_ROUTE)).thenReturn(false);
         when(mPrefs.contains(KEY_AUTO_CHANGE_CAPABLE)).thenReturn(false);
         when(mPrefs.getString(KEY_DEFAULT_ROUTE, null)).thenReturn(defaultRoute);
         when(mPrefs.getString(KEY_DEFAULT_ISO_DEP_ROUTE, null)).thenReturn(defaultRoute);
         when(mPrefs.getString(KEY_DEFAULT_OFFHOST_ROUTE, null)).thenReturn(defaultRoute);
+        when(mPrefs.getString(KEY_DEFAULT_FELICA_ROUTE, null)).thenReturn(defaultRoute);
         when(mPrefs.getString(KEY_DEFAULT_SC_ROUTE, null)).thenReturn(defaultRoute);
         when(mPrefs.getBoolean(KEY_AUTO_CHANGE_CAPABLE, true)).thenReturn(true);
 
+        when(context.getResources()).thenReturn(mResources);
         mRoutingOptionManager.readRoutingOptionsFromPrefs(context, deviceConfigFacade);
         assertTrue(mRoutingOptionManager.isAutoChangeEnabled());
         verify(mPrefs).contains(KEY_AUTO_CHANGE_CAPABLE);

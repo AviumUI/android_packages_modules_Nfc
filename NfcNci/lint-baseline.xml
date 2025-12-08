@@ -1,37 +1,147 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.4.0-alpha01" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha01">
+<issues format="6" by="lint 8.4.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha08">
+
+    <issue
+        id="ApplySharedPref"
+        message="Consider using `apply()` instead; `commit` writes its data to persistent storage immediately, whereas `apply` will handle it in the background"
+        errorLine1="            mSubscriptionPrefs.edit().putInt(PREF_PREFERRED_SUB_ID, subscriptionId).commit();"
+        errorLine2="                                                                                    ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/PreferredSubscriptionService.java"
+            line="95"
+            column="85"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `toUpperCase(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
+        errorLine1="                    serviceAidInfo.aid = aid.toUpperCase();"
+        errorLine2="                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="846"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `toUpperCase(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
+        errorLine1="            systemCode = systemCode.toUpperCase();"
+        errorLine2="                                    ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredNfcFServicesCache.java"
+            line="629"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `toUpperCase(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
+        errorLine1="            nfcid2 = nfcid2.toUpperCase();"
+        errorLine2="                            ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredNfcFServicesCache.java"
+            line="705"
+            column="29"/>
+    </issue>
 
     <issue
         id="FlaggedApi"
-        message="Method `updateForShouldDefaultToObserveMode()` is a flagged API and should be inside an `if (Flags.nfcObserveMode())` check (or annotate the surrounding method `updateForShouldDefaultToObserveMode` with `@FlaggedApi(Flags.FLAG_NFC_OBSERVE_MODE) to transfer requirement to caller`)"
-        errorLine1="            mHostEmulationManager.updateForShouldDefaultToObserveMode(enableObserveMode);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        message="This is a flagged API and should be inside an `if (Flags.nfcEventListener())` check (or annotate the surrounding method `?` with `@FlaggedApi(Flags.FLAG_NFC_EVENT_LISTENER) to transfer requirement to caller`)"
+        errorLine1="        HostEmulationManager.NfcAidRoutingListener {"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/CardEmulationManager.java"
-            line="1095"
+            line="117"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Field `PROCESSOR_NFCC` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `onObserveModeDisabledInFirmware` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="            mStatsdUtils.logAutoTransactReported(StatsdUtils.PROCESSOR_NFCC, exitFrame.getData());"
+        errorLine2="                                                             ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/CardEmulationManager.java"
+            line="1989"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Method `logAutoTransactReported()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `onObserveModeDisabledInFirmware` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="            mStatsdUtils.logAutoTransactReported(StatsdUtils.PROCESSOR_NFCC, exitFrame.getData());"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/CardEmulationManager.java"
+            line="1989"
             column="13"/>
     </issue>
 
     <issue
         id="FlaggedApi"
         message="Field `SE_NAME_HCE` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `HostEmulationManager` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
-        errorLine1="        this(context, looper, aidCache, new StatsdUtils(StatsdUtils.SE_NAME_HCE));"
-        errorLine2="                                                                    ~~~~~~~~~~~">
+        errorLine1="            new StatsdUtils(StatsdUtils.SE_NAME_HCE, nfcInjector.getStatsdUtilsContext()) : null,"
+        errorLine2="                                        ~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="200"
-            column="69"/>
+            line="325"
+            column="41"/>
     </issue>
 
     <issue
         id="FlaggedApi"
         message="Method `StatsdUtils()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `HostEmulationManager` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
-        errorLine1="        this(context, looper, aidCache, new StatsdUtils(StatsdUtils.SE_NAME_HCE));"
-        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="            new StatsdUtils(StatsdUtils.SE_NAME_HCE, nfcInjector.getStatsdUtilsContext()) : null,"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="200"
-            column="41"/>
+            line="325"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Method `logAutoTransactReported()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `onPollingLoopDetected` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="                                mStatsdUtils.logAutoTransactReported("
+        errorLine2="                                ^">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
+            line="679"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Field `PROCESSOR_HOST` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `onPollingLoopDetected` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="                                    StatsdUtils.PROCESSOR_HOST, data);"
+        errorLine2="                                                ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
+            line="680"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Method `setNextObserveModeTriggerSource()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `onPollingLoopDetected` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="                                mStatsdUtils.setNextObserveModeTriggerSource("
+        errorLine2="                                ^">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
+            line="681"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Field `TRIGGER_SOURCE_AUTO_TRANSACT` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `onPollingLoopDetected` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="                                    StatsdUtils.TRIGGER_SOURCE_AUTO_TRANSACT);"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
+            line="682"
+            column="49"/>
     </issue>
 
     <issue
@@ -41,7 +151,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="412"
+            line="714"
             column="25"/>
     </issue>
 
@@ -52,7 +162,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="418"
+            line="720"
             column="21"/>
     </issue>
 
@@ -63,7 +173,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="610"
+            line="917"
             column="25"/>
     </issue>
 
@@ -74,7 +184,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="611"
+            line="918"
             column="25"/>
     </issue>
 
@@ -85,7 +195,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="621"
+            line="927"
             column="29"/>
     </issue>
 
@@ -96,7 +206,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="663"
+            line="972"
             column="25"/>
     </issue>
 
@@ -107,7 +217,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="664"
+            line="973"
             column="25"/>
     </issue>
 
@@ -118,7 +228,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="676"
+            line="986"
             column="29"/>
     </issue>
 
@@ -129,7 +239,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="677"
+            line="987"
             column="29"/>
     </issue>
 
@@ -140,7 +250,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="694"
+            line="1018"
             column="29"/>
     </issue>
 
@@ -151,7 +261,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="760"
+            line="1084"
             column="17"/>
     </issue>
 
@@ -162,7 +272,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="825"
+            line="1216"
             column="17"/>
     </issue>
 
@@ -173,7 +283,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="1065"
+            line="1732"
             column="25"/>
     </issue>
 
@@ -184,7 +294,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
-            line="1125"
+            line="1813"
             column="25"/>
     </issue>
 
@@ -195,7 +305,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostNfcFEmulationManager.java"
-            line="138"
+            line="142"
             column="21"/>
     </issue>
 
@@ -206,7 +316,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostNfcFEmulationManager.java"
-            line="169"
+            line="175"
             column="25"/>
     </issue>
 
@@ -217,7 +327,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostNfcFEmulationManager.java"
-            line="170"
+            line="176"
             column="25"/>
     </issue>
 
@@ -228,7 +338,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostNfcFEmulationManager.java"
-            line="199"
+            line="205"
             column="17"/>
     </issue>
 
@@ -239,7 +349,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostNfcFEmulationManager.java"
-            line="273"
+            line="279"
             column="17"/>
     </issue>
 
@@ -250,7 +360,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostNfcFEmulationManager.java"
-            line="327"
+            line="334"
             column="25"/>
     </issue>
 
@@ -261,19 +371,30 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostNfcFEmulationManager.java"
-            line="381"
+            line="390"
             column="25"/>
     </issue>
 
     <issue
         id="FlaggedApi"
-        message="Method `StatsdUtils()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `NfcInjector` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
-        errorLine1="        mStatsdUtils = mFeatureFlags.statsdCeEventsFlag() ? new StatsdUtils() : null;"
-        errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
+        message="Method `StatsdUtilsContext()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `NfcInjector` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="        mStatsdUtilsContext = mFeatureFlags.statsdCeEventsFlag() ? new StatsdUtilsContext() : null;"
+        errorLine2="                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcInjector.java"
-            line="102"
-            column="61"/>
+            line="120"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Method `StatsdUtils()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `NfcInjector` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="            new StatsdUtils(mStatsdUtilsContext) : null;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcInjector.java"
+            line="122"
+            column="13"/>
     </issue>
 
     <issue
@@ -283,7 +404,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
-            line="508"
+            line="704"
             column="13"/>
     </issue>
 
@@ -294,19 +415,30 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
-            line="517"
+            line="738"
             column="13"/>
     </issue>
 
     <issue
         id="FlaggedApi"
-        message="Method `logObserveModeStateChanged()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `setObserveMode` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
-        errorLine1="                mStatsdUtils.logObserveModeStateChanged(enable, triggerSource, latency);"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        message="Field `TRIGGER_SOURCE_UNKNOWN` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `setObserveMode` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="                int triggerSource = StatsdUtils.TRIGGER_SOURCE_UNKNOWN;"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
-            line="1802"
-            column="17"/>
+            line="2444"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Method `logObserveModeStateChanged()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `setObserveMode` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="                    mStatsdUtils.logObserveModeStateChanged(enable, triggerSource, latency);"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="2492"
+            column="21"/>
     </issue>
 
     <issue
@@ -316,7 +448,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
-            line="3979"
+            line="5612"
             column="21"/>
     </issue>
 
@@ -327,8 +459,2566 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
-            line="4073"
+            line="5709"
             column="21"/>
+    </issue>
+
+    <issue
+        id="FlaggedApi"
+        message="Method `logExitFrameTableChanged()` is a flagged API and should be inside an `if (Flags.statsdCeEventsFlag())` check (or annotate the surrounding method `setFirmwareExitFrameTable` with `@FlaggedApi(Flags.FLAG_STATSD_CE_EVENTS_FLAG) to transfer requirement to caller`)"
+        errorLine1="            mStatsdUtils.logExitFrameTableChanged(exitFrames.size(), timeoutMs);"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="6584"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="        mDeviceConfigFacade = new DeviceConfigFacade(mContext, new Handler(mainLooper));"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcInjector.java"
+            line="113"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    mNfcService.mCardEmulationManager"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcShellCommand.java"
+            line="153"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    mNfcService.mCardEmulationManager"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcShellCommand.java"
+            line="163"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    mNfcService.mCardEmulationManager"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcShellCommand.java"
+            line="177"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    mNfcService.mCardEmulationManager"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcShellCommand.java"
+            line="188"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    mNfcService.mCardEmulationManager"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcShellCommand.java"
+            line="200"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This class should only be accessed from tests or within private scope"
+        errorLine1="        final HashMap&lt;String, AidRoutingManager.AidEntry> routingEntries = new HashMap&lt;>();"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1279"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This class should only be accessed from tests or within private scope"
+        errorLine1="            AidRoutingManager.AidEntry aidType = mRoutingManager.new AidEntry();"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1286"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                aidType.aidInfo |= AID_ROUTE_QUAL_SUBSET;"
+        errorLine2="                        ~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1288"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                aidType.aidInfo |= AID_ROUTE_QUAL_PREFIX;"
+        errorLine2="                        ~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1292"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    aidType.unCheckedOffHostSE.addAll(resolveInfo.unCheckedOffHostSecureElement);"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1298"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    aidType.isOnHost = true;"
+        errorLine2="                            ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1299"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    aidType.power = POWER_STATE_SWITCH_ON;"
+        errorLine2="                            ~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1300"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                aidType.isOnHost = resolveInfo.defaultService.isOnHost();"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1307"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                if (!aidType.isOnHost) {"
+        errorLine2="                             ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1308"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    aidType.offHostSE ="
+        errorLine2="                            ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1309"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                aidType.power ="
+        errorLine2="                        ~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1316"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                        computeAidPowerState(aidType.isOnHost, requiresScreenOn, requiresUnlock);"
+        errorLine2="                                                     ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1317"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    aidType.isOnHost = true;"
+        errorLine2="                            ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1325"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    aidType.isOnHost = resolveInfo.services.get(0).isOnHost();"
+        errorLine2="                            ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1327"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    if (!aidType.isOnHost) {"
+        errorLine2="                                 ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1328"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                        aidType.offHostSE ="
+        errorLine2="                                ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1329"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                aidType.power ="
+        errorLine2="                        ~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1337"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                        computeAidPowerState(aidType.isOnHost, requiresScreenOn, requiresUnlock);"
+        errorLine2="                                                     ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1338"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                aidType.isOnHost = onHost;"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1382"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                aidType.offHostSE = onHost ? null : offHostSE;"
+        errorLine2="                        ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1383"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                aidType.power = computeAidPowerState(onHost, requiresScreenOn, requiresUnlock);"
+        errorLine2="                        ~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1387"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                if (!aidType.isOnHost) {"
+        errorLine2="                             ~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1393"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                    host = aidType.offHostSE;"
+        errorLine2="                                   ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1394"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within private scope"
+        errorLine1="                                + String.format(&quot;0x%02X&quot;, aidType.power) + &quot;, nb services=&quot;"
+        errorLine2="                                                                  ~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="1398"
+            column="67"/>
+    </issue>
+
+    <issue
+        id="ShiftFlags"
+        message="Consider declaring this constant using 1 &lt;&lt; 1 instead"
+        errorLine1="    public static final int CONFIGURE_ROUTING_FAILURE_UNKNOWN = 2;"
+        errorLine2="                                                                ~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/AidRoutingManager.java"
+            line="260"
+            column="65"/>
+    </issue>
+
+    <issue
+        id="MissingVersion"
+        message="Should set `android:versionCode` to specify the application version"
+        errorLine1="&lt;manifest xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2=" ~~~~~~~~">
+        <location
+            file="./out/soong/.intermediates/packages/modules/Nfc/NfcNci/NfcNciApex/android_common_apex36/manifest_merger/AndroidManifest.xml"
+            line="17"
+            column="2"/>
+    </issue>
+
+    <issue
+        id="MissingVersion"
+        message="Should set `android:versionName` to specify the application version"
+        errorLine1="&lt;manifest xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2=" ~~~~~~~~">
+        <location
+            file="./out/soong/.intermediates/packages/modules/Nfc/NfcNci/NfcNciApex/android_common_apex36/manifest_merger/AndroidManifest.xml"
+            line="17"
+            column="2"/>
+    </issue>
+
+    <issue
+        id="UnclosedTrace"
+        message="The `beginSection()` call is not always closed with a matching `endSection()` because the code in between may return early"
+        errorLine1="        Trace.beginSection(&quot;notifyPollingLoopFrame&quot;);"
+        errorLine2="              ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/nci/src/com/android/nfc/dhimpl/NativeNfcManager.java"
+            line="568"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="QueryAllPackagesPermission"
+        message="A `&lt;queries>` declaration should generally be used instead of QUERY_ALL_PACKAGES; see https://g.co/dev/packagevisibility for details"
+        errorLine1="    &lt;uses-permission android:name=&quot;android.permission.QUERY_ALL_PACKAGES&quot; />"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="./out/soong/.intermediates/packages/modules/Nfc/NfcNci/NfcNciApex/android_common_apex36/manifest_merger/AndroidManifest.xml"
+            line="67"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="Wakelock"
+        message="The `release()` call is not always reached (because of a possible exception in the path acquire() → setPackage() → sendBroadcast() → exit; use try/finally to ensure `release` is always called)"
+        errorLine1="            mRequireUnlockWakeLock.release();"
+        errorLine2="                                   ~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="5120"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="WakelockTimeout"
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery."
+        errorLine1="                mRoutingWakeLock.acquire();"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="1864"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="WakelockTimeout"
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery."
+        errorLine1="            mRequireUnlockWakeLock.acquire();"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="5115"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="WakelockTimeout"
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery."
+        errorLine1="                    mRoutingWakeLock.acquire();"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="5466"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="WakelockTimeout"
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery."
+        errorLine1="                mRoutingWakeLock.acquire();"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="6009"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="ObsoleteLayoutParam"
+        message="Invalid layout param in a `LinearLayout`: `layout_centerHorizontal`"
+        errorLine1="        android:layout_centerHorizontal=&quot;true&quot;/>"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_payment_item.xml"
+            line="30"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="ObsoleteLayoutParam"
+        message="Invalid layout param in a `LinearLayout`: `layout_centerHorizontal`"
+        errorLine1="            android:layout_centerHorizontal=&quot;true&quot;/>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/tapagain.xml"
+            line="57"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 35"
+        errorLine1="    @TargetApi(35)"
+        errorLine2="    ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
+            line="415"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 35"
+        errorLine1="    @TargetApi(35)"
+        errorLine2="    ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
+            line="441"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 35"
+        errorLine1="    @TargetApi(35)"
+        errorLine2="    ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
+            line="606"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 35"
+        errorLine1="    @TargetApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java"
+            line="165"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; SDK_INT is always >= 35"
+        errorLine1="    @TargetApi(35)"
+        errorLine2="    ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RegisteredAidCache.java"
+            line="293"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="Do not place Android context classes in static fields (static reference to `DeviceConfigFacade` which has field `mContext` pointing to `Context`); this is a memory leak"
+        errorLine1="    private static DeviceConfigFacade sInstance;"
+        errorLine2="            ~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/DeviceConfigFacade.java"
+            line="76"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="Do not place Android context classes in static fields (static reference to `NativeNfcManager` which has field `mContext` pointing to `Context`); this is a memory leak"
+        errorLine1="    private static NativeNfcManager sInstance;"
+        errorLine2="            ~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/nci/src/com/android/nfc/dhimpl/NativeNfcManager.java"
+            line="87"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="Do not place Android context classes in static fields (static reference to `NfcInjector` which has field `mContext` pointing to `Context`); this is a memory leak"
+        errorLine1="    private static NfcInjector sInstance;"
+        errorLine2="            ~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcInjector.java"
+            line="91"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="This `AsyncTask` class should be static or leaks might occur (com.android.nfc.NfcService.EnableDisableTask)"
+        errorLine1="    class EnableDisableTask extends AsyncTask&lt;Integer, Void, Boolean> {"
+        errorLine2="          ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="1700"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="This `AsyncTask` class should be static or leaks might occur (com.android.nfc.NfcService.ApplyRoutingTask)"
+        errorLine1="    class ApplyRoutingTask extends AsyncTask&lt;Integer, Void, Void> {"
+        errorLine2="          ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcService.java"
+            line="5998"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="Do not place Android context classes in static fields (static reference to `RoutingOptionManager` which has field `mContext` pointing to `Context`); this is a memory leak"
+        errorLine1="    private static RoutingOptionManager sInstance;"
+        errorLine2="            ~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/RoutingOptionManager.java"
+            line="147"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="VectorPath"
+        message="Very long vector path (934 characters), which is bad for performance. Considering reducing precision, removing minor details or rasterizing vector."
+        errorLine1="    &lt;path android:fillColor=&quot;#939393&quot; android:pathData=&quot;M87.6,31.9L87.6,31.9h0.8l0,0l30.7,0.2h0.7h0.1c2.1,0 3.8,0.6 4.9,1.7c1.1,1.1 1.7,2.7 1.7,4.7v0.1v0.6l-0.6,76.7c0,0.4 0,0.7 0,1.1l0,0l0,0c0,0.2 0,0.5 -0.1,0.7l0,0c-0.7,4 -4.4,4.6 -6.6,4.6h-0.1h-0.7l-30.7,-0.3h-0.7h-0.1c-2.2,0 -5.9,-0.6 -6.5,-4.7l0,0c0,-0.2 -0.1,-0.4 -0.1,-0.7l0,0l0,0c0,-0.4 0,-0.7 0,-1.1l0.6,-76.7v-0.6v-0.1c0,-2 0.6,-3.6 1.7,-4.7C83.7,32.4 85.4,31.9 87.6,31.9C87.5,31.9 87.5,31.9 87.6,31.9C87.5,31.9 87.6,31.9 87.6,31.9L87.6,31.9M87.7,31.4L87.7,31.4L87.7,31.4h-0.2l0,0c-2.3,0 -4,0.6 -5.3,1.8c-1.2,1.2 -1.9,2.9 -1.9,5.1v0.1v0.6l-0.6,76.7c0,0.4 0,0.7 0,1.1l0,0l0,0c0,0.2 0,0.5 0.1,0.7l0,0l0,0l0,0l0,0c0.3,1.9 1.3,3.4 3,4.2c1.4,0.7 3,0.9 4.1,0.9h0.1h0.7l30.7,0.2h0.7h0.1c1.1,0 2.7,-0.1 4.1,-0.8c1.7,-0.8 2.7,-2.2 3,-4.2l0,0l0,0l0,0l0,0c0,-0.2 0.1,-0.4 0.1,-0.7l0,0l0,0c0,-0.4 0,-0.7 0,-1.1l0.6,-76.7v-0.6v-0.1c0,-2.2 -0.6,-3.9 -1.8,-5.1c-1.2,-1.2 -3,-1.8 -5.3,-1.8h-0.1h-0.7l-30.7,-0.2l0,0L87.7,31.4L87.7,31.4L87.7,31.4z&quot;/>"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/drawable/ic_weblink_nfc.xml"
+            line="10"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="HandlerLeak"
+        message="This `Handler` class should be static or leaks might occur (anonymous android.os.Handler)"
+        errorLine1="    final Handler mHandler = new Handler() {"
+        errorLine2="                             ^">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/handover/BluetoothPeripheralHandover.java"
+            line="664"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="HandlerLeak"
+        message="This `Handler` class should be static or leaks might occur (com.android.nfc.cardemulation.HostEmulationManager.MessageHandler)"
+        errorLine1="    class MessageHandler extends Handler {"
+        errorLine2="          ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostEmulationManager.java"
+            line="1784"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="HandlerLeak"
+        message="This `Handler` class should be static or leaks might occur (com.android.nfc.cardemulation.HostNfcFEmulationManager.MessageHandler)"
+        errorLine1="    class MessageHandler extends Handler {"
+        errorLine2="          ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/cardemulation/HostNfcFEmulationManager.java"
+            line="353"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="HandlerLeak"
+        message="This `Handler` class should be static or leaks might occur (com.android.nfc.NfcDispatcher.MessageHandler)"
+        errorLine1="    private class MessageHandler extends Handler {"
+        errorLine2="                  ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/NfcDispatcher.java"
+            line="1345"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="HandlerLeak"
+        message="This `Handler` class should be static or leaks might occur (com.android.nfc.handover.PeripheralHandoverService.MessageHandler)"
+        errorLine1="    class MessageHandler extends Handler {"
+        errorLine2="          ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/src/com/android/nfc/handover/PeripheralHandoverService.java"
+            line="88"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="InefficientWeight"
+        message="Use a `layout_height` of `0dp` instead of `wrap_content` for better performance"
+        errorLine1="                 android:layout_height=&quot;wrap_content&quot;"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_resolver.xml"
+            line="25"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `#FF000000` with a theme that also paints a background (inferred theme is `@android:style/Theme.Material.Light`)"
+        errorLine1="    android:background=&quot;#FF000000&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/screenshot.xml"
+            line="19"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UselessParent"
+        message="This `FrameLayout` layout or its `LinearLayout` parent is unnecessary"
+        errorLine1="    &lt;FrameLayout android:layout_width=&quot;match_parent&quot;"
+        errorLine2="     ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_resolver.xml"
+            line="24"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Inkomende straal...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-af/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ገቢ ሞገድ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-am/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;بيانات واردة...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ar/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;অন্তৰ্গামী বীম...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-as/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Gələn beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-az/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Dolazno prebacivanje...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-b+sr+Latn/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Уваходная перадача beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-be/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Входящо излъчване...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-bg/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;আগত বীম...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-bn/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Dolazni prijenos...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-bs/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Transferència entrant...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ca/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Příchozí přenos...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-cs/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Indgående overførsel...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-da/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Beam wird empfangen...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-de/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Incoming beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rAU/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Incoming beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rCA/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Incoming beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rGB/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Incoming beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rIN/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;7453634884807323920&quot;>&quot;‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‏‎‏‎‎‏‎‏‏‎‏‏‏‏‏‏‏‏‎‎‏‏‏‎‏‏‏‎‎‎‎‏‎‏‎‎‎‎‏‎‏‏‎‏‏‏‏‏‏‎‎‏‎‏‎‎‏‏‎‎‏‏‎‎‏‏‏‎‎‎‏‎‎‎‏‎‎‎‎‎Incoming beam...‎‏‎‎‏‎&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rXC/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Transmisión entrante...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-es-rUS/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Transferencia entrante...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-es/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Sissetulev kiir ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-et/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;در حال دریافت پرتو...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-fa/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Saapuva sisällönjakopyyntö...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-fi/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Partage entrant...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-fr-rCA/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Partage entrant...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-fr/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Transferencia entrante...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-gl/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ઇનકમિંગ બીમ ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-gu/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;इनकमिंग बीम...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-hi/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Dolazno emitiranje...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-hr/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Bejövő sugár...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-hu/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Մուտքային փոխանցում...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-hy/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Pancaran yang masuk...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-in/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Sending berst...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-is/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Trasmissione in arrivo...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-it/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ビームを受信しています...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ja/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;შემომავალი სხივი...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ka/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Келген сигналдар...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-kk/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ការ​ផ្ទេរ​ចូល...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-km/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ಒಳಬರುತ್ತಿರುವ ಬೀಮ್...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-kn/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;수신 빔...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ko/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Кириш beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ky/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ມີ beam ເຂົ້າມາ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-lo/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Gaunamas perdavimas...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-lt/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Ienākošie vienumi, izmantojot funkciju Beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-lv/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Дојдовен зрак...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-mk/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ഇൻകമിംഗ് ബീം...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ml/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Орж ирж буй бийм...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-mn/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;येणारे बीम...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-mr/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Pancar sedang masuk...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ms/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;အဝင် လှိုင်းလွှင့်ခြင်း...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-my/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;आगमन बिम...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ne/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Inkomende beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-nl/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ବିମ୍‌ ଆସୁଛି...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-or/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ਇਨਕਮਿੰਗ ਬੀਮ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-pa/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Odbieram dane zbliżeniowo...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-pl/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;A receber partilha...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-pt-rPT/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Beam chegando...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-pt/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Transmitere primită...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ro/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;එන බීම්...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-si/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Prichádzajúci prenos...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sk/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Dohodni prenos ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sl/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Dërgimi me rreze është në ardhje...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sq/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Долазно пребацивање...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sr/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Inkommande trådlös överföring ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sv/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Boriti zinazoingia...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sw/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;உள்வரும் பீம்...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ta/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;ఇన్‌కమింగ్ Beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-te/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;บีมขาเข้า...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-th/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Dumarating na beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-tl/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Gelen ışın...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-tr/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Вхідне передавання даних...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-uk/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Tia đến...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-vi/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;正在接收传输内容...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-zh-rCN/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;正在接收傳送...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-zh-rHK/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;正在接收傳輸...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-zh-rTW/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot; msgid=&quot;1929294166633309327&quot;>&quot;Ukuvumelanisa okungenayo...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-zu/strings.xml"
+            line="8"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;ሞገድ በማመንጨት ላይ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-am/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;إرسال لاسلكي...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ar/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;বীম চলি আছে...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-as/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beaming...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-az/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Prebacivanje...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-b+sr+Latn/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Ззяючы (Beaming)...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-be/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Излъчва се...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-bg/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;বীম হচ্ছে...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-bn/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Prenošenje...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-bs/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;S\&apos;està compartint...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ca/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Přenášení...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-cs/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Overfører...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-da/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beamen...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-de/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beaming...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rAU/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beaming...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rCA/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beaming...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rGB/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beaming...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rIN/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;4679536649779123495&quot;>&quot;‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‏‎‏‎‎‏‎‏‏‎‏‏‏‏‏‏‏‎‎‎‎‎‎‏‏‏‏‎‎‎‏‎‎‎‎‏‏‎‏‏‏‎‎‏‎‏‎‎‎‏‎‏‎‏‏‏‎‎‎‎‎‎‏‏‎‎‏‎‏‎‏‎‎‏‎‎‏‏‏‎Beaming...‎‏‎‎‏‎&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-en-rXC/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Transmitiendo...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-es-rUS/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Compartiendo...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-es/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Kiirega edastamine ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-et/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Transferindo...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-gl/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;બીમિંગ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-gu/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;बीम हो रहा है...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-hi/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Emitiranje...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-hr/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Sugárzás...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-hu/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Փոխանցվում է...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-hy/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Memancarkan...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-in/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Sendir...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-is/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Trasmissione...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-it/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;העברת התוכן מתבצעת...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-iw/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;ビームしています...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ja/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;სხივით გადაცემა...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ka/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Хабар таратылуда...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-kk/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;កំពុង​ផ្ទេរ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-km/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;ಬೀಮ್ ಮಾಡಲಾಗುತ್ತಿದೆ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-kn/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;공유 중...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ko/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beam өткөрүүдө...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ky/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beaming...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-lo/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Perduodama...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-lt/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Notiek kopīgošana, izmantojot funkciju Beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-lv/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Зрачење...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-mk/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;ബീമിംഗ്...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ml/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Бийм цацруулж байна...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-mn/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;बीम करत आहे...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-mr/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Memancar...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ms/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;လှိုင်းလွှင့်နေစဥ်...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-my/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Sender ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-nb/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;बिम गर्दै...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ne/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beamen...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-nl/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;ବିମ୍‌ କରା ହେଉଛି...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-or/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;ਬੀਮ ਕਰ ਰਿਹਾ ਹੈ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-pa/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Przesyłam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-pl/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;A transmitir...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-pt-rPT/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Enviando...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-pt/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Se transmite...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ro/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Передача данных...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ru/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;බීම් කරමින්...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-si/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Prenáša sa...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sk/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Prenašanje ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sl/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Po dërgon me rreze...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sq/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Пребацивање...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sr/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Överför trådlöst ...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sv/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Inasambaza...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-sw/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;பரிமாற்றுகிறது...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-ta/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Beam చేస్తోంది...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-te/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;กำลังบีม...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-th/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Nagbi-beam...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-tl/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Işınlanıyor...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-tr/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Đang chiếu...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-vi/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;正在传输信息...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-zh-rCN/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;正在傳送...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-zh-rHK/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;即時傳輸中...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-zh-rTW/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot; msgid=&quot;5219329384828480018&quot;>&quot;Ukuvumelanisa...&quot;&lt;/string>"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values-zu/strings.xml"
+            line="9"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_progress&quot;>Incoming beam...&lt;/string>"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values/strings.xml"
+            line="10"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="TypographyEllipsis"
+        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
+        errorLine1="    &lt;string name=&quot;beam_outgoing&quot;>Beaming...&lt;/string>"
+        errorLine2="                                 ~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/values/strings.xml"
+            line="11"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="IconDensities"
+        message="Missing the following drawables in `drawable-hdpi`: back.png (found in drawable-mdpi)">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/drawable-hdpi"/>
+    </issue>
+
+    <issue
+        id="IconDensities"
+        message="Missing the following drawables in `drawable-mdpi`: nfc.png (found in drawable-hdpi)">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/drawable-mdpi"/>
+    </issue>
+
+    <issue
+        id="IconDensities"
+        message="Missing the following drawables in `drawable-xhdpi`: back.png, ic_menu_cancel_holo_dark.png, nfc.png">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/drawable-xhdpi"/>
+    </issue>
+
+    <issue
+        id="IconDensities"
+        message="Missing the following drawables in `drawable-xxhdpi`: back.png, ic_menu_cancel_holo_dark.png, nfc.png">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/drawable-xxhdpi"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="    &lt;ImageView android:id=&quot;@+id/appicon&quot;"
+        errorLine2="     ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_item.xml"
+            line="26"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="    &lt;ImageView android:id=&quot;@+id/banner&quot;"
+        errorLine2="     ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_payment_item.xml"
+            line="24"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="        &lt;ImageView"
+        errorLine2="         ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_resolver_bottomsheet.xml"
+            line="42"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="    &lt;ImageView android:id=&quot;@+id/screenshot&quot;"
+        errorLine2="     ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/screenshot.xml"
+            line="48"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="    &lt;ImageView android:id=&quot;@+id/blacklayer&quot;"
+        errorLine2="     ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/screenshot.xml"
+            line="53"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="        &lt;ImageView android:id=&quot;@+id/screenshot&quot;"
+        errorLine2="         ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/tapagain.xml"
+            line="29"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="        &lt;ImageView android:id=&quot;@+id/tap_again_appicon&quot;"
+        errorLine2="         ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/tapagain.xml"
+            line="52"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="        &lt;ImageView"
+        errorLine2="         ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/url_open_confirmation.xml"
+            line="28"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="        &lt;ImageView"
+        errorLine2="         ~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/url_open_confirmation_tablet.xml"
+            line="28"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Consider replacing `android:layout_marginRight` with `android:layout_marginEnd=&quot;16dp&quot;` to better support right-to-left layouts"
+        errorLine1="            android:layout_marginRight=&quot;16dp&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_item.xml"
+            line="29"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Consider replacing `android:layout_marginLeft` with `android:layout_marginStart=&quot;24dp&quot;` to better support right-to-left layouts"
+        errorLine1="            android:layout_marginLeft=&quot;24dp&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_item.xml"
+            line="30"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`start`&quot; instead of &quot;`left`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            android:gravity=&quot;center_vertical|left&quot;"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_item.xml"
+            line="40"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Consider replacing `android:layout_marginRight` with `android:layout_marginEnd=&quot;16dp&quot;` to better support right-to-left layouts"
+        errorLine1="        android:layout_marginRight=&quot;16dp&quot;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_payment_item.xml"
+            line="27"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Consider replacing `android:layout_marginLeft` with `android:layout_marginStart=&quot;24dp&quot;` to better support right-to-left layouts"
+        errorLine1="        android:layout_marginLeft=&quot;24dp&quot;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Nfc/NfcNci/res/layout/cardemu_payment_item.xml"
+            line="28"
+            column="9"/>
     </issue>
 
 </issues>

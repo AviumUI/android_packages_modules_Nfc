@@ -117,7 +117,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         HostEmulationManager.NfcAidRoutingListener {
     static final String TAG = "NfcCardEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
 
     static final int NFC_HCE_APDU = 0x01;
     static final int NFC_HCE_NFCF = 0x04;
@@ -175,6 +175,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
     private final ExecutorService mCommitRoutingExecutor = Executors.newSingleThreadExecutor();
 
     private boolean mIsEuiccCapable;
+    private final NfcPermissions mNfcPermissions;
 
     // TODO: Move this object instantiation and dependencies to NfcInjector.
     public CardEmulationManager(Context context, NfcInjector nfcInjector,
@@ -214,9 +215,11 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mNfcEventLog = nfcInjector.getNfcEventLog();
         mVendorApiLevel = SystemProperties.getInt(
                 "ro.vendor.api_level", Build.VERSION.DEVICE_INITIAL_SDK_INT);
-        mPreferredSubscriptionService = new PreferredSubscriptionService(mContext, this);
+        mPreferredSubscriptionService = new PreferredSubscriptionService(mContext,
+                deviceConfigFacade, this);
         mStatsdUtils = nfcInjector.getStatsdUtils();
         mDeviceConfigFacade = deviceConfigFacade;
+        mNfcPermissions = new NfcPermissions(mContext);
         initialize();
     }
 
@@ -265,6 +268,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         mPreferredSubscriptionService = preferredSubscriptionService;
         mStatsdUtils = statsdUtils;
         mDeviceConfigFacade = deviceConfigFacade;
+        mNfcPermissions = new NfcPermissions(mContext);
         initialize();
     }
 
@@ -337,6 +341,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             mHostNfcFEmulationManager.onHostEmulationActivated();
             mNfcFServicesCache.onHostEmulationActivated();
             mEnabledNfcFServices.onHostEmulationActivated();
+            mHostEmulationManager.onNfcFHostEmulationActivated();
         }
     }
 
@@ -362,6 +367,10 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
         }
     }
 
+    public void resetToIdleState() {
+        mHostEmulationManager.returnToIdleState();
+    }
+
     public void onHostCardEmulationDeactivated(int technology) {
         if (technology == NFC_HCE_APDU) {
             mHostEmulationManager.onHostEmulationDeactivated();
@@ -370,6 +379,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             mHostNfcFEmulationManager.onHostEmulationDeactivated();
             mNfcFServicesCache.onHostEmulationDeactivated();
             mEnabledNfcFServices.onHostEmulationDeactivated();
+            mHostEmulationManager.onNfcFHostEmulationDeactivated();
         }
         if (mNfcOemExtensionCallback != null) {
             try {
@@ -386,6 +396,7 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
     public void onOffHostAidSelected(@NonNull String aid, @NonNull String eeName) {
         mHostEmulationManager.onOffHostAidSelectedOrTransaction();
+        mPreferredServices.onOffHostAidSelected();
         if (com.android.nfc.module.flags.Flags.eventListenerOffhostAidSelected()) {
             callNfcEventCallbacks(listener -> listener.onOffHostAidSelected(aid, eeName));
         }
@@ -798,8 +809,15 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                 route->mRoutingOptionManager.overrideDefaultRoute(route));
         changed |= updateRouteToPreferredSim(()->mRoutingOptionManager.getDefaultIsoDepRoute(),
                 route->mRoutingOptionManager.overrideDefaultIsoDepRoute(route));
-        changed |= updateRouteToPreferredSim(()->mRoutingOptionManager.getDefaultOffHostRoute(),
-                route->mRoutingOptionManager.overrideDefaultOffHostRoute(route));
+        if (mDeviceConfigFacade.shouldSeparateOffhostFelicaRouting()) {
+            int fRoute = mRoutingOptionManager.getDefaultFelicaRoute();
+            changed |= updateRouteToPreferredSim(
+                    ()->mRoutingOptionManager.getDefaultOffHostRoute(),
+                    route->mRoutingOptionManager.overrideDefaultTechRoute(route, fRoute));
+        } else {
+            changed |= updateRouteToPreferredSim(()->mRoutingOptionManager.getDefaultOffHostRoute(),
+                    route->mRoutingOptionManager.overrideDefaultOffHostRoute(route));
+        }
         if (changed) {
             mRoutingOptionManager.overwriteRoutingTable();
         }
@@ -1293,7 +1311,23 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
             if (!mDeviceConfigFacade.getEnableServiceOther())
               return SET_SERVICE_ENABLED_STATUS_FAILURE_FEATURE_UNSUPPORTED;
             NfcPermissions.enforceUserPermissions(mContext);
-
+            mNfcEventLog.logEvent(
+                    NfcEventProto.EventType.newBuilder()
+                            .setServiceOtherStateChange(
+                                NfcEventProto.NfcServiceOtherStateChange.newBuilder()
+                                    .setAppInfo(NfcEventProto.NfcAppInfo.newBuilder()
+                                            .setUid(Binder.getCallingUid())
+                                            .build())
+                                    .setComponentInfo(
+                                        NfcEventProto.NfcComponentInfo.newBuilder()
+                                            .setPackageName(
+                                                app.getPackageName())
+                                            .setClassName(
+                                                app.getClassName())
+                                            .build())
+                                    .setEnabled(status)
+                                    .build())
+                            .build());
             return mServiceCache.registerOtherForService(userId, app, status);
         }
 
@@ -1386,45 +1420,79 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
 
         @Override
         public void overwriteRoutingTable(int userHandle, String aids,
-            String protocol, String technology, String sc) {
+                String protocol, String technologyAB, String technologyF, String sc,
+                String pkg) {
             Log.d(TAG, "overwriteRoutingTable(): userHandle: " + userHandle
-                + ", emptyAid: " + aids + ", protocol: " + protocol
-                + ", technology: " + technology + ", systemCode: " + sc);
-
+                    + ", emptyAid: " + aids + ", protocol: " + protocol
+                    + ", technologyAB: " + technologyAB + ", technologyF: " + technologyF
+                    + ", systemCode: " + sc);
+            mNfcPermissions.checkPackage(Binder.getCallingUid(), pkg);
             NfcPermissions.enforceAdminPermissions(mContext);
+            // If the OEM has set a list of allowed packages, check if the calling package is in
+            // the list.
+            List<String> allowListPkgs =
+                Arrays.asList(mDeviceConfigFacade.getOverwriteRoutingTableAllowListPkgs());
+            if (allowListPkgs.size() > 0 && !allowListPkgs.contains(pkg)) {
+                throw new IllegalArgumentException(
+                    "overwriteRoutingTable: pkg " + pkg + " is not in allow list");
+            }
+            if (mForegroundUid != Process.INVALID_UID) {
+                throw new IllegalStateException(
+                    "overwriteRoutingTable(): Fg app has overridden routing table");
+            }
 
             int aidRoute = (aids != null && aids.equals("default"))
-                    ? mRoutingOptionManager.getDefaultRoute()
+                    ? RoutingOptionManager.ROUTE_DEFAULT
                     : getRouteForSecureElement(aids);
             int protocolRoute = (protocol != null && protocol.equals("default"))
-                    ? mRoutingOptionManager.getDefaultIsoDepRoute()
+                    ? RoutingOptionManager.ROUTE_DEFAULT
                     : getRouteForSecureElement(protocol);
-            int technologyRoute = (technology != null && technology.equals("default"))
-                    ? mRoutingOptionManager.getDefaultOffHostRoute()
-                    : getRouteForSecureElement(technology);
+            int technologyABRoute = (technologyAB != null && technologyAB.equals("default"))
+                    ? RoutingOptionManager.ROUTE_DEFAULT
+                    : getRouteForSecureElement(technologyAB);
+            int technologyFRoute = (technologyF != null && technologyF.equals("default"))
+                    ? RoutingOptionManager.ROUTE_DEFAULT
+                    : getRouteForSecureElement(technologyF);
             int scRoute = (sc != null && sc.equals("default"))
-                    ? mRoutingOptionManager.getDefaultScRoute()
+                    ? RoutingOptionManager.ROUTE_DEFAULT
                     : getRouteForSecureElement(sc);
 
-            if (DBG)  {
-                Log.d(TAG, "overwriteRoutingTable(): aidRoute: " + Integer.toHexString(aidRoute)
-                        + ", protocolRoute: " + Integer.toHexString(protocolRoute)
-                        + ", technologyRoute: " + Integer.toHexString(technologyRoute)
-                        + ", scRoute: " + Integer.toHexString(scRoute));
-            }
             if (aids != null) {
                 mRoutingOptionManager.overrideDefaultRoute(aidRoute);
             }
             if (protocol != null) {
                 mRoutingOptionManager.overrideDefaultIsoDepRoute(protocolRoute);
             }
-            if (technology != null) {
-                mRoutingOptionManager.overrideDefaultOffHostRoute(technologyRoute);
+            if (technologyAB != null && technologyF != null) {
+                mRoutingOptionManager.overrideDefaultTechRoute(
+                        technologyABRoute, technologyFRoute);
+            } else if (technologyAB != null && technologyF == null) {
+                mRoutingOptionManager.overrideDefaultTechRoute(
+                        technologyABRoute, mRoutingOptionManager.getDefaultFelicaRoute());
+            } else if (technologyAB == null && technologyF != null) {
+                mRoutingOptionManager.overrideDefaultTechRoute(
+                        mRoutingOptionManager.getDefaultOffHostRoute(), technologyFRoute);
             }
             if (sc != null) {
                 mRoutingOptionManager.overrideDefaultScRoute(scRoute);
             }
-            if (aids != null || protocol != null || technology != null || sc != null) {
+
+            if (DBG) {
+                aidRoute = mRoutingOptionManager.getOverrideDefaultRoute();
+                protocolRoute = mRoutingOptionManager.getOverrideDefaultIsoDepRoute();
+                technologyABRoute = mRoutingOptionManager.getOverrideDefaultOffHostRoute();
+                technologyFRoute = mRoutingOptionManager.getOverrideDefaultFelicaRoute();
+                scRoute = mRoutingOptionManager.getOverrideDefaultScRoute();
+
+                Log.d(TAG, "overwriteRoutingTable(): aidRoute: " + Integer.toHexString(aidRoute)
+                        + ", protocolRoute: " + Integer.toHexString(protocolRoute)
+                        + ", technologyABRoute: " + Integer.toHexString(technologyABRoute)
+                        + ", technologyFRoute: " + Integer.toHexString(technologyFRoute)
+                        + ", scRoute: " + Integer.toHexString(scRoute));
+            }
+
+            if (aids != null || protocol != null || sc != null
+                    || technologyAB != null || technologyF != null) {
                 mRoutingOptionManager.overwriteRoutingTable();
             }
 
@@ -1455,14 +1523,22 @@ public class CardEmulationManager implements RegisteredServicesCache.Callback,
                     overrideDefaultOffHostRoute =
                         mRoutingOptionManager.getDefaultOffHostRoute();
                 }
+                int overrideDefaultFelicaRoute =
+                        mRoutingOptionManager.getOverrideDefaultFelicaRoute();
+                if (overrideDefaultFelicaRoute == RoutingOptionManager.ROUTE_UNKNOWN) {
+                    overrideDefaultFelicaRoute =
+                        mRoutingOptionManager.getDefaultFelicaRoute();
+                }
                 routingList.add(overrideDefaultRoute);
                 routingList.add(overrideDefaultIsoDepRoute);
                 routingList.add(overrideDefaultOffHostRoute);
+                routingList.add(overrideDefaultFelicaRoute);
             }
             else {
                 routingList.add(mRoutingOptionManager.getDefaultRoute());
                 routingList.add(mRoutingOptionManager.getDefaultIsoDepRoute());
                 routingList.add(mRoutingOptionManager.getDefaultOffHostRoute());
+                routingList.add(mRoutingOptionManager.getDefaultFelicaRoute());
             }
 
             return routingList.stream()

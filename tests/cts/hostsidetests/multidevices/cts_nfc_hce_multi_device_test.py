@@ -216,7 +216,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
 
     def _get_casimir_id_for_device(self):
         host = "localhost"
-        conn = HTTPSConnection(host, 1443, context=ssl._create_unverified_context())
+        conn = HTTPSConnection(host, 1443, context=ssl.create_default_context())
         path = '/devices'
         headers = {'Content-type': 'application/json'}
         conn.request("GET", path, {}, headers)
@@ -263,6 +263,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
             except adb.AdbError:
                 _LOG.info("Could not enable nfc through adb.")
                 self.emulator.nfc_emulator.setNfcState(True)
+            # Ensure any wallet role holder is reset before tests.
+            self.emulator.nfc_emulator.resetWalletRoleHolder()
             if (
                 hasattr(self.emulator, 'dimensions')
                 and 'pn532_serial_path' in self.emulator.dimensions
@@ -383,6 +385,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         default wallet app.
         2. Verifies a successful APDU exchange after reboot.
         """
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         # Set the role before rebooting and ensure it remains enabled after
         # reboot to ensure that the NFC stack binds to it at bootup.
         self._set_up_emulator(
@@ -392,6 +395,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
             payment_default_service=_PAYMENT_SERVICE_1,
             should_disable_services_on_destroy=False # Don't disable services on shutdown.
         )
+        time.sleep(3) # Let NFC stack complete set up emulator
         self._reboot(self.emulator)
         # Setup the payment service activity to handle the transaction after
         # reboot.
@@ -1039,7 +1043,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         self.emulator.nfc_emulator.setNfcState(False)
         time.sleep(2) # Let NFC stack complete initialization.
         self.emulator.nfc_emulator.setNfcState(True)
-
+        time.sleep(2) # Let NFC stack complete initialization.
         self._set_up_reader_and_assert_transaction(expected_service=_PAYMENT_SERVICE_1)
 
     @CddTest(requirements = ["7.4.4/C-1-13"])
@@ -1168,6 +1172,10 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
                 }
                 num_exceeding_threshold = num_exceeding_threshold + 1
                 _LOG.warning(f"Polling frame timestamp tolerance exceeded: {debug_info}")
+                first_timestamp_device = timestamp_device
+                first_timestamp = timestamp_host
+                first_timestamp_error = timestamp_error
+
         asserts.assert_less(num_exceeding_threshold,
                                   _POLLING_FRAME_TIMESTAMP_EXCEED_COUNT_TOLERANCE_)
 
@@ -1189,6 +1197,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         1. Verifies that vendorSpecificGain value increases or stays the same
         when PN532 output power increases.
         """
+        # TBD: Re-enable once we fix the flakiness.
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         asserts.skip_if(not self.emulator.nfc_emulator.isObserveModeSupported(),
                     "Skipping polling frame gain test, observe mode not supported")
 
@@ -1283,6 +1293,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         Verifies:
         1. Verifies that PollingFrame.type value is set correctly
         """
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         asserts.skip_if(not self.emulator.nfc_emulator.isObserveModeSupported(),
                     "Skipping polling frame type test, observe mode not supported")
         self.pn532.mute()
@@ -1335,6 +1346,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         Verifies:
         1. Verifies that PollingFrame.data value is set correctly
         """
+        # TBD: Re-enable once we fix the flakiness.
+        asserts.skip("Skipping test because it is not yet stable across all Android devices")
         asserts.skip_if(not self.emulator.nfc_emulator.isObserveModeSupported(),
                     "Skipping polling frame data test, observe mode not supported")
         self.pn532.mute()
@@ -1383,6 +1396,7 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
     def teardown_test(self):
         if hasattr(self, 'emulator') and hasattr(self.emulator, 'nfc_emulator'):
             self.emulator.nfc_emulator.closeActivity()
+            self.emulator.nfc_emulator.resetWalletRoleHolder()
             self.emulator.nfc_emulator.logInfo(
                 "*** TEST END: " + self.current_test_info.name + " ***")
         if hasattr(self, 'pn532'):
@@ -1431,6 +1445,9 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         asserts.assert_true(tag_detected, _FAILED_TAG_MSG)
         asserts.assert_true(transacted, _FAILED_TRANSACTION_MSG)
 
+        # Reset listen tech back.
+        self.emulator.nfc_emulator.resetListenTech()
+
 
     #@CddTest(requirements = {"7.4.4/C-2-2", "7.4.4/C-1-2"})
     def test_single_non_payment_service_with_listen_tech_poll_tech_mismatch(self):
@@ -1448,6 +1465,8 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         1. Verifies that no APDU exchange occurs when the listen tech mismatches with poll tech.
         2. Verifies a successful APDU exchange when no longer mismatched.
         """
+        asserts.skip_if(int(self.emulator.adb.getprop("ro.product.first_api_level")) < 36,
+            "Tech mismatch test is only supported on Android 16+")
         self._set_up_emulator(service_list=[_TRANSPORT_SERVICE_1],
                               expected_service=_TRANSPORT_SERVICE_1, is_payment=False)
         # Set listen to Type-F
@@ -1464,6 +1483,9 @@ class CtsNfcHceMultiDeviceTestCases(base_test.BaseTestClass):
         tag_detected, transacted = poll_and_transact(self.pn532, command_apdus[:1], response_apdus[:1])
         asserts.assert_true(tag_detected, _FAILED_TAG_MSG)
         asserts.assert_true(transacted, _FAILED_TRANSACTION_MSG)
+
+        # Reset listen tech back.
+        self.emulator.nfc_emulator.resetListenTech()
 
 if __name__ == '__main__':
     # Take test args

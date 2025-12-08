@@ -283,6 +283,11 @@ typedef uint8_t tNFA_RW_NDEF_ST;
 /* NDEF DETECTed OK                                                         */
 #define NFA_RW_FL_NDEF_OK 0x40
 
+enum {
+  NFA_RW_MIFARE_PRES_CHECK_NONE = 0,
+  NFA_RW_MIFARE_PRES_CHECK_AUTH_TX,
+  NFA_RW_MIFARE_PRES_CHECK_AUTH_ON
+};
 /* NFA RW control block */
 typedef struct {
   tNFA_RW_OP cur_op; /* Current operation */
@@ -296,6 +301,8 @@ typedef struct {
   tNFC_INTF_TYPE intf_type;
   uint8_t pa_sel_res;
   tNFC_RF_TECH_N_MODE activated_tech_mode; /* activated technology and mode */
+  int mifare_pres_check_status;
+  uint8_t mifare_auth_cmd[12];
 
   bool b_hard_lock;
 
@@ -354,4 +361,6 @@ extern bool nfa_rw_handle_event(NFC_HDR* p_msg);
 extern void nfa_rw_free_ndef_rx_buf(void);
 extern void nfa_rw_sys_disable(void);
 
+extern void nfa_rw_check_mifare_data(NFC_HDR* p_data);
+extern void nfa_rw_set_mifare_deactivated();
 #endif /* NFA_DM_INT_H */

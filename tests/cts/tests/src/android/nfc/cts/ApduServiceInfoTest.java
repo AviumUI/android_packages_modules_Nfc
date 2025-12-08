@@ -533,4 +533,33 @@ public class ApduServiceInfoTest {
         assertFalse(apduServiceInfo.shouldDefaultToObserveMode());
     }
 
+    @Test
+    public void test_setRequiresUnlock() {
+        assumeTrue(android.nfc.Flags.screenStateAttributeToggle());
+        ApduServiceInfo apduServiceInfo = new ApduServiceInfo(mResolveInfo, false, "",
+                new ArrayList<>(), mDynamicAidGroups, false, 0, 0, "", "", "");
+
+        assertFalse(apduServiceInfo.requiresUnlock());
+
+        apduServiceInfo.setRequiresUnlock(true);
+        assertTrue(apduServiceInfo.requiresUnlock());
+
+        apduServiceInfo.setRequiresUnlock(false);
+        assertFalse(apduServiceInfo.requiresUnlock());
+    }
+
+    @Test
+    public void test_setRequiresScreenOn() {
+        assumeTrue(android.nfc.Flags.screenStateAttributeToggle());
+        ApduServiceInfo apduServiceInfo = new ApduServiceInfo(mResolveInfo, false, "",
+                new ArrayList<>(), mDynamicAidGroups, false, 0, 0, "", "", "");
+
+        assertFalse(apduServiceInfo.requiresScreenOn());
+
+        apduServiceInfo.setRequiresScreenOn(true);
+        assertTrue(apduServiceInfo.requiresScreenOn());
+
+        apduServiceInfo.setRequiresScreenOn(false);
+        assertFalse(apduServiceInfo.requiresScreenOn());
+    }
 }

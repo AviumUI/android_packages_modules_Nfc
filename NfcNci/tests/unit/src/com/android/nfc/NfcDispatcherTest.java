@@ -25,13 +25,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.PendingIntent;
+import android.app.PendingIntent.CanceledException;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -70,7 +73,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.nfc.flags.FeatureFlags;
-import com.android.nfc.flags.Flags;
 import com.android.nfc.handover.HandoverDataParser;
 import com.android.nfc.handover.PeripheralHandoverService;
 
@@ -131,6 +133,8 @@ public final class NfcDispatcherTest {
     AtomicBoolean mAtomicBoolean;
     @Mock
     DeviceConfigFacade mDeviceConfigFacade;
+    @Mock
+    NfcTagAllowNotification mNfcTagAllowNotification;
 
     @Before
     public void setUp() throws PackageManager.NameNotFoundException {
@@ -165,6 +169,8 @@ public final class NfcDispatcherTest {
         when(mockContext.getResources()).thenReturn(mResources);
         when(NfcAdapter.getDefaultAdapter(mockContext)).thenReturn(mNfcAdapter);
         when(mNfcInjector.createAtomicBoolean()).thenReturn(mAtomicBoolean);
+        when(mNfcInjector.createNfcTagAllowNotification(any(), any()))
+                .thenReturn(mNfcTagAllowNotification);
 
         mNfcDispatcher = new NfcDispatcher(mockContext,
                 new HandoverDataParser(), mNfcInjector, true, mDeviceConfigFacade);
@@ -261,7 +267,7 @@ public final class NfcDispatcherTest {
         NdefRecord ndefRecord = NdefRecord.createUri("https://www.example.com");
         when(ndefMessage.getRecords()).thenReturn(new NdefRecord[]{ndefRecord});
         NfcDispatcher.DispatchInfo dispatchInfo = new NfcDispatcher
-                .DispatchInfo(mockContext, tag, ndefMessage);
+                .DispatchInfo(mockContext, mNfcInjector, tag, ndefMessage);
         ResolveInfo activity = mock(ResolveInfo.class);
         ActivityInfo activityInfo = mock(ActivityInfo.class);
         activityInfo.packageName = "com.android.nfc";
@@ -289,7 +295,6 @@ public final class NfcDispatcherTest {
         Assert.assertNotNull(dispatchInfo.intent);
         dispatchInfo.intent.setAction(NfcAdapter.ACTION_TECH_DISCOVERED);
         when(android.nfc.Flags.enableNfcMainline()).thenReturn(true);
-        when(com.android.nfc.flags.Flags.nfcAlertTagAppLaunch()).thenReturn(false);
         dispatchInfo.checkPrefList(activities, 0);
 
         assertThat(dispatchInfo.rootIntent).isNotNull();
@@ -389,7 +394,7 @@ public final class NfcDispatcherTest {
         NdefRecord ndefRecord = NdefRecord.createUri("https://www.example.com");
         when(ndefMessage.getRecords()).thenReturn(new NdefRecord[]{ndefRecord});
         NfcDispatcher.DispatchInfo dispatchInfo = new NfcDispatcher
-                .DispatchInfo(mockContext, tag, ndefMessage);
+                .DispatchInfo(mockContext, mNfcInjector, tag, ndefMessage);
         UserHandle userHandle = mock(UserHandle.class);
         List<UserHandle> luh = new ArrayList<>();
         luh.add(userHandle);
@@ -425,7 +430,7 @@ public final class NfcDispatcherTest {
         when(mUserManager.getEnabledProfiles()).thenReturn(luh);
         when(mUserManager.isQuietModeEnabled(userHandle)).thenReturn(false);
         NfcDispatcher.DispatchInfo dispatchInfo = new NfcDispatcher
-                .DispatchInfo(mockContext, tag, ndefMessage);
+                .DispatchInfo(mockContext, mNfcInjector, tag, ndefMessage);
         FeatureFlags featureFlags = mock(FeatureFlags.class);
         when(featureFlags.sendViewIntentForUrlTagDispatch()).thenReturn(false);
         when(mNfcInjector.getFeatureFlags()).thenReturn(featureFlags);
@@ -444,7 +449,7 @@ public final class NfcDispatcherTest {
         NdefRecord ndefRecord = NdefRecord.createUri("https://www.example.com");
         when(ndefMessage.getRecords()).thenReturn(new NdefRecord[]{ndefRecord});
         NfcDispatcher.DispatchInfo dispatchInfo = new NfcDispatcher
-                .DispatchInfo(mockContext, tag, ndefMessage);
+                .DispatchInfo(mockContext, mNfcInjector, tag, ndefMessage);
         String uri = dispatchInfo.getUri();
         assertThat(uri).isNotNull();
         assertThat(uri).isEqualTo("https://www.example.com");
@@ -459,7 +464,7 @@ public final class NfcDispatcherTest {
         NdefRecord ndefRecord = NdefRecord.createUri("https://www.example.com");
         when(ndefMessage.getRecords()).thenReturn(new NdefRecord[]{ndefRecord});
         NfcDispatcher.DispatchInfo dispatchInfo = new NfcDispatcher
-                .DispatchInfo(mockContext, tag, ndefMessage);
+                .DispatchInfo(mockContext, mNfcInjector, tag, ndefMessage);
         boolean webIntent = dispatchInfo.isWebIntent();
         assertThat(webIntent).isTrue();
     }
@@ -473,7 +478,7 @@ public final class NfcDispatcherTest {
         NdefRecord ndefRecord = NdefRecord.createUri("https://www.example.com");
         when(ndefMessage.getRecords()).thenReturn(new NdefRecord[]{ndefRecord});
         NfcDispatcher.DispatchInfo dispatchInfo = new NfcDispatcher
-                .DispatchInfo(mockContext, tag, ndefMessage);
+                .DispatchInfo(mockContext, mNfcInjector, tag, ndefMessage);
         Intent intent = dispatchInfo.setViewIntent();
         assertThat(intent).isNotNull();
         assertThat(intent.getAction()).isEqualTo(Intent.ACTION_VIEW);
@@ -488,7 +493,7 @@ public final class NfcDispatcherTest {
         NdefRecord ndefRecord = NdefRecord.createUri("https://www.example.com");
         when(ndefMessage.getRecords()).thenReturn(new NdefRecord[]{ndefRecord});
         NfcDispatcher.DispatchInfo dispatchInfo = new NfcDispatcher
-                .DispatchInfo(mockContext, tag, ndefMessage);
+                .DispatchInfo(mockContext, mNfcInjector, tag, ndefMessage);
         ResolveInfo ri = mock(ResolveInfo.class);
         ActivityInfo ai = mock(ActivityInfo.class);
         ApplicationInfo applicationInfo = mock(ApplicationInfo.class);
@@ -782,10 +787,98 @@ public final class NfcDispatcherTest {
         when(pm.getApplicationLabel(appInfo)).thenReturn("appname");
         when(userHandle.getIdentifier()).thenReturn(0);
         when(mNfcAdapter.getTagIntentAppPreferenceForUser(0)).thenReturn(prefList);
-        when(Flags.nfcAlertTagAppLaunch()).thenReturn(false);
         when(dispatch.tryStartActivity()).thenReturn(true);
 
         assertTrue(mNfcDispatcher.tryTech(dispatch, tag));
         verify(mNfcAdapter).setTagIntentAppPreferenceForUser(0, packageName, true);
+    }
+
+    @Test
+    public void testTryOverrides_NdefDispatchFails() throws CanceledException {
+        // Verifies that tryOverrides returns false when PendingIntent.send fails for NDEF.
+        // Setup a pending intent that will fail by throwing CanceledException.
+        PendingIntent pendingIntent = mock(PendingIntent.class);
+        doThrow(new CanceledException()).when(pendingIntent)
+                .send(any(Context.class), anyInt(), any(Intent.class));
+
+        // Setup a tag with an NDEF message to trigger the NDEF dispatch path.
+        NdefRecord record = NdefRecord.createMime("text/plain", "test".getBytes());
+        NdefMessage message = new NdefMessage(record);
+        Tag tag = Tag.createMockTag(new byte[]{0x01}, new int[]{TagTechnology.NDEF}, new Bundle[1],
+                0L);
+        NfcDispatcher.DispatchInfo dispatch = new NfcDispatcher.DispatchInfo(mockContext,
+                mNfcInjector, tag, message);
+
+        // Setup filters to match the NDEF intent.
+        IntentFilter filter = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
+        try {
+            filter.addDataType("text/plain");
+        } catch (IntentFilter.MalformedMimeTypeException e) {
+            Assert.fail("Malformed Mime Type");
+        }
+        IntentFilter[] filters = new IntentFilter[]{filter};
+
+        // Call tryOverrides and expect it to fail because the PendingIntent send fails.
+        boolean result = mNfcDispatcher.tryOverrides(dispatch, tag, message, pendingIntent, filters,
+                null);
+
+        // Assert that the method returns false, indicating failure.
+        assertFalse(result);
+        // Verify that the send method was called, which then threw the mocked exception.
+        verify(pendingIntent).send(any(Context.class), eq(Activity.RESULT_OK), any(Intent.class));
+    }
+
+    @Test
+    public void testTryOverrides_TechDispatchFails() throws CanceledException {
+        // Verifies that tryOverrides returns false when PendingIntent.send fails for TECH.
+        // Setup a pending intent that will fail by throwing CanceledException.
+        PendingIntent pendingIntent = mock(PendingIntent.class);
+        doThrow(new CanceledException()).when(pendingIntent)
+                .send(any(Context.class), anyInt(), any(Intent.class));
+
+        // Setup a tag with NfcA tech to trigger the TECH dispatch path.
+        Tag tag = mock(Tag.class);
+        when(tag.getTechList()).thenReturn(new String[]{NfcA.class.getName()});
+        NfcDispatcher.DispatchInfo dispatch = new NfcDispatcher.DispatchInfo(mockContext,
+                mNfcInjector, tag, null);
+
+        // Setup tech lists to match the tag's tech.
+        String[][] techLists = new String[][]{{NfcA.class.getName()}};
+
+        // Call tryOverrides and expect it to fail because the PendingIntent send fails.
+        boolean result = mNfcDispatcher.tryOverrides(dispatch, tag, null, pendingIntent, null,
+                techLists);
+
+        // Assert that the method returns false, indicating failure.
+        assertFalse(result);
+        // Verify that the send method was called, which then threw the mocked exception.
+        verify(pendingIntent).send(any(Context.class), eq(Activity.RESULT_OK), any(Intent.class));
+    }
+
+    @Test
+    public void testTryOverrides_TagDispatchFails() throws CanceledException {
+        // Verifies that tryOverrides returns false when PendingIntent.send fails for TAG.
+        // Setup a pending intent that will fail by throwing CanceledException.
+        PendingIntent pendingIntent = mock(PendingIntent.class);
+        doThrow(new CanceledException()).when(pendingIntent)
+                .send(any(Context.class), anyInt(), any(Intent.class));
+
+        // Setup a generic tag to trigger the TAG dispatch path.
+        Tag tag = Tag.createMockTag(new byte[]{0x01}, new int[0], new Bundle[0], 0L);
+        NfcDispatcher.DispatchInfo dispatch = new NfcDispatcher.DispatchInfo(mockContext,
+                mNfcInjector, tag, null);
+
+        // Setup filters to match the TAG_DISCOVERED intent.
+        IntentFilter filter = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
+        IntentFilter[] filters = new IntentFilter[]{filter};
+
+        // Call tryOverrides and expect it to fail because the PendingIntent send fails.
+        boolean result = mNfcDispatcher.tryOverrides(dispatch, tag, null, pendingIntent, filters,
+                null);
+
+        // Assert that the method returns false, indicating failure.
+        assertFalse(result);
+        // Verify that the send method was called, which then threw the mocked exception.
+        verify(pendingIntent).send(any(Context.class), eq(Activity.RESULT_OK), any(Intent.class));
     }
 }

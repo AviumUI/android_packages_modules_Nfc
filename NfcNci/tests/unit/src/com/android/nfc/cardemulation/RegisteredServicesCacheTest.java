@@ -140,6 +140,8 @@ public class RegisteredServicesCacheTest {
     @Mock
     private NfcInjector mNfcInjector;
     @Mock
+    private NfcService mNfcService;
+    @Mock
     private DeviceConfigFacade mDeviceConfigFacade;
     @Captor
     private ArgumentCaptor<BroadcastReceiver> mReceiverArgumentCaptor;
@@ -184,6 +186,8 @@ public class RegisteredServicesCacheTest {
         when(ActivityManager.getCurrentUser()).thenReturn(USER_ID);
         when(NfcInjector.getInstance()).thenReturn(mNfcInjector);
         when(mNfcInjector.getDeviceConfigFacade()).thenReturn(mDeviceConfigFacade);
+        when(NfcService.getInstance()).thenReturn(mNfcService);
+        when(mNfcService.isNdefNfceefeatureEnabled()).thenReturn(false);
         when(mContext.getSystemService(eq(UserManager.class))).thenReturn(mUserManager);
         when(mContext.getFilesDir()).thenReturn(DIR);
         when(mContext.createContextAsUser(
@@ -357,7 +361,7 @@ public class RegisteredServicesCacheTest {
         // Verify that the installed services are populated properly
         verify(mContext)
                 .createPackageContextAsUser(eq(ANDROID_STRING), eq(0), eq(USER_HANDLE));
-        verify(mContext).getPackageManager();
+        verify(mContext, times(2)).getPackageManager();
         verify(mPackageManager, times(2))
                 .queryIntentServicesAsUser(mIntentArgumentCaptor.capture(),
                         mFlagArgumentCaptor.capture(), eq(USER_HANDLE));
@@ -366,9 +370,9 @@ public class RegisteredServicesCacheTest {
         Intent offHostIntent = mIntentArgumentCaptor.getAllValues().get(1);
         assertEquals(OffHostApduService.SERVICE_INTERFACE, offHostIntent.getAction());
         PackageManager.ResolveInfoFlags onHostFlag = mFlagArgumentCaptor.getAllValues().get(0);
-        assertEquals(PackageManager.GET_META_DATA, onHostFlag.getValue());
+        assertTrue((onHostFlag.getValue() & PackageManager.GET_META_DATA) != 0);
         PackageManager.ResolveInfoFlags offHostFlag = mFlagArgumentCaptor.getAllValues().get(1);
-        assertEquals(PackageManager.GET_META_DATA, offHostFlag.getValue());
+        assertTrue((offHostFlag.getValue() & PackageManager.GET_META_DATA) != 0);
         // Verify that the installed services are filtered properly
         verify(mPackageManager).checkPermission(eq(android.Manifest.permission.NFC),
                 eq(WALLET_HOLDER_PACKAGE_NAME));

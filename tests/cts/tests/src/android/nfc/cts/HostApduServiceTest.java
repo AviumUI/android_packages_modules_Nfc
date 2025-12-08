@@ -8,19 +8,23 @@ import android.nfc.cardemulation.PollingFrame;
 import android.os.Bundle;
 import android.os.Looper;
 import android.platform.test.annotations.RequiresFlagsEnabled;
-
+import android.platform.test.flag.junit.CheckFlagsRule;
+import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.util.ArrayList;
 
-
 @RunWith(JUnit4.class)
 public class HostApduServiceTest {
+  @Rule
+  public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+
   private CtsMyHostApduService service;
 
   @Before
@@ -57,7 +61,7 @@ public class HostApduServiceTest {
     }
   }
 
-    @Test
+  @Test
   @RequiresFlagsEnabled(android.nfc.Flags.FLAG_NFC_READ_POLLING_LOOP)
   public void testProcessPollingFrame() {
         ArrayList<PollingFrame> frames = new ArrayList<PollingFrame>();

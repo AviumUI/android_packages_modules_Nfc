@@ -95,6 +95,7 @@ interface INfcAdapter
     boolean isObserveModeSupported();
     boolean isObserveModeEnabled();
     boolean setObserveMode(boolean enabled, String pkg);
+    boolean isExitFramesSupported();
     boolean isPowerSavingModeSupported();
     boolean isPowerSavingModeEnabled();
     void setPowerSavingMode(boolean enabled);
@@ -129,4 +130,6 @@ interface INfcAdapter
     boolean isTagIntentAllowed(in String pkg, in int Userid);
     IT4tNdefNfcee getT4tNdefNfceeInterface();
     long getMaxPausePollingTimeoutMs();
+    int emulateNfcATag(boolean setConfig, byte bitFrameSdd, byte platformConfig, byte selInfo,
+        in byte[] nfcid1, byte rats, in byte[] histBytes);
 }

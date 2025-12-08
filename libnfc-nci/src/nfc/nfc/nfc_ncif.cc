@@ -1532,12 +1532,11 @@ void nfc_ncif_proc_reset_rsp(uint8_t* p, bool is_ntf) {
 
   status = *p_len > 0 ? *p++ : NCI_STATUS_FAILED;
   if (*p_len > 2 && is_ntf) {
-    LOG(WARNING) << StringPrintf("%s: reset notification!!=0x%x ", __func__,
-                                 status);
     /* clean up, if the state is OPEN
      * FW does not report reset ntf right now */
-    if (status == NCI2_X_RESET_TRIGGER_TYPE_CORE_RESET_CMD_RECEIVED ||
-        status == NCI2_X_RESET_TRIGGER_TYPE_POWERED_ON) {
+    if ((status == NCI2_X_RESET_TRIGGER_TYPE_CORE_RESET_CMD_RECEIVED ||
+         status == NCI2_X_RESET_TRIGGER_TYPE_POWERED_ON) &&
+        (nfc_cb.nfc_state < NFC_STATE_IDLE)) {
       LOG(VERBOSE) << StringPrintf("%s: status=0x%x nfc_state=0x%x", __func__,
                                    status, nfc_cb.nfc_state);
       nfc_stop_timer(&nfc_cb.nci_wait_rsp_timer);
@@ -1686,13 +1685,17 @@ void nfc_ncif_proc_t3t_polling_ntf(uint8_t* p, uint16_t plen) {
   uint8_t num_responses;
 
   if (plen < NFC_TL_SIZE) {
-    return;
+    // Error case, wrongly formatted NTF
+    /* Pass result to RW_T3T for processing */
+    status = NCI_STATUS_FAILED;
+    num_responses = 0;
+  } else {
+    /* Pass result to RW_T3T for processing */
+    STREAM_TO_UINT8(status, p);
+    STREAM_TO_UINT8(num_responses, p);
+    plen -= NFC_TL_SIZE;
   }
 
-  /* Pass result to RW_T3T for processing */
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT8(num_responses, p);
-  plen -= NFC_TL_SIZE;
   rw_t3t_handle_nci_poll_ntf(status, num_responses, (uint8_t)plen, p);
 }
 
@@ -1746,7 +1749,10 @@ void nfc_data_event(tNFC_CONN_CB* p_cb) {
 
       data_cevt.p_data = p_evt;
       /* adjust payload, if needed */
-      if (p_cb->conn_id == NFC_RF_CONN_ID && p_evt->len) {
+      // Bug correction - On RF raw fragmented frames, data status is present
+      // only on last fragment
+      if ((p_cb->conn_id == NFC_RF_CONN_ID) &&
+          (p_evt->layer_specific != NFC_RAS_FRAGMENTED) && p_evt->len) {
         /* if NCI_PROTOCOL_T1T/NCI_PROTOCOL_T2T/NCI_PROTOCOL_T3T, the status
          * byte needs to be removed
          */
@@ -1932,6 +1938,7 @@ void nfc_mode_set_ntf_timeout() {
   LOG(ERROR) << StringPrintf("%s", __func__);
   tNFC_RESPONSE nfc_response;
   nfc_response.mode_set.status = NCI_STATUS_FAILED;
+  nfc_cb.flags &= ~NFC_FL_WAIT_MODE_SET_NTF;
   nfc_response.mode_set.nfcee_id = *nfc_cb.last_nfcee_cmd;
   nfc_response.mode_set.mode = NCI_NFCEE_MD_DEACTIVATE;
 

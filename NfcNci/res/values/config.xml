@@ -43,6 +43,8 @@
     <string name="nfc_default_isodep_route" translatable="false"></string>
     <!-- Default OffHost Route value -->
     <string name="nfc_default_offhost_route" translatable="false"></string>
+    <!-- Default Felica Route value -->
+    <string name="nfc_default_felica_route" translatable="false"></string>
     <!-- Default System Code Route value -->
     <string name="nfc_default_sc_route" translatable="false"></string>
     <!-- Overlay to enable NFC developer option notification-->
@@ -75,4 +77,10 @@
     <bool name="ce_disable_other_services_on_managed_profiles">false</bool>
     <!-- Timeout for CE field on wake lock. Set to 0 to disable the CE wake lock. -->
     <integer name="ce_wake_lock_timeout_millis">1000</integer>
+    <string-array name="overwrite_routing_table_allow_list_pkgs" translatable="false" />
+    <!-- Forcibly set the preferred subscription service to UICC when there is no preference. -->
+    <bool name="default_preferred_subscription_to_uicc">true</bool>
+    <!-- Separate felica routing when default preferred subscription status changed -->
+    <bool name="separate_offhost_felica_routing">true</bool>
+    <bool name="telephony_subscription_routing_enabled">true</bool>
 </resources>

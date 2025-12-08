@@ -125,6 +125,16 @@ static void nfa_rw_send_data_to_upper(tRW_DATA* p_rw_data) {
   conn_evt_data.data.p_data =
       (uint8_t*)(p_rw_data->data.p_data + 1) + p_rw_data->data.p_data->offset;
   conn_evt_data.data.len = p_rw_data->data.p_data->len;
+  if (nfa_rw_cb.protocol == NFC_PROTOCOL_MIFARE) {
+    if (nfa_rw_cb.mifare_pres_check_status ==
+        NFA_RW_MIFARE_PRES_CHECK_AUTH_TX) {
+      if (conn_evt_data.data.p_data[0] == 0x00) {
+        nfa_rw_cb.mifare_pres_check_status = NFA_RW_MIFARE_PRES_CHECK_AUTH_ON;
+      } else {
+        nfa_rw_cb.mifare_pres_check_status = NFA_RW_MIFARE_PRES_CHECK_NONE;
+      }
+    }
+  }
 
   nfa_dm_act_conn_cback_notify(NFA_DATA_EVT, &conn_evt_data);
 
@@ -1501,6 +1511,9 @@ static void nfa_rw_handle_mfc_evt(tRW_EVENT event, tRW_DATA* p_rw_data) {
       nfa_dm_act_conn_cback_notify(NFA_WRITE_CPLT_EVT, &conn_evt_data);
       break;
 
+    case RW_MFC_PRES_CHECK_EVT:
+      nfa_rw_handle_presence_check_rsp(p_rw_data->status);
+      break;
     default:
       LOG(VERBOSE) << StringPrintf("%s: Unhandled RW event 0x%X", __func__,
                                    event);
@@ -1895,6 +1908,40 @@ static bool nfa_rw_write_ndef(tNFA_RW_MSG* p_data) {
 
 /*******************************************************************************
 **
+** Function         nfa_rw_check_mifare_data
+**
+** Description      Checks the content of MIFARE raw data
+**                  If AUTHENTICATE command, change status to AUTH_TX
+**                  Else set to AUTH_OFF
+**
+** Returns
+**
+*******************************************************************************/
+void nfa_rw_check_mifare_data(NFC_HDR* p_data) {
+  uint8_t* p;
+  p = (uint8_t*)(p_data + 1) + p_data->offset;
+  if ((p[0] == 0x60) || (p[0] == 0x61)) {
+    nfa_rw_cb.mifare_pres_check_status = NFA_RW_MIFARE_PRES_CHECK_AUTH_TX;
+    memcpy(nfa_rw_cb.mifare_auth_cmd, p, sizeof(nfa_rw_cb.mifare_auth_cmd));
+  }
+}
+
+/*******************************************************************************
+**
+** Function         nfa_rw_set_mifare_deactivated
+**
+** Description      Set status to AUTH_OFF
+**
+** Returns
+**
+*******************************************************************************/
+void nfa_rw_set_mifare_deactivated() {
+  nfa_rw_cb.mifare_pres_check_status = NFA_RW_MIFARE_PRES_CHECK_NONE;
+  memset(nfa_rw_cb.mifare_auth_cmd, 0, sizeof(nfa_rw_cb.mifare_auth_cmd));
+}
+
+/*******************************************************************************
+**
 ** Function         nfa_rw_presence_check
 **
 ** Description      Handler for NFA_RW_API_PRESENCE_CHECK
@@ -1959,6 +2006,15 @@ void nfa_rw_presence_check(tNFA_RW_MSG* p_data) {
   } else if (NFC_PROTOCOL_CI == protocol) {
     // Chinese ID card
     status = RW_CiPresenceCheck();
+  } else if (NFC_PROTOCOL_MIFARE == protocol) {
+    if (nfa_rw_cb.mifare_pres_check_status ==
+        NFA_RW_MIFARE_PRES_CHECK_AUTH_ON) {
+      // Read last authenticated block address
+      status = RW_MfcPresenceCheck(nfa_rw_cb.mifare_auth_cmd);
+    } else {
+      /* Protocol unsupported by RW module... */
+      unsupported = true;
+    }
   } else {
     /* Protocol unsupported by RW module... */
     unsupported = true;

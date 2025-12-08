@@ -28,25 +28,27 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ServiceInfo;
 import android.content.res.XmlResourceParser;
 import android.nfc.NfcAdapter;
+import android.nfc.cardemulation.ApduServiceInfo;
 import android.nfc.cardemulation.CardEmulation;
 import android.nfc.cardemulation.HostApduService;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Xml;
 
 import com.android.compatibility.common.util.CommonTestUtils;
+import com.android.modules.utils.build.SdkLevel;
 import com.android.nfc.service.HceService;
 import com.android.nfc.utils.HceUtils;
 
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class BaseEmulatorActivity extends Activity {
     public static final String PACKAGE_NAME = "com.android.nfc.emulator";
@@ -99,7 +101,7 @@ public abstract class BaseEmulatorActivity extends Activity {
     }
 
     public void registerEventListener(CardEmulation.NfcEventCallback eventListener) {
-        if (android.nfc.Flags.nfcEventListener()) {
+        if (SdkLevel.isAtLeastB() && android.nfc.Flags.nfcEventListener()) {
             Log.d(TAG, "registering event listener...");
             mCardEmulation.registerNfcEventCallback(getMainExecutor(), eventListener);
         }
@@ -246,7 +248,26 @@ public abstract class BaseEmulatorActivity extends Activity {
     }
 
     public List<String> getAidsForService(ComponentName componentName) {
-        return mCardEmulation.getAidsForService(componentName, CardEmulation.CATEGORY_PAYMENT);
+        // Combine services from both categories into a single stream
+        List<ApduServiceInfo> allServices = new ArrayList<>();
+        List<ApduServiceInfo> paymentServices = mCardEmulation.getServices(
+                CardEmulation.CATEGORY_PAYMENT, 0);
+        if (paymentServices != null) { // Add null check for robustness
+            allServices.addAll(paymentServices);
+        }
+        List<ApduServiceInfo> otherServices = mCardEmulation.getServices(
+                CardEmulation.CATEGORY_OTHER, 0);
+        if (otherServices != null) { // Add null check for robustness
+            allServices.addAll(otherServices);
+        }
+        if (allServices.isEmpty()) {
+            return Collections.emptyList(); // Return an immutable empty list
+        }
+        // Filter and collect AIDs using streams
+        return allServices.stream()
+                .filter(serviceInfo -> serviceInfo.getComponent().equals(componentName))
+                .flatMap(serviceInfo -> serviceInfo.getAids().stream()) // Flatten the lists of AIDs
+                .collect(Collectors.toList());
     }
 
     /** Executed after services are set up */

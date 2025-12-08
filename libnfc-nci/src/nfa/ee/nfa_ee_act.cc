@@ -1487,7 +1487,7 @@ void nfa_ee_api_add_sys_code(tNFA_EE_MSG* p_data) {
         LOG(ERROR) << StringPrintf("%s: Exceeded LMRT size=%d", __func__,
                                    new_size);
         evt_data.status = NFA_STATUS_BUFFER_FULL;
-      } else {
+      } else if (p_add->power_state) {
         /* add SC entry*/
         uint32_t p_cb_sc_len = nfa_ee_find_total_sys_code_len(p_cb, 0);
         p_cb->sys_code_pwr_cfg[p_cb->sys_code_cfg_entries] = p_add->power_state;
@@ -2779,7 +2779,8 @@ bool nfa_ee_is_active(tNFA_HANDLE nfcee_id) {
   /* compose output */
   for (xx = 0; xx < nfa_ee_cb.cur_ee; xx++, p_cb++) {
     if ((tNFA_HANDLE)p_cb->nfcee_id == nfcee_id) {
-      if (p_cb->ee_status == NFA_EE_STATUS_ACTIVE) {
+      if ((p_cb->ee_status & ~NFA_EE_STATUS_MEP_MASK) ==
+          NFC_NFCEE_STATUS_ACTIVE) {
         is_active = true;
       }
       break;

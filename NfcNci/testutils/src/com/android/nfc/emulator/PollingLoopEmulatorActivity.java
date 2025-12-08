@@ -68,7 +68,7 @@ public class PollingLoopEmulatorActivity extends BaseEmulatorActivity {
         super.onResume();
 
         IntentFilter filter = new IntentFilter(PollingLoopService.POLLING_FRAME_ACTION);
-        registerReceiver(mFieldStateReceiver, filter, RECEIVER_EXPORTED);
+        registerReceiver(mPollingLoopReceiver, filter, RECEIVER_EXPORTED);
         mNfcTech = getIntent().getIntExtra(NFC_TECH_KEY, NfcAdapter.FLAG_READER_NFC_A);
         ComponentName serviceName =
                 new ComponentName(this.getApplicationContext(), PollingLoopService.class);
@@ -103,7 +103,7 @@ public class PollingLoopEmulatorActivity extends BaseEmulatorActivity {
     @Override
     public void onPause() {
         super.onPause();
-        unregisterReceiver(mFieldStateReceiver);
+        unregisterReceiver(mPollingLoopReceiver);
         mCardEmulation.unsetPreferredService(this);
     }
 
@@ -234,7 +234,7 @@ public class PollingLoopEmulatorActivity extends BaseEmulatorActivity {
         }
     }
 
-    final BroadcastReceiver mFieldStateReceiver =
+    final BroadcastReceiver mPollingLoopReceiver =
             new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {

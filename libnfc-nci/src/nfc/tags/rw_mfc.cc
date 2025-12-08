@@ -637,8 +637,12 @@ static bool rw_mfc_send_to_lower(NFC_HDR* p_data) {
   /* Indicate first attempt to send command, back up cmd buffer in case needed
    * for retransmission */
   rw_cb.cur_retry = 0;
-  memcpy(p_mfc->p_cur_cmd_buf, p_data,
-         sizeof(NFC_HDR) + p_data->offset + p_data->len);
+  if (!p_mfc->p_cur_cmd_buf) {
+    LOG(ERROR) << StringPrintf("%s: p_mfc->p_cur_cmd_buf null", __func__);
+  } else {
+    memcpy(p_mfc->p_cur_cmd_buf, p_data,
+           sizeof(NFC_HDR) + p_data->offset + p_data->len);
+  }
 
   if (NFC_SendData(NFC_RF_CONN_ID, p_data) != NFC_STATUS_OK) {
     LOG(ERROR) << __func__ << ": NFC_SendData () failed";
@@ -668,6 +672,80 @@ void rw_mfc_process_timeout(TIMER_LIST_ENT* p_tle) {
   } else {
     LOG(ERROR) << __func__ << ": unknown event=" << p_tle->event;
   }
+}
+
+/*******************************************************************************
+ **
+ ** Function         RW_MfcPresenceCheck
+ **
+ ** Description      Handles alternative presence check
+ **
+ ** Returns          none
+ **
+ *******************************************************************************/
+tNFC_STATUS RW_MfcPresenceCheck(uint8_t* p_auth_cmd) {
+  tRW_MFC_CB* p_mfc = &rw_cb.tcb.mfc;
+  tNFC_STATUS success = NFC_STATUS_OK;
+  NFC_HDR* mfcbuf;
+  uint8_t* p;
+
+  LOG(DEBUG) << StringPrintf("%s ", __func__);
+
+  if (p_mfc->state != RW_MFC_STATE_IDLE) {
+    return NFC_STATUS_BUSY;
+  }
+
+  p_mfc->state = RW_MFC_STATE_PRESENCE_CHECK;
+  mfcbuf = (NFC_HDR*)GKI_getpoolbuf(NFC_RW_POOL_ID);
+
+  if (!mfcbuf) {
+    LOG(ERROR) << __func__ << "; Cannot allocate buffer";
+    return NFC_STATUS_REJECTED;
+  }
+
+  mfcbuf->offset = NCI_MSG_OFFSET_SIZE + NCI_DATA_HDR_SIZE;
+  p = (uint8_t*)(mfcbuf + 1) + mfcbuf->offset;
+
+  mfcbuf->len = 12;
+  memcpy(p, p_auth_cmd, mfcbuf->len);
+
+  if (!rw_mfc_send_to_lower(mfcbuf)) {
+    return NFC_STATUS_REJECTED;
+  }
+
+  return success;
+}
+
+/*******************************************************************************
+ **
+ ** Function         rw_mfc_handle_pres_check_rsp
+ **
+ ** Description      Handle Presence check.
+ **
+ ** Returns          none
+ **
+ *******************************************************************************/
+static void rw_mfc_handle_pres_check_rsp(uint8_t* p_data) {
+  tRW_MFC_CB* p_mfc = &rw_cb.tcb.mfc;
+  NFC_HDR* mfc_data;
+  uint8_t* p;
+  tRW_DATA pres_check_data;
+  tNFC_STATUS status = NFC_STATUS_FAILED;
+
+  p_mfc->state = RW_MFC_STATE_IDLE;
+
+  mfc_data = (NFC_HDR*)p_data;
+  /* Assume the data is just the response byte sequence */
+  p = (uint8_t*)(mfc_data + 1) + mfc_data->offset;
+
+  LOG(DEBUG) << StringPrintf("%s; status = 0x%02X", __func__, p[0]);
+
+  if (p[0] == 0x00) {
+    status = NFC_STATUS_OK;
+  }
+
+  pres_check_data.raw_frame.status = status;
+  (*(rw_cb.p_cback))(RW_MFC_PRES_CHECK_EVT, &pres_check_data);
 }
 
 /*******************************************************************************
@@ -727,6 +805,13 @@ static void rw_mfc_conn_cback(uint8_t conn_id, tNFC_CONN_EVT event,
       /* Data event with error status...fall through to NFC_ERROR_CEVT case */
       FALLTHROUGH_INTENDED;
     case NFC_ERROR_CEVT:
+      if ((p_mfc->state == RW_MFC_STATE_PRESENCE_CHECK) &&
+          (event == NFC_ERROR_CEVT)) {
+        p_mfc->state = RW_MFC_STATE_IDLE;
+        evt_data.status = (tNFC_STATUS)(*(uint8_t*)p_data);
+        (*(rw_cb.p_cback))(RW_MFC_PRES_CHECK_EVT, (tRW_DATA*)&evt_data);
+        return;
+      }
       if ((p_mfc->state == RW_MFC_STATE_NOT_ACTIVATED) ||
           (p_mfc->state == RW_MFC_STATE_IDLE)) {
         if (event == NFC_ERROR_CEVT) {
@@ -764,6 +849,10 @@ static void rw_mfc_conn_cback(uint8_t conn_id, tNFC_CONN_EVT event,
       } else {
         GKI_freebuf(mfc_data);
       }
+      break;
+    case RW_MFC_STATE_PRESENCE_CHECK:
+      rw_mfc_handle_pres_check_rsp((uint8_t*)mfc_data);
+      GKI_freebuf(mfc_data);
       break;
     case RW_MFC_STATE_DETECT_MAD:
       rw_mfc_handle_mad_detect_rsp((uint8_t*)mfc_data);
@@ -1247,7 +1336,7 @@ static void rw_mfc_handle_read_op(uint8_t* data) {
         p_mfc->ndef_status = MFC_NDEF_DETECTED;
         p_mfc->ndef_first_block = p_mfc->last_block_accessed.block;
         rw_mfc_ntf_tlv_detect_complete(NFC_STATUS_OK);
-      } else if (mfc_read_mad()) {
+      } else {
         tRW_DETECT_NDEF_DATA ndef_data;
         ndef_data.status = NFC_STATUS_FAILED;
         ndef_data.protocol = NFC_PROTOCOL_MIFARE;

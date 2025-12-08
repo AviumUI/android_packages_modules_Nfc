@@ -56,6 +56,7 @@ import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
+import android.app.AppOpsManager;
 import android.app.Application;
 import android.app.KeyguardManager;
 import android.app.VrManager;
@@ -191,6 +192,7 @@ public final class NfcServiceTest {
     @Mock NfcCharging mNfcCharging;
     @Mock VrManager mVrManager;
     @Mock RoleManager mRoleManager;
+    @Mock AppOpsManager mAppOpsManager;
     @Captor ArgumentCaptor<DeviceHost.DeviceHostListener> mDeviceHostListener;
     @Captor ArgumentCaptor<BroadcastReceiver> mGlobalReceiver;
     @Captor ArgumentCaptor<IBinder> mIBinderArgumentCaptor;
@@ -264,6 +266,7 @@ public final class NfcServiceTest {
         when(mApplication.getSystemService(DisplayManager.class)).thenReturn(mDisplayManager);
         when(mApplication.getSystemService(VrManager.class)).thenReturn(mVrManager);
         when(mApplication.getSystemService(RoleManager.class)).thenReturn(mRoleManager);
+        when(mApplication.getSystemService(AppOpsManager.class)).thenReturn(mAppOpsManager);
         when(mUserManager.getUserRestrictions()).thenReturn(mUserRestrictions);
         when(mResources.getStringArray(R.array.nfc_allow_list)).thenReturn(new String[0]);
         when(mResources.getBoolean(R.bool.tag_intent_app_pref_supported)).thenReturn(true);
@@ -2102,7 +2105,6 @@ public final class NfcServiceTest {
                 .thenReturn(ScreenStateHelper.SCREEN_STATE_OFF_LOCKED);
         mNfcService.mScreenState = ScreenStateHelper.SCREEN_STATE_ON_UNLOCKED;
         when(mDeviceHost.getNciVersion()).thenReturn(NCI_VERSION_1_0);
-        when(mFeatureFlags.reduceStateTransition()).thenReturn(true);
         mNfcService.mIsWatchType = true;
         mNfcService.mState = NfcAdapter.STATE_ON;
         when(mCardEmulationManager.isRequiresScreenOnServiceExist()).thenReturn(false);
@@ -2335,5 +2337,50 @@ public final class NfcServiceTest {
 
         assertFalse("setFirmwareExitFrameTable should return false", result);
         verify(mDeviceHost, never()).setFirmwareExitFrameTable(any(), any());
+    }
+
+    @Test
+    public void testApplyRouting_whenNfcDisabled_doesNothing() {
+        // Set NFC state to OFF
+        mNfcService.mState = NfcAdapter.STATE_OFF;
+
+        // applyRouting is package-private, can be called directly from test
+        mNfcService.applyRouting(true);
+
+        // Verify that discovery methods on DeviceHost are not called, as applyRouting should return
+        // early
+        verify(mDeviceHost, never()).enableDiscovery(any(), anyBoolean());
+        verify(mDeviceHost, never()).disableDiscovery();
+        verify(mDeviceHost, never()).commitRouting();
+    }
+
+    @Test
+    public void testApplyRouting_whenNfcTurningOn_doesNothing() {
+        // Set NFC state to TURNING_ON
+        mNfcService.mState = NfcAdapter.STATE_TURNING_ON;
+
+        // applyRouting is package-private, can be called directly from test
+        mNfcService.applyRouting(true);
+
+        // Verify that discovery methods on DeviceHost are not called,
+        // as applyRouting should return early
+        verify(mDeviceHost, never()).enableDiscovery(any(), anyBoolean());
+        verify(mDeviceHost, never()).disableDiscovery();
+        verify(mDeviceHost, never()).commitRouting();
+    }
+
+    @Test
+    public void testApplyRouting_whenNfcTurningOff_doesNothing() {
+        // Set NFC state to TURNING_OFF
+        mNfcService.mState = NfcAdapter.STATE_TURNING_OFF;
+
+        // applyRouting is package-private, can be called directly from test
+        mNfcService.applyRouting(true);
+
+        // Verify that discovery methods on DeviceHost are not called,
+        // as applyRouting should return early
+        verify(mDeviceHost, never()).enableDiscovery(any(), anyBoolean());
+        verify(mDeviceHost, never()).disableDiscovery();
+        verify(mDeviceHost, never()).commitRouting();
     }
 }

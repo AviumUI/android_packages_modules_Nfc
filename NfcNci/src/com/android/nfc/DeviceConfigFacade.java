@@ -62,6 +62,7 @@ public class DeviceConfigFacade {
     private String mDefaultRoute;
     private String mDefaultIsoDepRoute;
     private String mDefaultOffHostRoute;
+    private String mDefaultFelicaRoute;
     private String mDefaultScRoute;
     private int mSlowTapThresholdMillis;
     private int mUnknownTagPollingDelay;
@@ -69,6 +70,9 @@ public class DeviceConfigFacade {
     private int mUnknownTagPollingDelayLong;
     private boolean mCeDisableOtherServicesOnManagedProfiles;
     private int mCeWakeLockTimeoutMillis;
+    private String[] mOverwriteRoutingTableAllowListPkgs;
+    private boolean mDefaultPreferredSubscriptionToUicc;
+    private boolean mSeparateOffhostFelicaRouting;
 
     private static DeviceConfigFacade sInstance;
     public static DeviceConfigFacade getInstance(Context context, Handler handler) {
@@ -168,6 +172,10 @@ public class DeviceConfigFacade {
                 "nfc_default_offhost_route",
                 mContext.getResources().getString(R.string.nfc_default_offhost_route));
 
+        mDefaultFelicaRoute = DeviceConfig.getString(DEVICE_CONFIG_NAMESPACE_NFC,
+                "nfc_default_felica_route",
+                mContext.getResources().getString(R.string.nfc_default_felica_route));
+
         mDefaultScRoute = DeviceConfig.getString(DEVICE_CONFIG_NAMESPACE_NFC,
                 "nfc_default_sc_route",
                 mContext.getResources().getString(R.string.nfc_default_sc_route));
@@ -193,6 +201,15 @@ public class DeviceConfigFacade {
         mCeWakeLockTimeoutMillis = DeviceConfig.getInt(DEVICE_CONFIG_NAMESPACE_NFC,
                 "ce_wake_lock_timeout_millis",
                 mContext.getResources().getInteger(R.integer.ce_wake_lock_timeout_millis));
+        // device config override with array is not supported, so just read the resource.
+        mOverwriteRoutingTableAllowListPkgs = mContext.getResources()
+            .getStringArray(R.array.overwrite_routing_table_allow_list_pkgs);
+        mDefaultPreferredSubscriptionToUicc = DeviceConfig.getBoolean(DEVICE_CONFIG_NAMESPACE_NFC,
+                "default_preferred_subscription_to_uicc",
+                mContext.getResources().getBoolean(R.bool.default_preferred_subscription_to_uicc));
+        mSeparateOffhostFelicaRouting = DeviceConfig.getBoolean(
+                DEVICE_CONFIG_NAMESPACE_NFC, "separate_offhost_felica_routing",
+                mContext.getResources().getBoolean(R.bool.separate_offhost_felica_routing));
     }
 
     private boolean isSecureNfcCapableDefault() {
@@ -241,6 +258,15 @@ public class DeviceConfigFacade {
     public boolean getEnableDeveloperNotification() { return mEnableDeveloperNotification; }
     public boolean getCheckDisplayStateForScreenState() { return mCheckDisplayStateForScreenState; }
     public boolean getIndicateUserActivityForHce() { return mIndicateUserActivityForHce; }
+    public boolean shouldDefaultPreferredSubscriptionToUicc() {
+        return mDefaultPreferredSubscriptionToUicc;
+    }
+    /**
+     * Checks separate_offhost_felica_routing overlay value
+     */
+    public boolean shouldSeparateOffhostFelicaRouting() {
+        return mSeparateOffhostFelicaRouting;
+    }
     public String getDefaultRoute() {
         return mDefaultRoute;
     }
@@ -249,6 +275,9 @@ public class DeviceConfigFacade {
     }
     public String getDefaultOffHostRoute() {
         return mDefaultOffHostRoute;
+    }
+    public String getDefaultFelicaRoute() {
+        return mDefaultFelicaRoute;
     }
     public String getDefaultScRoute() {
         return mDefaultScRoute;
@@ -266,5 +295,9 @@ public class DeviceConfigFacade {
 
     public int getCeWakeLockTimeoutMillis() {
         return mCeWakeLockTimeoutMillis;
+    }
+
+    public String[] getOverwriteRoutingTableAllowListPkgs() {
+        return mOverwriteRoutingTableAllowListPkgs;
     }
 }

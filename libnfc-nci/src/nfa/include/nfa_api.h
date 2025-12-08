@@ -214,6 +214,7 @@ typedef enum power_substate {
 } epower_substate_t;
 
 #define NFA_SCREEN_STATE_MASK 0x0F
+#define NFA_SCREEN_POLLING_TAG_MASK 0x10
 
 /* CONN_DISCOVER_PARAM */
 #define NFA_DM_PWR_MODE_FULL 0x04
@@ -1422,5 +1423,16 @@ tNFA_STATUS NFA_ChangeDiscoveryTech(tNFA_TECHNOLOGY_MASK pollTech,
 **
 *******************************************************************************/
 bool NFA_IsRfRemovalDetectionSupported();
+
+/*******************************************************************************
+**
+** Function:        NFA_SetCustomConfig
+**
+** Description:     Allow to set NCI config for Listen A from upper layer
+**
+** Returns:         none:
+**
+*******************************************************************************/
+extern void NFA_SetCustomConfig(bool status);
 
 #endif /* NFA_API_H */

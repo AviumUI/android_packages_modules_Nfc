@@ -38,6 +38,7 @@ import android.util.proto.ProtoOutputStream;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.nfc.NfcService;
+import com.android.nfc.R;
 import com.android.nfc.cardemulation.util.TelephonyUtils;
 
 import java.io.FileDescriptor;
@@ -60,7 +61,7 @@ public class RegisteredAidCache {
     private INfcOemExtensionCallback mNfcOemExtensionCallback;
 
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
-    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(true);
+    static final boolean VDBG = NfcProperties.verbose_debug_enabled().orElse(false);
 
     static final int AID_ROUTE_QUAL_SUBSET = 0x20;
     static final int AID_ROUTE_QUAL_PREFIX = 0x10;
@@ -344,7 +345,7 @@ public class RegisteredAidCache {
                 }
                 resolveInfo.services.add(serviceAidInfo.service);
             } else {
-                if (DBG) {
+                if (VDBG) {
                     Log.d(TAG, "nonDefaultResolution: " + serviceAidInfo.service.getComponent()
                             + " is unselected other service");
                 }
@@ -352,7 +353,7 @@ public class RegisteredAidCache {
                     String offHostName = serviceAidInfo.service.getOffHostSecureElement();
                     if (offHostName != null &&
                             !resolveInfo.unCheckedOffHostSecureElement.contains(offHostName)) {
-                        if (DBG) {
+                        if (VDBG) {
                             Log.d(TAG, "nonDefaultResolution: add " + offHostName
                                     + " to disabled offHosts");
                         }
@@ -453,7 +454,9 @@ public class RegisteredAidCache {
 
         // [nfc_w_temp] Implement eSIM
         List<ServiceAidInfo> filteredServices;
-        if (mPreferredSimType == TelephonyUtils.SIM_TYPE_UNKNOWN) {
+        boolean telephonySubscriptionEnabled = mContext.getResources().getBoolean(
+                R.bool.telephony_subscription_routing_enabled);
+        if (telephonySubscriptionEnabled && mPreferredSimType == TelephonyUtils.SIM_TYPE_UNKNOWN) {
             if (DBG) {
                 Log.i(TAG, "resolveAidConflictLocked: Sim based service is removed "
                         + "due to unknown sim type");
@@ -1514,6 +1517,20 @@ public class RegisteredAidCache {
     @NonNull
     public ComponentNameAndUser getPreferredPaymentService() {
          return new ComponentNameAndUser(mUserIdPreferredPaymentService, mPreferredPaymentService);
+    }
+
+    @NonNull
+    public List<ComponentNameAndUser> getPreferredPaymentAssociatedServices() {
+        List<ComponentNameAndUser> associatedServices = new ArrayList<>();
+        if (mAssociatedRoleServices != null) {
+            for (ApduServiceInfo service : mAssociatedRoleServices) {
+                associatedServices.add(
+                        new ComponentNameAndUser(
+                                UserHandle.getUserHandleForUid(service.getUid()).getIdentifier(),
+                                service.getComponent()));
+            }
+        }
+        return associatedServices;
     }
 
     public boolean isPreferredServicePackageNameForUser(String packageName, int userId) {
