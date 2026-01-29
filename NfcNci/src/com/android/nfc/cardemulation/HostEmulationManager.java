@@ -90,6 +90,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+/**
+ * TODO(b/479895625): Remove the {@link Flags#allowMultipleHceBindings()} check from the codebase.
+ */
 public class HostEmulationManager {
     static final String TAG = "NfcHostEmulationManager";
     static final boolean DBG = NfcProperties.debug_enabled().orElse(true);
@@ -254,6 +257,35 @@ public class HostEmulationManager {
         }
     };
 
+    private void unbindInactiveServicesLocked() {
+        ComponentNameAndUser preferredNameAndUser = mAidCache.getPreferredService();
+        Map<ComponentNameAndUser, HostEmulationConnection> retainedConnections =
+                new HashMap<>();
+        mComponentNameToConnectionsMap.keySet().forEach((key) -> {
+            if (!preferredNameAndUser.equals(key)) {
+                HostEmulationConnection connection =
+                        mComponentNameToConnectionsMap.get(key);
+                if (connection.mMessenger != null) {
+                    Log.d(TAG, "unbindServiceInactiveServicesLocked: service "
+                            + connection.mServiceConnection);
+                    try {
+                        mContext.unbindService(connection.mServiceConnection);
+                    } catch (IllegalArgumentException iae) {
+                        Log.wtf(TAG,
+                                "unbindInactiveServicesLocked: "
+                                        + "Exception while unbinding "
+                                        + key.getComponentName()
+                                        + " service connection",
+                                iae);
+                    }
+                }
+            } else {
+                retainedConnections.put(key, mComponentNameToConnectionsMap.get(key));
+            }
+        });
+        mComponentNameToConnectionsMap = retainedConnections;
+    }
+
     Runnable mUnbindInactiveServicesRunnable =
             new Runnable() {
                 @Override
@@ -268,32 +300,6 @@ public class HostEmulationManager {
                     }
                 }
 
-                void unbindInactiveServicesLocked() {
-                    ComponentNameAndUser preferredNameAndUser = mAidCache.getPreferredService();
-                    Map<ComponentNameAndUser, HostEmulationConnection> retainedConnections =
-                            new HashMap<>();
-                    mComponentNameToConnectionsMap.keySet().forEach((key) -> {
-                        if (!preferredNameAndUser.equals(key)) {
-                            HostEmulationConnection connection =
-                                mComponentNameToConnectionsMap.get(key);
-                            if (connection.mMessenger != null) {
-                                try {
-                                    mContext.unbindService(connection.mServiceConnection);
-                                } catch (IllegalArgumentException iae) {
-                                    Log.wtf(TAG,
-                                            "unbindInactiveServicesLocked: "
-                                                    + "Exception while unbinding "
-                                                    + key.getComponentName()
-                                                    + " service connection",
-                                            iae);
-                                }
-                            }
-                        } else {
-                            retainedConnections.put(key, mComponentNameToConnectionsMap.get(key));
-                        }
-                    });
-                    mComponentNameToConnectionsMap = retainedConnections;
-                }
             };
 
     // Runnable to re-enable observe mode after a transaction. This should be delayed after
@@ -837,7 +843,7 @@ public class HostEmulationManager {
             if (service != null) {
                 bindServiceIfNeededLocked(userId, service);
             } else {
-                unbindServiceIfNeededLocked();
+                unbindServiceIfNeededLocked(/* force */ true);
             }
          }
      }
@@ -1459,8 +1465,29 @@ public class HostEmulationManager {
         }
     }
 
+    /**
+     * Regular unbind to be used when delivering polling loops, etc and switching between services
+     * during a single transaction. This retains the binding to avoid trashing while the transaction
+     * is in progress. The bindings are cleared in that case when
+     * {@link #mUnbindInactiveServicesRunnable} runs after the completion of transaction.
+     */
     void unbindServiceIfNeededLocked() {
+        unbindServiceIfNeededLocked(/* force */ false);
+    }
+
+    /**
+     * Unbind regular app service.
+     *
+     * @param force Force unbind is used for cases where the preferred service is unset.
+     * Otherwise, we are at the mercy of the next run of {@link #mUnbindInactiveServicesRunnable}
+     * invocation which is only triggered when the next NFC transaction occurs.
+     */
+    void unbindServiceIfNeededLocked(boolean force) {
         if (isMultipleBindingSupported()) {
+            if (force) {
+                unbindInactiveServicesLocked();
+                return;
+            }
             if (mServiceName == null
                     || CompatChanges.isChangeEnabled(
                         DONT_IMMEDIATELY_UNBIND_SERVICES,
