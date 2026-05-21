@@ -72,6 +72,8 @@
     <uses-permission android:name="android.permission.MODIFY_PHONE_STATE"/>
     <uses-permission android:name="android.permission.WRITE_SECURITY_LOG"/>
     <uses-permission android:name="android.permission.UPDATE_DEVICE_STATS"/>
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
     <protected-broadcast android:name="android.nfc.intent.action.WATCHDOG" />
     <application android:name=".NfcApplication"
